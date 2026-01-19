@@ -1,0 +1,53 @@
+# Node / TypeScript
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build outputs
+/dist/
+/build/
+/out/
+/.turbo/
+
+# Frontend / backend specific
+frontend/dist/
+frontend/.vite/
+backend/dist/
+backend/.tsbuildinfo
+
+# Coverage
+coverage/
+
+# Test results (Playwright)
+/test/results/
+
+# Env & secrets
+.env
+.env.*
+*.local
+
+!.env.example
+!**/.env.example
+!.env.docker.example
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Logs
+logs/
+*.log
+
+# Misc
+*.tgz
+*.gz
+
+# Local docs (not tracked)
+/local-docs/
+/archive/

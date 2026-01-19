@@ -1,0 +1,194 @@
+/* Animations */
+@keyframes vt-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.vtRetrySpin {
+  animation: vt-spin 0.8s linear infinite;
+}
+
+/* React Split Pane Resizer styles */
+:global(.Resizer) {
+  background: var(--cds-layer-02, #e0e0e0);
+  opacity: 1;
+  z-index: 1;
+  box-sizing: border-box;
+  background-clip: padding-box;
+}
+
+:global(.Resizer:hover) {
+  transition: all 0.2s ease;
+}
+
+:global(.Resizer.horizontal) {
+  height: 6px;
+  margin: 0;
+  border-top: 1px solid var(--cds-border-subtle-01, #c6c6c6);
+  border-bottom: 1px solid var(--cds-border-subtle-01, #c6c6c6);
+  cursor: row-resize;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:global(.Resizer.horizontal:hover) {
+  background: var(--cds-layer-hover-02, #d1d1d1);
+}
+
+:global(.Resizer.horizontal::after) {
+  content: '';
+  width: 32px;
+  height: 3px;
+  background: var(--cds-icon-secondary, #525252);
+  border-radius: 2px;
+}
+
+:global(.Resizer.vertical) {
+  width: 6px;
+  margin: 0;
+  border-left: 1px solid var(--cds-border-subtle-01, #c6c6c6);
+  border-right: 1px solid var(--cds-border-subtle-01, #c6c6c6);
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:global(.Resizer.vertical:hover) {
+  background: var(--cds-layer-hover-02, #d1d1d1);
+}
+
+:global(.Resizer.vertical::after) {
+  content: '';
+  width: 3px;
+  height: 32px;
+  background: var(--cds-icon-secondary, #525252);
+  border-radius: 2px;
+}
+
+:global(.Resizer.disabled) {
+  cursor: not-allowed;
+}
+
+:global(.Resizer.disabled:hover) {
+  border-color: transparent;
+}
+
+/* Filter bar element styling for dark background */
+:global(.filter-bar-container .cds--list-box),
+:global(.filter-bar-container .cds--dropdown),
+:global(.filter-bar-container .cds--text-input) {
+  background-color: rgba(255, 255, 255, 0.0) !important;
+  border-color: rgba(255, 255, 255, 0.0) !important;
+}
+
+:global(.filter-bar-container .cds--list-box__field),
+:global(.filter-bar-container .cds--dropdown),
+:global(.filter-bar-container .cds--text-input),
+:global(.filter-bar-container .cds--list-box__label) {
+  color: white !important;
+  font-weight: 500 !important;
+}
+
+/* Dropdown menu items - black text */
+:global(.filter-bar-container .cds--list-box__menu-item__option),
+:global(.filter-bar-container .cds--checkbox-label) {
+  color: black !important;
+}
+
+/* Checkbox borders and checks - black */
+:global(.filter-bar-container .cds--checkbox-label::before),
+:global(.filter-bar-container .cds--checkbox:checked + .cds--checkbox-label::before) {
+  border-color: black !important;
+}
+
+:global(.filter-bar-container .cds--checkbox:checked + .cds--checkbox-label::after) {
+  border-bottom-color: black !important;
+  border-left-color: black !important;
+}
+
+/* Fix for instance-states multiselect to show names instead of count */
+:global(.filter-bar-container #instance-states .cds--list-box__field) {
+  height: auto !important;
+  min-height: 2.5rem !important;
+}
+
+:global(.filter-bar-container #instance-states .cds--list-box__selection) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.25rem !important;
+  max-width: none !important;
+  overflow: visible !important;
+}
+
+/* Force ALL tags to be visible first */
+:global(.filter-bar-container #instance-states .cds--tag) {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+/* Then hide ONLY the count tag (high-contrast) after making all visible */
+:global(.filter-bar-container #instance-states .cds--tag.cds--tag--filter.cds--tag--high-contrast) {
+  display: none !important;
+}
+
+/* Ensure the tag container shows all items */
+:global(.filter-bar-container #instance-states .cds--list-box__selection--multi) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.25rem !important;
+}
+
+/* Remove any max-width constraints on tags */
+:global(.filter-bar-container #instance-states .cds--tag__label) {
+  max-width: none !important;
+  white-space: nowrap !important;
+}
+
+:global(.filter-bar-container .cds--list-box__menu-icon svg),
+:global(.filter-bar-container .cds--dropdown__arrow) {
+  fill: white !important;
+}
+
+:global(.filter-bar-container .cds--list-box__selection svg) {
+  fill: white !important;
+}
+
+:global(.filter-bar-container .cds--text-input::placeholder) {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+:global(.filter-bar-container .cds--btn--ghost) {
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+:global(.filter-bar-container .cds--btn--ghost:hover) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Process selector ComboBox styling - transparent background */
+:global(.filter-bar-container #proc-name.cds--combo-box .cds--list-box) {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+:global(.filter-bar-container #proc-name.cds--combo-box .cds--text-input) {
+  background-color: transparent !important;
+  border: none !important;
+  color: white !important;
+}
+
+:global(.filter-bar-container #proc-name.cds--combo-box .cds--text-input::placeholder) {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+:global(.filter-bar-container #proc-name.cds--combo-box .cds--list-box__menu-icon svg) {
+  fill: white !important;
+}

@@ -1,0 +1,176 @@
+/* ===========================================
+   CARBON DESIGN SYSTEM - GLOBAL OVERRIDES
+   Single source of truth for ALL Carbon customizations
+   =========================================== */
+
+/* -----------------------------------------
+   1. CARBON TOKEN OVERRIDES
+   ----------------------------------------- */
+:root {
+  --cds-interactive-01: #0f347a;        /* Primary button color */
+  --cds-interactive-02: #0043ce;        /* Secondary actions */
+  --cds-link-01: #0f62fe;               /* Link color */
+  --cds-focus: #0f62fe;                 /* Focus ring */
+}
+
+/* -----------------------------------------
+   2. UI SHELL / HEADER OVERRIDES
+   (Minimal overrides - theme tokens handle colors via g100 at root)
+   ----------------------------------------- */
+
+/* Invert default logo for dark background (not custom logos) */
+.cds--header__name img.default-logo {
+  filter: invert(1) brightness(2);
+}
+
+/* -----------------------------------------
+   3. PLATFORM SETTINGS PAGE - LAYOUT
+   (Token colors now handled by Theme g10 wrapper)
+   ----------------------------------------- */
+
+.platform-settings-page .cds--tabs {
+  margin-bottom: 1.5rem;
+}
+
+.platform-settings-page .cds--tile {
+  margin-bottom: 1rem;
+}
+
+.platform-settings-page .cds--tab-content {
+  padding: 1.5rem 0;
+}
+
+/* -----------------------------------------
+   4. STARBASE - COLLABORATORS PANEL
+   (Match toolbar search height to small primary button)
+   ----------------------------------------- */
+
+[data-eg-collaborators-panel] .cds--table-toolbar--sm {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  --cds-layout-size-height-local: 2rem;
+}
+
+[data-eg-collaborators-panel] .cds--table-toolbar {
+  margin-bottom: 0 !important;
+  height: 2rem !important;
+  min-height: 2rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+[data-eg-collaborators-panel] .cds--data-table-content {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+[data-eg-collaborators-panel] .cds--data-table {
+  margin-top: 0 !important;
+}
+
+[data-eg-collaborators-panel] .cds--data-table--sm {
+  margin-top: 0 !important;
+}
+
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--table-toolbar-content {
+  height: 2rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  align-items: center;
+}
+
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--table-toolbar-search-container,
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--table-toolbar-search-container-expandable,
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--table-toolbar-search-container-active,
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--search,
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--search--expandable,
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--search--expanded {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  max-height: 2rem !important;
+}
+
+[data-eg-collaborators-panel] .cds--toolbar-search-container,
+[data-eg-collaborators-panel] .cds--toolbar-search-container-expandable,
+[data-eg-collaborators-panel] .cds--toolbar-search-container-active,
+[data-eg-collaborators-panel] .cds--toolbar-search-container-collapsed,
+[data-eg-collaborators-panel] .cds--search--sm {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  max-height: 2rem !important;
+}
+
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--search-input {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  max-height: 2rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 2rem !important;
+}
+
+[data-eg-collaborators-panel] .cds--search--sm .cds--search-input {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  max-height: 2rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 2rem !important;
+}
+
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--search-magnifier,
+[data-eg-collaborators-panel] .cds--table-toolbar--sm .cds--search-close {
+  height: 2rem !important;
+  min-height: 2rem !important;
+}
+
+[data-eg-collaborators-panel] .cds--search--sm .cds--search-magnifier,
+[data-eg-collaborators-panel] .cds--search--sm .cds--search-close {
+  height: 2rem !important;
+  min-height: 2rem !important;
+}
+
+ [data-eg-project-members-roles] .cds--list-box__wrapper,
+ [data-eg-project-members-roles] .cds--list-box,
+ [data-eg-project-members-roles] .cds--list-box__field,
+ [data-eg-project-members-roles] .cds--list-box__menu-icon {
+   overflow: visible !important;
+ }
+
+ [data-eg-project-members-roles] .cds--list-box__menu {
+   z-index: 10001 !important;
+   height: auto !important;
+   min-height: 8rem !important;
+   max-height: 300px !important;
+   overflow-y: auto !important;
+ }
+
+ [data-eg-project-members-roles-modal] .cds--modal-container,
+ [data-eg-project-members-roles-modal] .cds--modal-content,
+ [data-eg-project-members-add-modal] .cds--modal-container,
+ [data-eg-project-members-add-modal] .cds--modal-content {
+   overflow: visible !important;
+ }
+
+ [data-eg-project-members-roles-modal] .cds--modal-footer,
+ [data-eg-project-members-add-modal] .cds--modal-footer {
+   position: relative;
+   z-index: 0;
+ }
+
+ [data-eg-project-members-roles] .cds--list-box {
+   position: relative;
+   z-index: 10001 !important;
+ }
+
+ [data-eg-project-members-roles] .cds--list-box__menu-item,
+ [data-eg-project-members-roles] .cds--list-box__menu-item__option {
+   height: auto !important;
+ }
+
+ [data-eg-project-members-roles] .cds--list-box__menu-item__option,
+ [data-eg-project-members-roles] .cds--checkbox-label {
+   color: var(--cds-text-primary, #161616) !important;
+ }

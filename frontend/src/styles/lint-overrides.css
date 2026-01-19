@@ -1,0 +1,41 @@
+/* Hide bpmnlint default status balloon ("No Issues" or counts) */
+.djs-parent .bjsl-button { display: none !important; }
+
+/* Minimap: replace text label with map icon when closed */
+.djs-minimap:not(.open) .toggle:before {
+  content: '' !important;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: center / contain no-repeat url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23525252' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z'/><path d='M9 4v16'/><path d='M15 6v16'/></svg>");
+}
+
+/* Tighten closed toggle padding to fit icon shape nicely */
+.djs-minimap:not(.open) .toggle {
+  padding: 8px 10px !important;
+}
+
+/* Minimap: replace 'Close minimap' with an X icon when open */
+.djs-minimap.open .toggle:before {
+  content: '' !important;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background: center / contain no-repeat url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23525252' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>");
+}
+
+/* Hide canvas context pad when the right properties drawer is open */
+.drawer-open .djs-context-pad { display: none !important; }
+ 
+/* Hide the origin crosshair marker (0, 0) */
+.layer-djs-origin,
+[data-layer="djs-origin"],
+.djs-origin-border,
+.djs-origin-cross,
+.djs-origin-label,
+g[class*="djs-origin"],
+.djs-layer-djs-origin {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

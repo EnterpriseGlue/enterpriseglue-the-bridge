@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Favicon for light mode (when browser is white/light) -->
+    <link rel="icon" type="image/x-icon" href="/favicon-light.ico" media="(prefers-color-scheme: light)" />
+    <!-- Favicon for dark mode (when browser is black/dark) -->
+    <link rel="icon" type="image/x-icon" href="/favicon-dark.ico" media="(prefers-color-scheme: dark)" />
+    <!-- Fallback favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon-light.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voyager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- EnterpriseGlue.ai Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Keep IBM Plex Mono for code/monospace -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      /* ============================================
+         CARBON DESIGN SYSTEM OVERRIDES
+         Using centralized CSS variables from theme.css
+         ============================================ */
+      
+      /* Font Override - Use EnterpriseGlue.ai Inter font globally */
+      body,
+      .cds--text-input,
+      .cds--text-area,
+      .cds--select-input,
+      .cds--label,
+      .cds--btn,
+      .cds--header,
+      .cds--side-nav,
+      .cds--data-table {
+        font-family: Inter, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif !important;
+      }
+      
+      /* Header - uses g100 theme from Theme wrapper, no override needed */
+      
+      /* Sidebar */
+      .sidebar-item-inactive:hover {
+        background-color: var(--color-bg-tertiary) !important;
+      }
+      
+      /* Buttons */
+      .create-project-btn:hover {
+        background-color: var(--color-primary-hover) !important;
+      }
+      
+      /* Tabs */
+      .tab-btn-inactive:hover {
+        border-bottom-color: var(--color-text-tertiary) !important;
+      }
+      
+      /* Data Tables */
+      
+      /* Overflow Menus */
+      .cds--overflow-menu:hover,
+      .cds--overflow-menu--open {
+        background-color: var(--color-bg-tertiary) !important;
+      }
+      .cds--overflow-menu {
+        border-radius: 0 !important;
+      }
+      .cds--overflow-menu svg {
+        fill: var(--color-icon-tertiary) !important;
+        width: 24px !important;
+        height: 24px !important;
+      }
+      .cds--overflow-menu-options {
+        background-color: var(--color-bg-primary) !important;
+      }
+      .cds--overflow-menu-options__option:hover {
+        background-color: var(--color-bg-hover) !important;
+      }
+      
+      /* Menus */
+      .create-menu-item:hover {
+        background-color: var(--color-bg-hover) !important;
+      }
+      
+      /* Toolbar alignment fixes */
+      .cds--table-toolbar {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+      .cds--table-toolbar .cds--toolbar-content {
+        padding: 0 !important;
+        align-items: center !important;
+        height: 100% !important;
+      }
+      .cds--table-toolbar .cds--btn,
+      .cds--table-toolbar .cds--search {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+      }
+      .cds--table-toolbar .create-project-btn {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+      
+      /* Disable browser autocomplete globally */
+      input,
+      textarea,
+      select,
+      .cds--text-input,
+      .cds--text-area,
+      .cds--select-input,
+      .cds--text-input--empty,
+      .cds--list-box__field,
+      .cds--combo-box input {
+        -webkit-autocomplete: off !important;
+      }
+
+      .eg-no-tooltip .cds--tooltip-content,
+      .eg-no-tooltip .cds--popover-content {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+
+      .eg-no-tooltip .cds--popover-caret {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body autocomplete="off">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

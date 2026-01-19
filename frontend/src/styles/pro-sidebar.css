@@ -1,0 +1,143 @@
+/* React Pro Sidebar Custom Styles */
+/* Sidebar inherits g100 theme from root Theme wrapper - uses Carbon CSS tokens */
+
+/* Force sidebar to use Carbon background token */
+.ps-sidebar-root {
+  background-color: var(--cds-background) !important;
+}
+
+/* Add spacing between header and menu items */
+.ps-menu-root {
+  padding-top: var(--spacing-6) !important;
+  background-color: var(--cds-background) !important;
+}
+
+/* Collapsed state fixes */
+.ps-collapsed .ps-menu-button {
+  justify-content: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.ps-collapsed .ps-menu-icon {
+  margin: 0 !important;
+}
+
+/* Hide text and arrows when collapsed */
+.ps-collapsed .ps-menu-label {
+  display: none !important;
+}
+
+.ps-collapsed .ps-submenu-expand-icon {
+  display: none !important;
+}
+
+/* Remove borders when collapsed */
+.ps-collapsed .ps-menu-button {
+  border-left: none !important;
+}
+
+/* Center icons in collapsed state */
+.ps-collapsed .ps-menuitem-root,
+.ps-collapsed .ps-submenu-root {
+  text-align: center;
+}
+
+/* Force all submenus to be visible when collapsed */
+.ps-collapsed .ps-submenu-content {
+  display: block !important;
+  height: auto !important;
+  overflow: visible !important;
+  position: static !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Disable the popover overlay in collapsed mode */
+.ps-collapsed .ps-submenu-content {
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* Remove any floating/absolute positioning */
+.ps-collapsed .ps-submenu-root {
+  position: relative !important;
+}
+
+.ps-collapsed .ps-submenu-root > .ps-submenu-content {
+  position: static !important;
+  width: 100% !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+/* Different icon sizes based on level when collapsed */
+.ps-collapsed .ps-submenu-root > .ps-menu-button svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.ps-collapsed .ps-submenu-content .ps-menuitem-root > .ps-menu-button svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.ps-collapsed .ps-submenu-content .ps-submenu-root > .ps-menu-button svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.ps-collapsed .ps-submenu-content .ps-submenu-content .ps-menuitem-root > .ps-menu-button svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+
+/* Ensure submenu buttons (parents) don't show background when active */
+.ps-submenu-root > .ps-menu-button.ps-active {
+  background-color: transparent !important;
+}
+
+/* Only leaf menu items show background when active - use Carbon tokens */
+.ps-menuitem-root > .ps-menu-button.ps-active {
+  background-color: var(--cds-layer-active) !important;
+}
+
+/* Menu button text color */
+.ps-menu-button {
+  color: var(--cds-text-primary) !important;
+}
+
+/* Menu button hover state */
+.ps-menu-button:hover {
+  background-color: var(--cds-layer-hover) !important;
+}
+
+/* Parent-active class: show colored border but no background */
+.ps-submenu-root.parent-active > .ps-menu-button {
+  border-left: 4px solid var(--cds-interactive-01) !important;
+  background-color: transparent !important;
+}
+
+/* Nested parent-active (level 2) */
+.ps-submenu-content .ps-submenu-root.parent-active > .ps-menu-button {
+  border-left: 4px solid var(--cds-interactive-01) !important;
+  background-color: transparent !important;
+}
+
+/* Submenu content background */
+.ps-submenu-content {
+  background-color: var(--cds-background) !important;
+}
+
+/* Ensure all sidebar containers have g100 background - fixes grey band issue */
+.ps-sidebar-container {
+  background-color: var(--cds-background) !important;
+}
+
+

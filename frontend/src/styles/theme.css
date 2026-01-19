@@ -1,0 +1,372 @@
+/**
+ * EnterpriseGlue Voyager - Centralized Design System
+ * Combines EnterpriseGlue.ai brand tokens with IBM Carbon Design System
+ */
+
+:root {
+  /* ============================================
+     ENTERPRISEGLUE.AI BRAND COLORS
+     ============================================ */
+  --eg-color-white: #ffffff;
+  --eg-color-old-lace: #fffce3;
+  --eg-color-gainsboro: #e2dedb;
+  --eg-color-gray: #78797e;
+  --eg-color-gray-1: #808080;
+  --eg-color-burnt-orange: #dc4e2f;
+  --eg-color-blue: #0000ee;
+  --eg-color-dark-blue: #0c2655;
+  --eg-color-dark-gray: #1c1b1d;
+  --eg-color-black: #000000;
+
+  /* ============================================
+     VOYAGER APPLICATION COLORS
+     Based on IBM Carbon Design System
+     ============================================ */
+  
+  /* Primary Colors (bridge to Carbon tokens) */
+  --color-primary: var(--cds-interactive-01);
+  --color-primary-hover: var(--cds-interactive-01-hover, var(--cds-interactive-01));
+  
+  /* Text Colors (Carbon theme tokens) */
+  --color-text-primary: var(--cds-text-primary);
+  --color-text-secondary: var(--cds-text-secondary);
+  --color-text-tertiary: var(--cds-text-secondary);
+  --color-text-disabled: var(--cds-text-disabled);
+  --color-text-inverse: var(--cds-text-inverse);
+  
+  /* Background Colors (Carbon layer tokens) */
+  --color-bg-primary: var(--cds-layer-01);
+  --color-bg-secondary: var(--cds-layer-02);
+  --color-bg-tertiary: var(--cds-layer-03);
+  --color-bg-hover: var(--cds-layer-hover);
+  --color-bg-active: var(--cds-layer-active);
+  --color-bg-action-bar: var(--cds-background-brand, var(--cds-interactive-01));
+  
+  /* Border Colors */
+  --color-border-primary: var(--cds-border-subtle-01);
+  --color-border-secondary: var(--cds-border-subtle-02, var(--cds-border-subtle-01));
+  --color-border-active: var(--cds-border-interactive);
+  --color-border-active-level2: var(--cds-border-strong-01, var(--cds-border-interactive));
+  --color-border-active-level3: var(--cds-border-danger, var(--cds-support-error));
+  --color-border-neutral: var(--cds-border-subtle-00, #ffffff);
+  
+  /* UI Element Colors */
+  --color-header-bg: var(--cds-background); /* follows g10/g90/g100 */
+  --color-sidebar-bg: var(--cds-layer-01);
+  --color-divider: var(--cds-border-subtle-01);
+  
+  /* Status Colors */
+  --color-success: var(--cds-support-success);
+  --color-warning: var(--cds-support-warning);
+  --color-error: var(--cds-support-error);
+  --color-info: var(--cds-support-info);
+  
+  /* Icon Colors */
+  --color-icon-primary: var(--cds-icon-primary);
+  --color-icon-secondary: var(--cds-icon-secondary);
+  --color-icon-tertiary: var(--cds-icon-tertiary);
+
+  /* ============================================
+     TYPOGRAPHY - ENTERPRISEGLUE.AI
+     ============================================ */
+  
+  /* Font Families - EnterpriseGlue.ai */
+  --font-buduj-sans: 'Buduj Sans', sans-serif;
+  --font-inter: Inter, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  
+  /* Font Families - IBM Carbon (Legacy) */
+  --font-ibm-plex-sans: 'IBM Plex Sans', system-ui, 'Segoe UI', Arial, sans-serif;
+  --font-ibm-plex-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  
+  /* Primary Font (EnterpriseGlue.ai - Inter) */
+  --font-primary: var(--font-inter);
+  --font-mono: var(--font-ibm-plex-mono);
+  --font-monospace: var(--font-ibm-plex-mono);
+
+  /* ============================================
+     TYPOGRAPHY SCALE
+     ============================================ */
+  
+  /* Font Sizes */
+  --text-12: 0.75rem;   /* 12px */
+  --text-14: 0.875rem;  /* 14px */
+  --text-16: 1rem;      /* 16px */
+  --text-18: 1.125rem;  /* 18px */
+  --text-20: 1.25rem;   /* 20px */
+  --text-24: 1.5rem;    /* 24px */
+  --text-28: 1.75rem;   /* 28px */
+  --text-30: 1.875rem;  /* 30px */
+  --text-32: 2rem;      /* 32px */
+  --text-44: 2.75rem;   /* 44px */
+  --text-70: 4.375rem;  /* 70px */
+  
+  /* Font Weights - EnterpriseGlue.ai */
+  --font-400: 400;
+  --font-500: 500;
+  --font-700: 700;
+  
+  /* Font Weights - Semantic Names */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Line Heights */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+  --leading-loose: 2;
+  
+  /* Letter Spacing */
+  --tracking-tight: -0.003em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.16px;
+
+  /* ============================================
+     SPACING SCALE
+     ============================================ */
+  
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.5rem;    /* 24px */
+  --spacing-6: 2rem;      /* 32px */
+  --spacing-7: 2.5rem;    /* 40px */
+  --spacing-8: 3rem;      /* 48px */
+  --spacing-10: 4rem;     /* 64px */
+
+  /* ============================================
+     BORDERS & RADIUS
+     ============================================ */
+  
+  --border-width-thin: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 4px;
+  
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-full: 9999px;
+
+  /* ============================================
+     SHADOWS
+     ============================================ */
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  /* ============================================
+     Z-INDEX SCALE
+     ============================================ */
+  
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 900;
+  --z-modal: 1000;
+  --z-overlay-toggle: 1002;
+  --z-popover: 1100;
+  --z-tooltip: 1200;
+  --z-toast: 3000;
+  --z-drag-overlay: 9999;
+
+  /* ============================================
+     TRANSITIONS
+     ============================================ */
+  
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* ============================================
+     COMPONENT-SPECIFIC TOKENS
+     ============================================ */
+  
+  /* Header */
+  --header-height: 48px;
+  --header-bg: var(--color-header-bg);
+  --header-border: var(--color-border-primary);
+  
+  /* Sidebar */
+  --sidebar-width: 256px;
+  --sidebar-bg: var(--color-sidebar-bg);
+  --sidebar-border: var(--color-border-secondary);
+  --sidebar-item-height: 48px;
+  
+  /* Table */
+  --table-row-height: 50px;
+  --table-header-bg: var(--color-bg-primary);
+  --table-row-bg: var(--color-bg-primary);
+  --table-row-hover-bg: var(--color-bg-secondary);
+  --table-border: var(--color-border-primary);
+  
+  /* Cards */
+  --card-bg: var(--color-bg-primary);
+  --card-border: var(--color-border-primary);
+  --card-border-radius: var(--border-radius-md);
+  --card-shadow: var(--shadow-md);
+  
+  /* Buttons */
+  --button-primary-bg: var(--color-primary);
+  --button-primary-hover: var(--color-primary-hover);
+  --button-height: 48px;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Text Colors */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+.text-inverse { color: var(--color-text-inverse); }
+
+/* Background Colors */
+.bg-primary { background-color: var(--color-bg-primary); }
+.bg-secondary { background-color: var(--color-bg-secondary); }
+.bg-tertiary { background-color: var(--color-bg-tertiary); }
+
+/* Font Families */
+.font-primary { font-family: var(--font-primary); }
+.font-mono { font-family: var(--font-monospace); }
+
+/* Font Sizes */
+.text-xs { font-size: var(--text-12); }
+.text-sm { font-size: var(--text-14); }
+.text-base { font-size: var(--text-16); }
+.text-lg { font-size: var(--text-18); }
+.text-xl { font-size: var(--text-24); }
+.text-2xl { font-size: var(--text-28); }
+.text-3xl { font-size: var(--text-32); }
+
+/* Font Weights */
+.font-regular { font-weight: var(--font-weight-regular); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+/* Starbase: New project button base + hover override */
+.create-project-btn.cds--btn--secondary {
+  background-color: #393939 !important;
+  color: #ffffff !important;
+}
+
+.create-project-btn.cds--btn--secondary:hover {
+  background-color: #474747 !important;
+  color: #ffffff !important;
+}
+
+/* Make search inputs match text input underline styling */
+
+
+.starbase-editor .starbase-properties-panel-host,
+.starbase-editor .starbase-properties-panel-host > * {
+  background: var(--cds-layer-01, #ffffff) !important;
+}
+
+.starbase-editor .starbase-properties-panel-host :where(
+  .bio-properties-panel,
+  .bio-properties-panel-container,
+  .bpp-properties-panel,
+  [class*='properties-panel']
+) {
+  background: var(--cds-layer-01, #ffffff) !important;
+  backdrop-filter: none !important;
+}
+
+/* Reposition overflow menu tooltip to align its right edge with the button's right edge */
+.git-url-tooltip .cds--popover{
+  right: 300px !important;
+  left: 0 !important;
+  transform: translateX(0) !important;
+}
+.git-url-tooltip .cds--popover-content .cds--tooltip-content {
+  justify-content: left;
+}
+
+.instance-history-tooltip .cds--popover {
+  z-index: var(--z-tooltip) !important;
+}
+
+/* Disable rubber banding / elastic scrolling globally */
+html,
+body,
+#root {
+  overscroll-behavior: none;
+  overscroll-behavior-y: contain;
+  overscroll-behavior-x: contain;
+}
+
+/* Rotating animation for retry button when loading */
+@keyframes vt-retry-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vt-retry-spin svg {
+  animation: vt-retry-rotate 1s linear infinite;
+}
+
+/* Prevent any scroll movement at boundaries */
+html {
+  overflow: hidden;
+  height: 100%;
+}
+
+body {
+  overflow: auto;
+  height: 100%;
+  position: fixed;
+  width: 100%;
+}
+
+/* Hide scrollbar on page while keeping scroll functionality */
+html,
+body,
+#root,
+.cds--content,
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar,
+.cds--content::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Carbon header overrides moved to carbon-overrides.css */
+
+/* Carbon OverflowMenu dropdown styling - ensure white background for g10 theme */
+.cds--overflow-menu-options {
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+.cds--overflow-menu-options__btn {
+  background-color: #ffffff !important;
+  color: #161616 !important;
+}
+
+.cds--overflow-menu-options__btn:hover {
+  background-color: #e8e8e8 !important;
+}
+
+.cds--overflow-menu-options__option--danger .cds--overflow-menu-options__btn:hover {
+  background-color: #da1e28 !important;
+  color: #ffffff !important;
+}

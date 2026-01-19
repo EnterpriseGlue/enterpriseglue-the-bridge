@@ -1,0 +1,83 @@
+import React from 'react'
+import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer'
+import 'bpmn-js/dist/assets/diagram-js.css'
+import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
+import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css'
+
+import { ViewerProps } from './viewer/viewerTypes'
+import { useViewerApi } from './viewer/useViewerApi'
+import { useDragToPan } from './viewer/useDragToPan'
+import { useXMLImport } from './viewer/useXMLImport'
+import { injectHighlightStyles, applyZoomWithPadding } from './viewer/viewerUtils'
+import { HIGHLIGHT_STYLES, PADDING_FACTOR } from './viewer/viewerConstants'
+import DiagramZoomControls from './DiagramZoomControls'
+
+export default function Viewer({ xml, onReady, initialViewport, onViewportChange }: ViewerProps) {
+  const containerRef = React.useRef<HTMLDivElement | null>(null)
+  const viewerRef = React.useRef<any | null>(null)
+  const xmlRef = React.useRef<string>(xml)
+  const overlayKeysRef = React.useRef<string[]>([])
+  const srcMarksRef = React.useRef<string[]>([])
+  const tgtMarksRef = React.useRef<string[]>([])
+
+  // Initialize BPMN viewer
+  React.useEffect(() => {
+    if (!containerRef.current) return
+
+    const v = new NavigatedViewer({ container: containerRef.current })
+    viewerRef.current = v
+
+    try {
+      const canvas: any = v.get('canvas')
+      const eventBus: any = v.get('eventBus')
+
+      // Inject highlight styles
+      if (containerRef.current) {
+        injectHighlightStyles(containerRef.current, HIGHLIGHT_STYLES)
+      }
+
+      // Keep centered on resize with padding
+      const handleResize = () => {
+        applyZoomWithPadding(canvas, PADDING_FACTOR)
+      }
+      eventBus && eventBus.on('canvas.resized', handleResize)
+    } catch {}
+
+    return () => {
+      try {
+        v.destroy()
+      } catch {}
+      viewerRef.current = null
+    }
+  }, [])
+
+  // Create and expose viewer API
+  const api = useViewerApi(
+    viewerRef,
+    xmlRef,
+    containerRef,
+    overlayKeysRef,
+    srcMarksRef,
+    tgtMarksRef,
+    onViewportChange
+  )
+
+  React.useEffect(() => {
+    if (api && onReady) {
+      onReady(api)
+    }
+  }, [api, onReady])
+
+  // Handle XML import and initial positioning
+  useXMLImport(viewerRef, xmlRef, xml, initialViewport)
+
+  // Enable drag-to-pan functionality
+  useDragToPan(containerRef, viewerRef, onViewportChange)
+
+  return (
+    <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+      <div ref={containerRef} style={{ height: '100%', width: '100%', background: 'var(--color-bg-primary)' }} />
+      <DiagramZoomControls viewerApi={api} position="center-right" />
+    </div>
+  )
+}

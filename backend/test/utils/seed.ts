@@ -1,0 +1,237 @@
+import { getDataSource } from '@shared/db/data-source.js';
+import { User } from '@shared/db/entities/User.js';
+import { Project } from '@shared/db/entities/Project.js';
+import { ProjectMember } from '@shared/db/entities/ProjectMember.js';
+import { ProjectMemberRole } from '@shared/db/entities/ProjectMemberRole.js';
+import { generateAccessToken } from '@shared/utils/jwt.js';
+import { generateId, unixTimestamp } from '@shared/utils/id.js';
+import { getAdapter } from '@shared/db/adapters/index.js';
+
+type SeedUser = {
+  id: string;
+  email: string;
+  token: string;
+};
+
+type SeedProject = {
+  id: string;
+  name: string;
+};
+
+type SeedFile = {
+  id: string;
+  name: string;
+  type: string;
+};
+
+type SeedFolder = {
+  id: string;
+  name: string;
+};
+
+export async function seedUser(prefix: string): Promise<SeedUser> {
+  const dataSource = await getDataSource();
+  const userRepo = dataSource.getRepository(User);
+  const id = generateId();
+  const email = `${prefix}@example.com`;
+  const now = Date.now();
+
+  await userRepo.insert({
+    id,
+    email,
+    authProvider: 'local',
+    passwordHash: null,
+    platformRole: 'user',
+    isActive: true,
+    mustResetPassword: false,
+    failedLoginAttempts: 0,
+    lockedUntil: null,
+    isEmailVerified: true,
+    emailVerificationToken: null,
+    emailVerificationTokenExpiry: null,
+    createdAt: now,
+    updatedAt: now,
+    lastLoginAt: null,
+    createdByUserId: null,
+  });
+
+  const token = generateAccessToken({ id, email, platformRole: 'user' });
+
+  return { id, email, token };
+}
+
+export async function seedAdditionalUser(prefix: string, suffix: string): Promise<SeedUser> {
+  return seedUser(`${prefix}-${suffix}`);
+}
+
+export async function seedProject(userId: string, name: string): Promise<SeedProject> {
+  const dataSource = await getDataSource();
+  const projectRepo = dataSource.getRepository(Project);
+  const memberRepo = dataSource.getRepository(ProjectMember);
+  const memberRoleRepo = dataSource.getRepository(ProjectMemberRole);
+  const id = generateId();
+  const now = unixTimestamp();
+  const membershipNow = Date.now();
+
+  await projectRepo.insert({
+    id,
+    name,
+    ownerId: userId,
+    tenantId: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await memberRepo.insert({
+    id: generateId(),
+    projectId: id,
+    userId,
+    role: 'owner',
+    invitedById: null,
+    joinedAt: membershipNow,
+    createdAt: membershipNow,
+    updatedAt: membershipNow,
+  });
+
+  await memberRoleRepo.insert({
+    projectId: id,
+    userId,
+    role: 'owner',
+    createdAt: membershipNow,
+  });
+
+  return { id, name };
+}
+
+export async function seedFile(
+  projectId: string,
+  name: string,
+  type = 'bpmn',
+  xml = '<xml />',
+  folderId: string | null = null
+): Promise<SeedFile> {
+  const dataSource = await getDataSource();
+  const id = generateId();
+  const now = Date.now();
+
+  const schema = getAdapter().getSchemaName() || 'public';
+  const columns = await dataSource.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'files'`,
+    [schema]
+  );
+  const columnSet = new Set(columns.map((c: any) => String(c.column_name)));
+
+  const entries: Array<{ name: string; value: any }> = [
+    { name: 'id', value: id },
+    { name: 'project_id', value: projectId },
+    { name: 'folder_id', value: folderId },
+    { name: 'name', value: name },
+    { name: 'type', value: type },
+    { name: 'xml', value: xml },
+    { name: 'created_by', value: null },
+    { name: 'updated_by', value: null },
+    { name: 'created_at', value: now },
+    { name: 'updated_at', value: now },
+  ].filter((entry) => columnSet.has(entry.name));
+
+  const columnNames = entries.map((entry) => `"${entry.name}"`).join(', ');
+  const placeholders = entries.map((_, index) => `$${index + 1}`).join(', ');
+  const values = entries.map((entry) => entry.value);
+
+  await dataSource.query(
+    `INSERT INTO "${schema}"."files" (${columnNames}) VALUES (${placeholders})`,
+    values
+  );
+
+  return { id, name, type };
+}
+
+export async function seedFolder(projectId: string, name: string): Promise<SeedFolder> {
+  const dataSource = await getDataSource();
+  const id = generateId();
+  const now = Date.now();
+
+  const schema = getAdapter().getSchemaName() || 'public';
+  const columns = await dataSource.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'folders'`,
+    [schema]
+  );
+  const columnSet = new Set(columns.map((c: any) => String(c.column_name)));
+
+  const entries: Array<{ name: string; value: any }> = [
+    { name: 'id', value: id },
+    { name: 'project_id', value: projectId },
+    { name: 'parent_folder_id', value: null },
+    { name: 'name', value: name },
+    { name: 'created_by', value: null },
+    { name: 'updated_by', value: null },
+    { name: 'created_at', value: now },
+    { name: 'updated_at', value: now },
+  ].filter((entry) => columnSet.has(entry.name));
+
+  const columnNames = entries.map((entry) => `"${entry.name}"`).join(', ');
+  const placeholders = entries.map((_, index) => `$${index + 1}`).join(', ');
+  const values = entries.map((entry) => entry.value);
+
+  await dataSource.query(
+    `INSERT INTO "${schema}"."folders" (${columnNames}) VALUES (${placeholders})`,
+    values
+  );
+
+  return { id, name };
+}
+
+export async function cleanupSeededData(
+  prefix: string,
+  projectIds: string[],
+  userIds: string[],
+  fileIds: string[] = [],
+  folderIds: string[] = []
+) {
+  const dataSource = await getDataSource();
+  const projectRepo = dataSource.getRepository(Project);
+  const memberRepo = dataSource.getRepository(ProjectMember);
+  const memberRoleRepo = dataSource.getRepository(ProjectMemberRole);
+  const userRepo = dataSource.getRepository(User);
+  const fileRepo = dataSource.getRepository((await import('@shared/db/entities/File.js')).File);
+  const folderRepo = dataSource.getRepository((await import('@shared/db/entities/Folder.js')).Folder);
+
+  if (fileIds.length > 0) {
+    await fileRepo.delete({ id: fileIds as any });
+  }
+
+  if (folderIds.length > 0) {
+    await folderRepo.delete({ id: folderIds as any });
+  }
+
+  if (projectIds.length > 0) {
+    await memberRoleRepo.delete({ projectId: projectIds as any });
+    await memberRepo.delete({ projectId: projectIds as any });
+    await projectRepo.delete({ id: projectIds as any });
+  }
+
+  if (userIds.length > 0) {
+    await userRepo.delete({ id: userIds as any });
+  }
+
+  // Clean up any leftover users/projects with prefix just in case
+  await projectRepo.createQueryBuilder()
+    .delete()
+    .where('name LIKE :prefix', { prefix: `${prefix}%` })
+    .execute();
+
+  await userRepo.createQueryBuilder()
+    .delete()
+    .where('email LIKE :prefix', { prefix: `${prefix}%` })
+    .execute();
+
+  await fileRepo.createQueryBuilder()
+    .delete()
+    .where('name LIKE :prefix', { prefix: `${prefix}%` })
+    .execute();
+
+  await folderRepo.createQueryBuilder()
+    .delete()
+    .where('name LIKE :prefix', { prefix: `${prefix}%` })
+    .execute();
+}

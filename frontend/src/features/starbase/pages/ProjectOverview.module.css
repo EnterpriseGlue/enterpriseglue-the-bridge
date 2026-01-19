@@ -1,0 +1,34 @@
+.pageRoot {
+  background: var(--color-bg-primary);
+  height: calc(100vh - var(--header-height));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pageContent {
+  padding: var(--spacing-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  flex: 1;
+  overflow: auto;
+}
+
+:global(.git-url-tooltip .cds--popover-content) {
+  max-width: none !important;
+  white-space: nowrap !important;
+}
+
+:global(.git-url-tooltip .cds--popover) {
+  z-index: 9999 !important;
+  transform: translateX(20px) !important;
+}
+
+:global(.git-url-tooltip .cds--popover-caret) {
+  z-index: 9999 !important;
+}
+
+:global(.git-sync-tooltip .cds--popover-content) {
+  padding: 4px 8px !important;
+}

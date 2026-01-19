@@ -1,0 +1,52 @@
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import request from 'supertest';
+import express from 'express';
+import deploymentsRouter from '../../../src/modules/engines/deployments.js';
+import { getDataSource } from '../../../src/shared/db/data-source.js';
+
+vi.mock('@shared/db/data-source.js', () => ({
+  getDataSource: vi.fn(),
+}));
+
+vi.mock('@shared/middleware/auth.js', () => ({
+  requireAuth: (req: any, _res: any, next: any) => {
+    req.user = { userId: 'user-1' };
+    next();
+  },
+}));
+
+vi.mock('@shared/services/platform-admin/index.js', () => ({
+  engineService: {
+    hasEngineAccess: vi.fn().mockResolvedValue(true),
+  },
+}));
+
+describe('engines deployments routes', () => {
+  let app: express.Application;
+
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use(deploymentsRouter);
+    vi.clearAllMocks();
+
+    (getDataSource as unknown as Mock).mockResolvedValue({
+      getRepository: () => ({
+        find: vi.fn().mockResolvedValue([]),
+        findOne: vi.fn().mockResolvedValue(null),
+      }),
+    });
+  });
+
+  it('lists deployments for an engine', async () => {
+    const response = await request(app).get('/engines-api/engines/e1/deployments');
+
+    expect(response.status).toBe(200);
+  });
+
+  it('gets deployment by id', async () => {
+    const response = await request(app).get('/engines-api/engines/e1/deployments/d1');
+
+    expect(response.status).toBe(200);
+  });
+});

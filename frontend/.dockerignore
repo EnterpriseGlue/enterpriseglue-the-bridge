@@ -1,0 +1,6 @@
+node_modules
+dist
+.vite
+*.log
+*.pid
+third_party_licenses.json

@@ -1,0 +1,12 @@
+{
+  "extends": [
+    "bpmnlint:recommended",
+    "plugin:camunda-compat/camunda-cloud-1-3"
+  ],
+  "rules": {
+    "label-required": "warn",
+    "no-disconnected": "error",
+    "start-event-required": "error",
+    "end-event-required": "error"
+  }
+}

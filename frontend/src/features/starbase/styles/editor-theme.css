@@ -1,0 +1,219 @@
+/**
+ * Starbase Editor Theme
+ * Modern styling for the BPMN/DMN editor canvas
+ * Based on modern-bpmn-theme.css but optimized for editing (no cursor/transition overrides)
+ */
+
+/* ===== TASKS ===== */
+/* Modern rounded corners and subtle shadows */
+/* Exclude CallActivity which has its own thick border styling */
+.djs-element.bpmn-task .djs-visual > rect,
+.djs-element.bpmn-service-task .djs-visual > rect,
+.djs-element.bpmn-user-task .djs-visual > rect,
+.djs-element.bpmn-manual-task .djs-visual > rect,
+.djs-element.bpmn-send-task .djs-visual > rect,
+.djs-element.bpmn-receive-task .djs-visual > rect,
+.djs-element.bpmn-script-task .djs-visual > rect,
+.djs-element.bpmn-business-rule-task .djs-visual > rect {
+  fill: #ffffff !important;
+  stroke: #d1d5db !important;
+  stroke-width: 1.5 !important;
+  rx: 8 !important;
+  ry: 8 !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* ===== CALL ACTIVITY ===== */
+/* Preserve thick border to indicate it's a reusable subprocess */
+.djs-element.bpmn-call-activity .djs-visual > rect {
+  fill: #ffffff !important;
+  stroke: #374151 !important;
+  stroke-width: 3 !important;
+  rx: 8 !important;
+  ry: 8 !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* ===== END EVENT ===== */
+/* Preserve thick border for end events */
+.djs-element.bpmn-end-event .djs-visual > circle {
+  stroke: #ef4444 !important;
+  fill: #fef2f2 !important;
+  stroke-width: 3 !important;
+  filter: drop-shadow(0 1px 3px rgba(239, 68, 68, 0.15));
+}
+
+/* ===== GATEWAYS ===== */
+/* Softer gateway styling with amber accent */
+.djs-element.bpmn-gateway .djs-visual > polygon,
+.djs-element.bpmn-exclusive-gateway .djs-visual > polygon,
+.djs-element.bpmn-parallel-gateway .djs-visual > polygon,
+.djs-element.bpmn-inclusive-gateway .djs-visual > polygon,
+.djs-element.bpmn-event-based-gateway .djs-visual > polygon {
+  fill: #fef3c7 !important;
+  stroke: #f59e0b !important;
+  stroke-width: 1.5 !important;
+  filter: drop-shadow(0 1px 3px rgba(245, 158, 11, 0.15));
+}
+
+/* ===== EVENTS ===== */
+/* Start events - green accent */
+.djs-element.bpmn-start-event .djs-visual > circle {
+  stroke: #10b981 !important;
+  fill: #f0fdf4 !important;
+  stroke-width: 1.5 !important;
+  filter: drop-shadow(0 1px 3px rgba(16, 185, 129, 0.15));
+}
+
+/* Intermediate/boundary events - neutral */
+.djs-element.bpmn-intermediate-event .djs-visual > circle,
+.djs-element.bpmn-boundary-event .djs-visual > circle {
+  fill: #ffffff !important;
+  stroke: #6b7280 !important;
+  stroke-width: 1.5 !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* ===== SEQUENCE FLOWS ===== */
+/* Clean black connectors */
+.djs-connection .djs-visual > path,
+.djs-connection .djs-visual > polyline {
+  stroke: #374151 !important;
+  stroke-width: 1.5 !important;
+  fill: none !important;
+}
+
+/* Arrow markers */
+marker path {
+  fill: #374151 !important;
+  stroke: #374151 !important;
+}
+
+/* ===== LABELS ===== */
+/* Modern typography */
+.djs-label text,
+.djs-element text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  fill: #1f2937 !important;
+}
+
+/* ===== POOLS & LANES ===== */
+/* Cleaner pool styling */
+.djs-element.bpmn-participant .djs-visual > rect {
+  fill: #f9fafb !important;
+  stroke: #d1d5db !important;
+  stroke-width: 1.5 !important;
+  rx: 4 !important;
+  ry: 4 !important;
+}
+
+.djs-element.bpmn-lane .djs-visual > rect {
+  fill: transparent !important;
+  stroke: #e5e7eb !important;
+  stroke-width: 1 !important;
+}
+
+/* ===== SUB-PROCESS ===== */
+.djs-element.bpmn-sub-process .djs-visual > rect {
+  fill: #fafafa !important;
+  stroke: #d1d5db !important;
+  stroke-width: 1.5 !important;
+  rx: 8 !important;
+  ry: 8 !important;
+  stroke-dasharray: 4 2;
+}
+
+/* ===== DATA OBJECTS ===== */
+.djs-element.bpmn-data-object .djs-visual > path,
+.djs-element.bpmn-data-store .djs-visual > path {
+  fill: #f3f4f6 !important;
+  stroke: #9ca3af !important;
+  stroke-width: 1.5 !important;
+}
+
+/* ===== CANVAS BACKGROUND ===== */
+/* Clean white background - grid is hidden via lint-overrides.css */
+.djs-container {
+  background-color: #ffffff;
+}
+
+/* ===== SELECTION STATE ===== */
+/* Modern selection with blue accent */
+.djs-element.selected .djs-outline {
+  stroke: #3b82f6 !important;
+  stroke-width: 2 !important;
+  fill: none !important;
+}
+
+/* ===== HOVER STATE ===== */
+/* Subtle hover feedback */
+.djs-element:not(.djs-connection):hover .djs-outline {
+  stroke: #93c5fd !important;
+  stroke-width: 1 !important;
+  fill: none !important;
+  opacity: 1 !important;
+}
+
+/* ===== PALETTE ===== */
+/* Modern palette styling */
+.djs-palette {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.djs-palette-entries {
+  padding: 8px 4px !important;
+}
+
+.djs-palette .entry:hover {
+  background: #f3f4f6 !important;
+  border-radius: 4px !important;
+}
+
+/* ===== CONTEXT PAD ===== */
+/* Modern context pad */
+.djs-context-pad {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  padding: 4px !important;
+}
+
+.djs-context-pad .entry:hover {
+  background: #f3f4f6 !important;
+  border-radius: 4px !important;
+}
+
+/* ===== POPUP MENU ===== */
+/* Modern popup/replace menu */
+.djs-popup {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.djs-popup .entry:hover {
+  background: #f3f4f6 !important;
+}
+
+/* ===== DIRECT EDITING ===== */
+/* Text input styling */
+.djs-direct-editing-parent {
+  background: #ffffff !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+.djs-direct-editing-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #1f2937 !important;
+}

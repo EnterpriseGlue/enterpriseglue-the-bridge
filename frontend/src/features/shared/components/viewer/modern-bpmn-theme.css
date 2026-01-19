@@ -1,0 +1,192 @@
+/**
+ * Modern BPMN Theme
+ * Transforms dated BPMN diagrams into sleek, contemporary visualizations
+ */
+
+/* ===== TASKS ===== */
+/* Modern rounded corners and subtle shadows */
+.djs-element.bpmn-task .djs-visual > rect,
+.djs-element.bpmn-service-task .djs-visual > rect,
+.djs-element.bpmn-user-task .djs-visual > rect,
+.djs-element.bpmn-manual-task .djs-visual > rect,
+.djs-element.bpmn-send-task .djs-visual > rect,
+.djs-element.bpmn-receive-task .djs-visual > rect,
+.djs-element.bpmn-script-task .djs-visual > rect,
+.djs-element.bpmn-business-rule-task .djs-visual > rect {
+  fill: #ffffff !important;
+  stroke: #d1d5db !important;
+  stroke-width: 1.5 !important;
+  rx: 8 !important;
+  ry: 8 !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* Hover effect for tasks */
+.djs-element.bpmn-task:hover .djs-visual > rect,
+.djs-element.bpmn-service-task:hover .djs-visual > rect,
+.djs-element.bpmn-user-task:hover .djs-visual > rect {
+  stroke: #9ca3af !important;
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.12));
+}
+
+/* ===== GATEWAYS ===== */
+/* Softer gateway styling */
+.djs-element.bpmn-gateway .djs-visual > polygon,
+.djs-element.bpmn-exclusive-gateway .djs-visual > polygon,
+.djs-element.bpmn-parallel-gateway .djs-visual > polygon {
+  fill: #fef3c7 !important;
+  stroke: #f59e0b !important;
+  stroke-width: 1.5 !important;
+  filter: drop-shadow(0 1px 3px rgba(245, 158, 11, 0.15));
+}
+
+/* ===== EVENTS ===== */
+/* Modern event circles */
+.djs-element.bpmn-event .djs-visual > circle {
+  fill: #ffffff !important;
+  stroke: #6b7280 !important;
+  stroke-width: 1.5 !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* Start events - green accent */
+.djs-element.bpmn-start-event .djs-visual > circle {
+  stroke: #10b981 !important;
+  fill: #f0fdf4 !important;
+}
+
+/* End events - red accent */
+.djs-element.bpmn-end-event .djs-visual > circle {
+  stroke: #ef4444 !important;
+  fill: #fef2f2 !important;
+  stroke-width: 3 !important;
+}
+
+/* ===== SEQUENCE FLOWS ===== */
+/* Smoother, more refined connectors */
+.djs-connection .djs-visual > path,
+.djs-connection .djs-visual > polyline {
+  stroke: #000000 !important;
+  stroke-width: 1.5 !important;
+  fill: none !important;
+}
+
+/* Arrow markers (arrowheads) */
+marker path {
+  fill: #000000 !important;
+  stroke: #000000 !important;
+}
+
+/* Hover effect for flows removed: keep stroke width consistent on hover */
+
+/* ===== LABELS ===== */
+/* Modern typography */
+.djs-label text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  fill: #1f2937 !important;
+  letter-spacing: -0.01em;
+}
+
+/* ===== POOLS & LANES ===== */
+/* Cleaner pool styling */
+.djs-element.bpmn-participant .djs-visual > rect {
+  fill: #f9fafb !important;
+  stroke: #d1d5db !important;
+  stroke-width: 1.5 !important;
+  rx: 4 !important;
+  ry: 4 !important;
+}
+
+.djs-element.bpmn-lane .djs-visual > rect {
+  fill: transparent !important;
+  stroke: #e5e7eb !important;
+  stroke-width: 1 !important;
+}
+
+/* ===== SELECTED STATE ===== */
+/* Modern selection indicator - concentric orange border matching shape
+.djs-element.selected .djs-visual > :first-child {
+  stroke: #f97316 !important;
+  stroke-width: 8 !important;
+  stroke-dasharray: none !important;
+  paint-order: stroke fill !important;
+  filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.25));
+} */
+
+/* ===== OVERLAYS ===== */
+/* Modern overlay styling */
+.djs-overlay {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif !important;
+}
+
+.djs-overlay-container {
+  z-index: 20;
+  pointer-events: none;
+}
+
+.djs-overlay {
+  pointer-events: all;
+}
+
+.djs-overlay > * {
+  pointer-events: all;
+}
+
+/* ===== CANVAS ===== */
+/* Grid background */
+.djs-container {
+  background-color: #ffffff;
+}
+
+/* ===== ANIMATIONS ===== */
+/* Subtle transitions for smooth interactions */
+.djs-visual > * {
+  transition: all 0.15s ease-out;
+}
+
+/* ===== CLICKABLE ELEMENTS ===== */
+/* Make flow nodes appear clickable */
+.djs-element:not(.djs-connection) {
+  cursor: pointer;
+}
+
+/* ===== CUSTOM MARKERS (Your existing highlights) ===== */
+/* Enhanced highlight styles - target only boundary shapes (rect, circle, polygon) */
+/* Excludes path to avoid coloring icons, text, and other SVG content inside shapes */
+.highlight-active .djs-visual > rect,
+.highlight-active .djs-visual > circle,
+.highlight-active .djs-visual > polygon {
+  stroke: var(--cds-link-01) !important;
+}
+
+.highlight-completed .djs-visual > rect,
+.highlight-completed .djs-visual > circle,
+.highlight-completed .djs-visual > polygon {
+  stroke: var(--cds-link-01) !important;
+}
+
+.highlight-selected .djs-visual > rect,
+.highlight-selected .djs-visual > circle,
+.highlight-selected .djs-visual > polygon {
+  stroke: var(--cds-link-01) !important;
+  fill: var(--cds-highlight) !important;
+}
+
+.highlight-completed-flow .djs-visual > path,
+.highlight-completed-flow .djs-visual > polyline {
+  stroke: var(--cds-link-01) !important;
+  stroke-width: 1.5 !important;
+}
+
+/* Navigable elements (Call Activity, Business Rule Task) - show link cursor */
+.djs-element[data-element-id] .djs-hit-all {
+  cursor: pointer;
+}
+
+/* Call Activity - special styling to indicate it's a link */
+.bjs-powered-by-lightbox .djs-element.bpmn-call-activity,
+[data-element-id*="CallActivity"] .djs-visual > rect {
+  cursor: pointer;
+}

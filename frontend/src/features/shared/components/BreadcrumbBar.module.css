@@ -1,0 +1,11 @@
+/* BreadcrumbBar - Carbon Design System g10 styled container */
+
+.breadcrumbBar {
+  padding: 8px 16px;
+  background: var(--cds-background);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
