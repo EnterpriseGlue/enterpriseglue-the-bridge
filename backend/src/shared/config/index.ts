@@ -59,7 +59,7 @@ const schemaName = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/);
   mysqlPassword: z.string().optional(),
   mysqlDatabase: z.string().optional(),
 
-  enterpriseSchema: schemaName.default('enterprise'),
+  enterpriseSchema: schemaName.optional(),
   
   // Authentication configuration
   jwtSecret: z.string().min(32),
@@ -182,7 +182,6 @@ function loadConfig(): Config {
 export const config = loadConfig();
 
 const mainSchema = config.postgresSchema;
-const enterpriseSchema = config.enterpriseSchema;
 
 if (mainSchema === 'public') {
   throw new Error(
@@ -190,16 +189,21 @@ if (mainSchema === 'public') {
   );
 }
 
-if (enterpriseSchema === 'public') {
-  throw new Error(
-    'Schema mode requires ENTERPRISE_SCHEMA to be set to a non-public schema name.'
-  );
-}
-
-if (enterpriseSchema === mainSchema) {
-  throw new Error(
-    'Schema mode requires ENTERPRISE_SCHEMA to be distinct from the main schema.'
-  );
+// Enterprise schema validation only applies when enterprise plugin is loaded
+if (config.enterpriseSchema) {
+  const enterpriseSchema = config.enterpriseSchema;
+  
+  if (enterpriseSchema === 'public') {
+    throw new Error(
+      'ENTERPRISE_SCHEMA cannot be "public". Use a dedicated schema name.'
+    );
+  }
+  
+  if (enterpriseSchema === mainSchema) {
+    throw new Error(
+      'ENTERPRISE_SCHEMA must be different from POSTGRES_SCHEMA.'
+    );
+  }
 }
 
 // Log configuration on startup (excluding sensitive data)

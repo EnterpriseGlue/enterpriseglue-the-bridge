@@ -1,6 +1,7 @@
 import { getDataSource } from '@shared/db/data-source.js';
 import { User } from '@shared/db/entities/User.js';
 import { Project } from '@shared/db/entities/Project.js';
+import { Engine } from '@shared/db/entities/Engine.js';
 import { ProjectMember } from '@shared/db/entities/ProjectMember.js';
 import { ProjectMemberRole } from '@shared/db/entities/ProjectMemberRole.js';
 import { generateAccessToken } from '@shared/utils/jwt.js';
@@ -27,6 +28,11 @@ type SeedFile = {
 type SeedFolder = {
   id: string;
   name: string;
+};
+
+type SeedEngine = {
+  id: string;
+  baseUrl: string;
 };
 
 export async function seedUser(prefix: string): Promise<SeedUser> {
@@ -101,6 +107,34 @@ export async function seedProject(userId: string, name: string): Promise<SeedPro
   });
 
   return { id, name };
+}
+
+export async function seedEngine(ownerId: string, baseUrl: string, name: string): Promise<SeedEngine> {
+  const dataSource = await getDataSource();
+  const engineRepo = dataSource.getRepository(Engine);
+  const id = generateId();
+  const now = Date.now();
+
+  await engineRepo.insert({
+    id,
+    name,
+    baseUrl,
+    type: 'camunda7',
+    authType: null,
+    username: null,
+    passwordEnc: null,
+    active: true,
+    version: null,
+    ownerId,
+    delegateId: null,
+    environmentTagId: null,
+    environmentLocked: false,
+    tenantId: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return { id, baseUrl };
 }
 
 export async function seedFile(
@@ -214,6 +248,8 @@ export async function cleanupSeededData(
     await userRepo.delete({ id: userIds as any });
   }
 
+  await dataSource.getRepository(Engine).delete({ name: `${prefix}-engine` } as any);
+
   // Clean up any leftover users/projects with prefix just in case
   await projectRepo.createQueryBuilder()
     .delete()
@@ -234,4 +270,12 @@ export async function cleanupSeededData(
     .delete()
     .where('name LIKE :prefix', { prefix: `${prefix}%` })
     .execute();
+}
+
+export async function cleanupEngines(engineIds: string[]) {
+  const dataSource = await getDataSource();
+  const engineRepo = dataSource.getRepository(Engine);
+  if (engineIds.length > 0) {
+    await engineRepo.delete({ id: engineIds as any });
+  }
 }
