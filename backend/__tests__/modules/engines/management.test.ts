@@ -17,6 +17,11 @@ vi.mock('@shared/middleware/auth.js', () => ({
 
 vi.mock('@shared/services/platform-admin/index.js', () => ({
   engineService: {
+    canManageEngine: vi.fn().mockResolvedValue(true),
+    canViewEngine: vi.fn().mockResolvedValue(true),
+    getEngineMembers: vi.fn().mockResolvedValue([]),
+    getEngineRole: vi.fn().mockResolvedValue('owner'),
+    getUserEngines: vi.fn().mockResolvedValue([]),
     hasEngineAccess: vi.fn().mockResolvedValue(true),
     listEngines: vi.fn().mockResolvedValue([]),
   },

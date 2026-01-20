@@ -22,16 +22,15 @@ vi.mock('@shared/db/data-source.js', () => ({
 }));
 
 vi.mock('../../../../src/modules/mission-control/batches/service.js', () => ({
-  listBatches: vi.fn().mockResolvedValue([]),
-  getBatchById: vi.fn().mockResolvedValue({ id: 'b1', type: 'delete' }),
-  getBatchStatistics: vi.fn().mockResolvedValue({ remainingJobs: 0, completedJobs: 10, failedJobs: 0 }),
+  processRetries: vi.fn().mockResolvedValue(undefined),
+  fetchBatchInfo: vi.fn().mockResolvedValue({ id: 'b1', type: 'delete' }),
+  fetchBatchStatistics: vi.fn().mockResolvedValue({ remainingJobs: 0, completedJobs: 10, failedJobs: 0 }),
+  fetchJobsByDefinitionIds: vi.fn().mockResolvedValue([]),
+  fetchJobStacktrace: vi.fn().mockResolvedValue(null),
   deleteBatch: vi.fn().mockResolvedValue(undefined),
-  suspendBatch: vi.fn().mockResolvedValue(undefined),
-  activateBatch: vi.fn().mockResolvedValue(undefined),
-  createDeleteBatch: vi.fn().mockResolvedValue({ id: 'b1', type: 'delete' }),
-  createSuspendBatch: vi.fn().mockResolvedValue({ id: 'b2', type: 'suspend' }),
-  createActivateBatch: vi.fn().mockResolvedValue({ id: 'b3', type: 'activate' }),
-  createRetriesBatch: vi.fn().mockResolvedValue({ id: 'b4', type: 'retries' }),
+  suspendProcessInstancesBatch: vi.fn().mockResolvedValue({ id: 'camunda-b1' }),
+  deleteProcessInstancesBatch: vi.fn().mockResolvedValue({ id: 'camunda-b1' }),
+  setBatchSuspended: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('mission-control batches routes', () => {
