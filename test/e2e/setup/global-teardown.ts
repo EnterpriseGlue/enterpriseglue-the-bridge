@@ -9,7 +9,11 @@ const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || process.env.ADMIN_PASSW
 
 const SEED_FILE = process.env.E2E_SEED_FILE || path.resolve(process.cwd(), 'test/e2e/.seed/user.json');
 
-async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+async function fetchJson<T>(
+  url: string,
+  options?: RequestInit,
+  extra?: { allowStatuses?: number[] }
+): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     headers: {
@@ -19,7 +23,8 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   });
 
   const data = await res.json().catch(() => null);
-  if (!res.ok) {
+  const allowStatuses = extra?.allowStatuses || [];
+  if (!res.ok && !allowStatuses.includes(res.status)) {
     const message = data?.error || data?.message || res.statusText;
     throw new Error(`E2E cleanup request failed (${url}): ${message}`);
   }
@@ -63,10 +68,14 @@ export default async function globalTeardown() {
     body: JSON.stringify({ email: adminEmail, password: adminPassword }),
   });
 
-  await fetchJson(`/api/users/${data.userId}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${adminLogin.accessToken}` },
-  });
+  await fetchJson(
+    `/api/users/${data.userId}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminLogin.accessToken}` },
+    },
+    { allowStatuses: [404] }
+  );
 
   if (data.engineId) {
     await fetchJson(`/engines-api/engines/${data.engineId}`, {
@@ -76,10 +85,14 @@ export default async function globalTeardown() {
   }
 
   if (data.cleanupAdmin && data.adminUserId) {
-    await fetchJson(`/api/users/${data.adminUserId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${adminLogin.accessToken}` },
-    });
+    await fetchJson(
+      `/api/users/${data.adminUserId}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminLogin.accessToken}` },
+      },
+      { allowStatuses: [404] }
+    );
   }
 
   await rm(SEED_FILE, { force: true });
