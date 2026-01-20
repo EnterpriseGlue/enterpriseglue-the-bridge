@@ -43,7 +43,7 @@
     "sql.js": "^1.13.0",
     "swagger-ui-express": "^5.0.0",
     "typeorm": "^0.3.28",
-    "undici": "^6.19.8",
+    "undici": "^7.18.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -68,7 +68,7 @@
     "vitest": "^2.1.9"
   },
   "overrides": {
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.27.2",
     "cookie": "^0.7.0"
   }
 }
