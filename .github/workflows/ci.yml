@@ -64,8 +64,8 @@ jobs:
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "CREATE SCHEMA IF NOT EXISTS main;"
 
-      - name: Run backend migrations
-        run: npm --prefix backend run db:migration:run
+      - name: Sync database schema
+        run: npm --prefix backend run db:schema:sync
 
       - name: Run unit tests
         run: npm run test:unit

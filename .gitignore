@@ -28,6 +28,7 @@ coverage/
 .env
 .env.*
 *.local
+.github_token
 
 !.env.example
 !**/.env.example

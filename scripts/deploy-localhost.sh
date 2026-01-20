@@ -9,22 +9,30 @@ set -Eeuo pipefail
 # - Restarts backend and serves built frontend via Vite preview
 #
 # Usage:
-#   bash ./scripts/deploy-localhost.sh          # Incremental build (reuses node_modules)
-#   bash ./scripts/deploy-localhost.sh --full   # Full rebuild (clean node_modules, dist, reinstall)
-#   npm run deploy:localhost -- --full          # Same as above, via npm
+#   bash ./scripts/deploy-localhost.sh                     # Incremental build (reuses node_modules)
+#   bash ./scripts/deploy-localhost.sh --full              # Full rebuild (clean node_modules, dist, reinstall)
+#   bash ./scripts/deploy-localhost.sh --first-time        # Run migrations before startup
+#   bash ./scripts/deploy-localhost.sh --full --first-time # Full rebuild + migrations
+#   npm run deploy:localhost -- --full                     # Same as above, via npm
 
 # Parse arguments
 FULL_REBUILD=false
+RUN_MIGRATIONS=false
 while [[ $# -gt 0 ]]; do
   case $1 in
     --full|-f)
       FULL_REBUILD=true
       shift
       ;;
+    --first-time|--init|--migrate|-i)
+      RUN_MIGRATIONS=true
+      shift
+      ;;
     --help|-h)
       echo "Usage: $0 [--full|-f]"
-      echo "  --full, -f   Clean rebuild (remove node_modules, dist, reinstall deps)"
-      echo "  --help, -h   Show this help message"
+      echo "  --full, -f        Clean rebuild (remove node_modules, dist, reinstall deps)"
+      echo "  --first-time, -i  Run DB migrations before startup"
+      echo "  --help, -h        Show this help message"
       exit 0
       ;;
     *)
@@ -234,12 +242,14 @@ check_database() {
 }
 
 run_migrations() {
-  log "Database migrations will run automatically on backend startup"
-  
-  # The backend handles migrations automatically via migrate.ts on startup
-  # No pre-deployment migration check needed - the startup process is safe
-  
-  log "✅ Database migrations ready (will execute on startup)"
+  if [[ "$RUN_MIGRATIONS" == "true" ]]; then
+    log "Running database migrations (first-time install)"
+    (cd "$BACKEND_DIR" && npm run db:migration:run)
+    log "✅ Database migrations completed"
+  else
+    log "Database migrations will run automatically on backend startup"
+    log "✅ Database migrations ready (will execute on startup)"
+  fi
 }
 
 kill_port() {

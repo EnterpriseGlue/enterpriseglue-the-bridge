@@ -33,3 +33,8 @@ npm run down
 - Docker uses a PostgreSQL container by default (see `.env.docker`).
 - Git repositories are stored at `./data/repos` inside the backend container.
 - To change ports or database settings, update `.env.docker`.
+
+## Non-Docker local deployment
+For a localhost deployment (build + preview) using the production-style script, see:
+- [Localhost Deployment (First-time install)](deploy-localhost.md)
+  - First-time installs should use `--first-time` to apply migrations.

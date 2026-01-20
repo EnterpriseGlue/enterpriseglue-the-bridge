@@ -78,6 +78,39 @@ Optional: local “production-style” run on the host (advanced):
 
 - `npm run deploy:localhost` (or `bash ./scripts/deploy-localhost.sh`)
   - It builds `backend/dist` and `frontend/dist`, then serves the frontend via `vite preview`.
+  - For first-time installs, pass `--first-time` to run migrations before startup.
+  - Otherwise, migrations run automatically when the backend starts.
+  - See [Localhost Deployment](docs/how-to/deploy-localhost.md).
+
+## Running tests
+
+### First-time test setup
+
+Before running tests for the first time, you need to set up the test database schema:
+
+```bash
+# From repo root
+cd backend
+npm run build:skip-generate
+npm run db:schema:sync
+```
+
+This creates all database tables in your test database. The test environment (`NODE_ENV=test`) skips migrations by design and uses schema synchronization instead.
+
+### Running tests
+
+```bash
+# From repo root
+npm run test:unit           # Unit tests only
+npm run test:integration    # Integration tests only
+npm run test:e2e            # E2E tests (requires services running)
+npm run test:ci             # All tests (unit + integration + e2e)
+```
+
+**Note:** Integration and E2E tests require:
+- PostgreSQL running (Docker or local)
+- Database schema synced (see above)
+- For E2E: Backend and frontend services running
 
 ## Running checks
 

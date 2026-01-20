@@ -27,3 +27,13 @@ Audience: Developers and architects.
 ## Migrations fail
 - Verify database credentials and schema permissions.
 - Check backend logs for migration errors.
+
+## Tests fail with "relation does not exist" errors
+- First-time test setup requires database schema sync:
+  ```bash
+  cd backend
+  npm run build:skip-generate
+  npm run db:schema:sync
+  ```
+- The test environment (`NODE_ENV=test`) uses schema synchronization instead of migrations.
+- CI automatically runs schema sync before tests.
