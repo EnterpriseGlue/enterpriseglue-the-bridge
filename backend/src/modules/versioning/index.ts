@@ -12,6 +12,7 @@ import { requireAuth } from '@shared/middleware/auth.js';
 import { requireProjectRole, requireProjectAccess } from '@shared/middleware/projectAuth.js';
 import { validateBody, validateParams } from '@shared/middleware/validate.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { getDataSource } from '@shared/db/data-source.js';
 import { projectIdParamSchema, commitBodySchema } from '@shared/schemas/common.js';
 import { File } from '@shared/db/entities/File.js';
@@ -49,7 +50,7 @@ const router = Router();
  * Batch uncommitted status for multiple projects (draft baseline)
  * GET /vcs-api/projects/uncommitted-status?projectIds=a,b,c
  */
-router.get('/vcs-api/projects/uncommitted-status', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/vcs-api/projects/uncommitted-status', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const rawIds = String(req.query?.projectIds || '').trim();
   const requestedIds = rawIds
@@ -128,7 +129,7 @@ router.get('/vcs-api/projects/uncommitted-status', requireAuth, asyncHandler(asy
  * If fileIds is provided, only those files are committed.
  * Otherwise, all files in the project are committed.
  */
-router.post('/vcs-api/projects/:projectId/commit', requireAuth, validateParams(projectIdParamSchema), validateBody(commitBodySchema), requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
+router.post('/vcs-api/projects/:projectId/commit', apiLimiter, requireAuth, validateParams(projectIdParamSchema), validateBody(commitBodySchema), requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
   const { message, fileIds } = req.body;
@@ -206,7 +207,7 @@ router.post('/vcs-api/projects/:projectId/commit', requireAuth, validateParams(p
  * Publish (merge) user's draft branch to main
  * POST /vcs-api/projects/:projectId/publish
  */
-router.post('/vcs-api/projects/:projectId/publish', requireAuth, requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
+router.post('/vcs-api/projects/:projectId/publish', apiLimiter, requireAuth, requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
 
@@ -238,7 +239,7 @@ router.post('/vcs-api/projects/:projectId/publish', requireAuth, requireProjectR
  * Get commit history for a project
  * GET /vcs-api/projects/:projectId/commits
  */
-router.get('/vcs-api/projects/:projectId/commits', requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
+router.get('/vcs-api/projects/:projectId/commits', apiLimiter, requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
   const { branch: branchType = 'all', fileId } = req.query as { branch?: 'draft' | 'main' | 'all', fileId?: string };
@@ -467,7 +468,7 @@ router.get('/vcs-api/projects/:projectId/commits', requireAuth, requireProjectAc
  * Get VCS status for a project (has uncommitted changes, etc.)
  * GET /vcs-api/projects/:projectId/status
  */
-router.get('/vcs-api/projects/:projectId/status', requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
+router.get('/vcs-api/projects/:projectId/status', apiLimiter, requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
 
@@ -517,7 +518,7 @@ router.get('/vcs-api/projects/:projectId/status', requireAuth, requireProjectAcc
  * Get uncommitted file IDs for a project
  * GET /vcs-api/projects/:projectId/uncommitted-files
  */
-router.get('/vcs-api/projects/:projectId/uncommitted-files', requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
+router.get('/vcs-api/projects/:projectId/uncommitted-files', apiLimiter, requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
   const baseline = String(req.query?.baseline || 'main').toLowerCase();
@@ -560,7 +561,7 @@ router.get('/vcs-api/projects/:projectId/uncommitted-files', requireAuth, requir
  * Get file snapshots for a specific commit
  * GET /vcs-api/projects/:projectId/commits/:commitId/files
  */
-router.get('/vcs-api/projects/:projectId/commits/:commitId/files', requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
+router.get('/vcs-api/projects/:projectId/commits/:commitId/files', apiLimiter, requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { projectId, commitId } = req.params;
   const userId = req.user!.userId;
 
@@ -581,7 +582,7 @@ router.get('/vcs-api/projects/:projectId/commits/:commitId/files', requireAuth, 
  * Restore files from a specific commit
  * POST /vcs-api/projects/:projectId/commits/:commitId/restore
  */
-router.post('/vcs-api/projects/:projectId/commits/:commitId/restore', requireAuth, requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
+router.post('/vcs-api/projects/:projectId/commits/:commitId/restore', apiLimiter, requireAuth, requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
   const { projectId, commitId } = req.params;
   const userId = req.user!.userId;
 

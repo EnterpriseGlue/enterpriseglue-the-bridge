@@ -6,7 +6,7 @@ import { verifyPassword } from '@shared/utils/password.js';
 import { generateAccessToken, generateRefreshToken } from '@shared/utils/jwt.js';
 import bcrypt from 'bcryptjs';
 import { logAudit, AuditActions } from '@shared/services/audit.js';
-import { authLimiter } from '@shared/middleware/rateLimiter.js';
+import { authLimiter , apiLimiter} from '@shared/middleware/rateLimiter.js';
 import { getDataSource } from '@shared/db/data-source.js';
 import { User } from '@shared/db/entities/User.js';
 import { RefreshToken } from '@shared/db/entities/RefreshToken.js';
@@ -25,7 +25,7 @@ const loginSchema = z.object({
  * Authenticate user and return tokens
  * Rate limited: 5 attempts per 15 minutes
  */
-router.post('/api/auth/login', authLimiter, validateBody(loginSchema), asyncHandler(async (req, res) => {
+router.post('/api/auth/login', apiLimiter, authLimiter, validateBody(loginSchema), asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const dataSource = await getDataSource();
   const userRepo = dataSource.getRepository(User);

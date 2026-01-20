@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -19,7 +20,7 @@ const r = Router();
 /**
  * List versions for a file (seed an initial version if none)
  */
-r.get('/starbase-api/files/:fileId/versions', requireAuth, validateParams(fileIdParamSchema), requireFileAccess(), asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/files/:fileId/versions', apiLimiter, requireAuth, validateParams(fileIdParamSchema), requireFileAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { fileId } = req.params;
   const dataSource = await getDataSource();
   const versionRepo = dataSource.getRepository(Version);
@@ -66,7 +67,7 @@ r.get('/starbase-api/files/:fileId/versions', requireAuth, validateParams(fileId
 /**
  * Very simple compare endpoint placeholder
  */
-r.get('/starbase-api/versions/:versionId/compare/:otherVersionId', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/versions/:versionId/compare/:otherVersionId', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { versionId, otherVersionId } = req.params;
   const userId = req.user!.userId;
   const dataSource = await getDataSource();

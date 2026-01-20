@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { requireAuth } from '@shared/middleware/auth.js';

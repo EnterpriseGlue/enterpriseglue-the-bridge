@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { asyncHandler } from '@shared/middleware/errorHandler.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
@@ -17,7 +18,7 @@ const router = Router();
  * GET /api/auth/me
  * Get current user profile
  */
-router.get('/api/auth/me', requireAuth, asyncHandler(async (req, res) => {
+router.get('/api/auth/me', apiLimiter, requireAuth, asyncHandler(async (req, res) => {
   const dataSource = await getDataSource();
   const userRepo = dataSource.getRepository(User);
   
@@ -49,7 +50,7 @@ const updateProfileSchema = z.object({
  * PATCH /api/auth/me
  * Update current user profile (firstName, lastName)
  */
-router.patch('/api/auth/me', requireAuth, validateBody(updateProfileSchema), asyncHandler(async (req, res) => {
+router.patch('/api/auth/me', apiLimiter, requireAuth, validateBody(updateProfileSchema), asyncHandler(async (req, res) => {
   const dataSource = await getDataSource();
   const userRepo = dataSource.getRepository(User);
   const userId = req.user!.userId;
@@ -93,7 +94,7 @@ router.patch('/api/auth/me', requireAuth, validateBody(updateProfileSchema), asy
   });
 }));
 
-router.get('/api/auth/my-tenants', requireAuth, asyncHandler(async (req, res) => {
+router.get('/api/auth/my-tenants', apiLimiter, requireAuth, asyncHandler(async (req, res) => {
   const dataSource = await getDataSource();
   const membershipRepo = dataSource.getRepository(TenantMembership);
 
@@ -111,7 +112,7 @@ router.get('/api/auth/my-tenants', requireAuth, asyncHandler(async (req, res) =>
  * Get platform branding for header display (public for authenticated users)
  * Uses platform-wide branding from platform_settings
  */
-router.get('/api/auth/branding', async (_req, res) => {
+router.get('/api/auth/branding', apiLimiter, async (_req, res) => {
   try {
     const dataSource = await getDataSource();
     const settingsRepo = dataSource.getRepository(PlatformSettings);
@@ -159,7 +160,7 @@ router.get('/api/auth/branding', async (_req, res) => {
  * GET /api/auth/platform-settings
  * Get platform settings needed for authenticated UI (non-admin)
  */
-router.get('/api/auth/platform-settings', requireAuth, async (_req, res) => {
+router.get('/api/auth/platform-settings', apiLimiter, requireAuth, async (_req, res) => {
   try {
     const dataSource = await getDataSource();
     const settingsRepo = dataSource.getRepository(PlatformSettings);

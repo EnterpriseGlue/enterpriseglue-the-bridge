@@ -10,6 +10,7 @@ import { randomBytes } from 'node:crypto';
 import { requireAuth } from '@shared/middleware/auth.js';
 import { validateBody, validateParams, validateQuery } from '@shared/middleware/validate.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { projectMemberService } from '@shared/services/platform-admin/ProjectMemberService.js';
 import { getDataSource } from '@shared/db/data-source.js';
 import { User } from '@shared/db/entities/User.js';
@@ -78,6 +79,7 @@ const userSearchSchema = z.object({
 });
 router.get(
   '/starbase-api/projects/:projectId/members/user-search',
+  apiLimiter,
   requireAuth,
   validateParams(projectIdSchema),
   validateQuery(userSearchSchema),
@@ -123,6 +125,7 @@ router.get(
 
 router.put(
   '/starbase-api/projects/:projectId/members/:userId/deploy-permission',
+  apiLimiter,
   requireAuth,
   validateParams(memberIdSchema),
   validateBody(updateDeployGrantSchema),
@@ -184,6 +187,7 @@ router.put(
  */
 router.get(
   '/starbase-api/projects/:projectId/members',
+  apiLimiter,
   requireAuth,
   validateParams(projectIdSchema),
   asyncHandler(async (req, res) => {
@@ -234,6 +238,7 @@ router.get(
  */
 router.post(
   '/starbase-api/projects/:projectId/members',
+  apiLimiter,
   requireAuth,
   validateParams(projectIdSchema),
   validateBody(addMemberSchema),
@@ -383,6 +388,7 @@ router.post(
  */
 router.patch(
   '/starbase-api/projects/:projectId/members/:userId',
+  apiLimiter,
   requireAuth,
   validateParams(memberIdSchema),
   validateBody(updateRoleSchema),
@@ -435,6 +441,7 @@ router.patch(
  */
 router.delete(
   '/starbase-api/projects/:projectId/members/:userId',
+  apiLimiter,
   requireAuth,
   validateParams(memberIdSchema),
   asyncHandler(async (req, res) => {
@@ -479,6 +486,7 @@ router.delete(
  */
 router.post(
   '/starbase-api/projects/:projectId/transfer-ownership',
+  apiLimiter,
   requireAuth,
   validateParams(projectIdSchema),
   validateBody(z.object({ newOwnerId: z.string().uuid() })),
@@ -515,6 +523,7 @@ router.post(
  */
 router.get(
   '/starbase-api/projects/:projectId/members/me',
+  apiLimiter,
   requireAuth,
   validateParams(projectIdSchema),
   asyncHandler(async (req, res) => {

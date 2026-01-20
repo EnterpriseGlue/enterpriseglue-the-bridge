@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { asyncHandler } from '@shared/middleware/errorHandler.js';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
@@ -16,7 +17,7 @@ const r = Router();
 /**
  * List comments for a file (seed a couple if none)
  */
-r.get('/starbase-api/files/:fileId/comments', requireAuth, validateParams(fileIdParamSchema), requireFileAccess(), asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/files/:fileId/comments', apiLimiter, requireAuth, validateParams(fileIdParamSchema), requireFileAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { fileId } = req.params;
   const dataSource = await getDataSource();
   const commentRepo = dataSource.getRepository(Comment);

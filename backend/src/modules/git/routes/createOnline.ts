@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { z } from 'zod';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -62,7 +63,7 @@ const checkRepoExistsSchema = z.object({
  * 5. Initialize VCS
  * 6. Link repository to project
  */
-router.post('/git-api/create-online', requireAuth, validateBody(createOnlineSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/create-online', apiLimiter, requireAuth, validateBody(createOnlineSchema), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const {
     projectName,
@@ -287,7 +288,7 @@ router.post('/git-api/create-online', requireAuth, validateBody(createOnlineSche
  * POST /git-api/check-repo-exists
  * Check if a repository name already exists
  */
-router.post('/git-api/check-repo-exists', requireAuth, validateBody(checkRepoExistsSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/check-repo-exists', apiLimiter, requireAuth, validateBody(checkRepoExistsSchema), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const { providerId, repositoryName, namespace, token } = req.body;
 

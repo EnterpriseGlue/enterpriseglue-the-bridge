@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -52,7 +53,7 @@ const updateConfigSchema = z.object({
  * GET /api/admin/email-configs
  * List all email configurations (super admin only)
  */
-router.get('/api/admin/email-configs', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/admin/email-configs', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const dataSource = await getDataSource();
     const configRepo = dataSource.getRepository(EmailSendConfig);
@@ -72,7 +73,7 @@ router.get('/api/admin/email-configs', requireAuth, requirePlatformAdmin, asyncH
  * GET /api/admin/email-configs/:id
  * Get a single email configuration (super admin only)
  */
-router.get('/api/admin/email-configs/:id', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/admin/email-configs/:id', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const dataSource = await getDataSource();
@@ -98,7 +99,7 @@ router.get('/api/admin/email-configs/:id', requireAuth, requirePlatformAdmin, as
  * POST /api/admin/email-configs
  * Create a new email configuration (super admin only)
  */
-router.post('/api/admin/email-configs', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/admin/email-configs', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const body = createConfigSchema.parse(req.body);
     const dataSource = await getDataSource();
@@ -168,7 +169,7 @@ router.post('/api/admin/email-configs', requireAuth, requirePlatformAdmin, async
  * PATCH /api/admin/email-configs/:id
  * Update an email configuration (super admin only)
  */
-router.patch('/api/admin/email-configs/:id', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.patch('/api/admin/email-configs/:id', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const body = updateConfigSchema.parse(req.body);
@@ -225,7 +226,7 @@ router.patch('/api/admin/email-configs/:id', requireAuth, requirePlatformAdmin, 
  * DELETE /api/admin/email-configs/:id
  * Delete an email configuration (super admin only)
  */
-router.delete('/api/admin/email-configs/:id', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.delete('/api/admin/email-configs/:id', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const dataSource = await getDataSource();
@@ -266,7 +267,7 @@ router.delete('/api/admin/email-configs/:id', requireAuth, requirePlatformAdmin,
  * POST /api/admin/email-configs/:id/set-default
  * Set an email configuration as the default (super admin only)
  */
-router.post('/api/admin/email-configs/:id/set-default', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/admin/email-configs/:id/set-default', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const dataSource = await getDataSource();
@@ -296,7 +297,7 @@ router.post('/api/admin/email-configs/:id/set-default', requireAuth, requirePlat
  * POST /api/admin/email-configs/:id/test
  * Send a test email using this configuration (super admin only)
  */
-router.post('/api/admin/email-configs/:id/test', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/admin/email-configs/:id/test', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { toEmail } = req.body as { toEmail?: string };

@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { z } from 'zod';
 import { logger } from '@shared/utils/logger.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
@@ -34,7 +35,7 @@ const updateProviderSchema = z.object({
  * GET /git-api/providers
  * List all active Git providers
  */
-router.get('/git-api/providers', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/providers', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const dataSource = await getDataSource();
   const providerRepo = dataSource.getRepository(GitProvider);
 
@@ -62,7 +63,7 @@ router.get('/git-api/providers', requireAuth, asyncHandler(async (req: Request, 
  * GET /git-api/providers/:id
  * Get a specific Git provider
  */
-router.get('/git-api/providers/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/providers/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const dataSource = await getDataSource();
   const providerRepo = dataSource.getRepository(GitProvider);
@@ -88,7 +89,7 @@ router.get('/git-api/providers/:id', requireAuth, asyncHandler(async (req: Reque
  * req.user is populated from the JWT, exactly like the platform admin API
  * router does with `router.use(requireAuth, requirePlatformAdmin);`.
  */
-router.get('/git-api/admin/providers', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/admin/providers', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const dataSource = await getDataSource();
   const providerRepo = dataSource.getRepository(GitProvider);
   const gitRepoRepo = dataSource.getRepository(GitRepository);
@@ -142,7 +143,7 @@ router.get('/git-api/admin/providers', requireAuth, requirePlatformAdmin, asyncH
  *
  * Same middleware order as GET: requireAuth first, then requirePlatformAdmin.
  */
-router.put('/git-api/admin/providers/:id', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.put('/git-api/admin/providers/:id', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const {
     isActive,
@@ -206,7 +207,7 @@ router.put('/git-api/admin/providers/:id', requireAuth, requirePlatformAdmin, as
  * GET /git-api/providers/:id/repos
  * List repositories from a Git provider for the authenticated user
  */
-router.get('/git-api/providers/:id/repos', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/providers/:id/repos', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id: providerId } = req.params;
   const userId = req.user?.userId;
   

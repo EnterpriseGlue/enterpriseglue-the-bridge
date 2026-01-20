@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { asyncHandler } from '@shared/middleware/errorHandler.js';
 import { logger } from '@shared/utils/logger.js';
 import { 
@@ -31,7 +32,7 @@ function parseTenantSlug(value: unknown): string | null {
  * Check if Google auth is enabled
  * GET /api/auth/google/status
  */
-router.get('/api/auth/google/status', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/auth/google/status', apiLimiter, asyncHandler(async (req: Request, res: Response) => {
   const enabled = await isGoogleAuthEnabled();
   res.json({ 
     enabled,
@@ -44,7 +45,7 @@ router.get('/api/auth/google/status', asyncHandler(async (req: Request, res: Res
  * GET /api/auth/google
  * Redirects user to Google login page
  */
-router.get('/api/auth/google', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/auth/google', apiLimiter, asyncHandler(async (req: Request, res: Response) => {
   const enabled = await isGoogleAuthEnabled();
   if (!enabled) {
     return res.status(503).json({ 
@@ -71,7 +72,7 @@ router.get('/api/auth/google', asyncHandler(async (req: Request, res: Response) 
  * GET /api/auth/google/callback
  * Google redirects here after user authenticates
  */
-router.get('/api/auth/google/callback', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/auth/google/callback', apiLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { code, state, error, error_description } = req.query;
 
     const tenantSlug = parseTenantSlug(req.cookies?.oauth_tenant_slug);

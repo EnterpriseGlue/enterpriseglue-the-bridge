@@ -14,7 +14,7 @@ import { CascadeDeleteService } from '@shared/services/cascade-delete.js';
 import { syncFileUpdate } from '@shared/services/versioning/index.js';
 import { extractBpmnProcessId, extractDmnDecisionId, updateStarbaseFileNameInXml } from '@shared/utils/starbase-xml.js';
 import { projectMemberService } from '@shared/services/platform-admin/ProjectMemberService.js';
-import { fileOperationsLimiter } from '@shared/middleware/rateLimiter.js';
+import { fileOperationsLimiter, apiLimiter } from '@shared/middleware/rateLimiter.js';
 import type { ProjectRole } from '@enterpriseglue/contracts/roles';
 
 /**
@@ -183,7 +183,7 @@ function sanitizeBpmnXml(xml: string): string {
  * List files by project
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/projects/:projectId/files', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/projects/:projectId/files', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
   
@@ -223,7 +223,7 @@ r.get('/starbase-api/projects/:projectId/files', requireAuth, asyncHandler(async
  * If an explicit XML payload is provided, this acts as an import endpoint.
  * ✨ Migrated to TypeORM
  */
-r.post('/starbase-api/projects/:projectId/files', requireAuth, fileOperationsLimiter, asyncHandler(async (req: Request, res: Response) => {
+r.post('/starbase-api/projects/:projectId/files', apiLimiter, requireAuth, fileOperationsLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
   
@@ -312,7 +312,7 @@ r.post('/starbase-api/projects/:projectId/files', requireAuth, fileOperationsLim
  * Get file by id (metadata + xml)
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/files/:fileId', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/files/:fileId', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { fileId } = req.params;
   const userId = req.user!.userId;
   
@@ -361,7 +361,7 @@ r.get('/starbase-api/files/:fileId', requireAuth, asyncHandler(async (req: Reque
  * Download file as XML attachment
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/files/:fileId/download', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/files/:fileId/download', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { fileId } = req.params;
   const userId = req.user!.userId;
 
@@ -388,7 +388,7 @@ r.get('/starbase-api/files/:fileId/download', requireAuth, asyncHandler(async (r
  * Update file XML (autosave)
  * ✨ Migrated to TypeORM
  */
-r.put('/starbase-api/files/:fileId', requireAuth, fileOperationsLimiter, asyncHandler(async (req: Request, res: Response) => {
+r.put('/starbase-api/files/:fileId', apiLimiter, requireAuth, fileOperationsLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { fileId } = req.params;
   const userId = req.user!.userId;
   
@@ -465,7 +465,7 @@ r.put('/starbase-api/files/:fileId', requireAuth, fileOperationsLimiter, asyncHa
  * Rename file (metadata)
  * ✨ Migrated to TypeORM
  */
-r.patch('/starbase-api/files/:fileId', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.patch('/starbase-api/files/:fileId', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { fileId} = req.params;
   const userId = req.user!.userId;
   
@@ -548,7 +548,7 @@ r.patch('/starbase-api/files/:fileId', requireAuth, asyncHandler(async (req: Req
  * Delete file (and associated versions)
  * ✨ Migrated to TypeORM
  */
-r.delete('/starbase-api/files/:fileId', requireAuth, fileOperationsLimiter, asyncHandler(async (req: Request, res: Response) => {
+r.delete('/starbase-api/files/:fileId', apiLimiter, requireAuth, fileOperationsLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { fileId } = req.params;
   const userId = req.user!.userId;
 

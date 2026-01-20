@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -15,7 +16,7 @@ const router = Router({ mergeParams: true });
 
 router.use(requireAuth, resolveTenantContext({ required: true }), requireTenantRole('tenant_admin'));
 
-router.get('/users', asyncHandler(async (req, res) => {
+router.get('/users', apiLimiter, asyncHandler(async (req, res) => {
   try {
     const tenantId = req.tenant!.tenantId;
     const dataSource = await getDataSource();
@@ -58,7 +59,7 @@ async function ensureNotLastTenantAdmin(membershipRepo: any, tenantId: string, t
   return true;
 }
 
-router.patch('/users/:userId', validateParams(userIdParamsSchema), validateBody(updateTenantUserRoleSchema), asyncHandler(async (req, res) => {
+router.patch('/users/:userId', apiLimiter, validateParams(userIdParamsSchema), validateBody(updateTenantUserRoleSchema), asyncHandler(async (req, res) => {
   try {
     const { userId } = req.params;
     const { role } = req.body;
@@ -106,7 +107,7 @@ router.patch('/users/:userId', validateParams(userIdParamsSchema), validateBody(
   }
 }));
 
-router.delete('/users/:userId', validateParams(userIdParamsSchema), asyncHandler(async (req, res) => {
+router.delete('/users/:userId', apiLimiter, validateParams(userIdParamsSchema), asyncHandler(async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -153,7 +154,7 @@ router.delete('/users/:userId', validateParams(userIdParamsSchema), asyncHandler
   }
 }));
 
-router.get('/settings', asyncHandler(async (req, res) => {
+router.get('/settings', apiLimiter, asyncHandler(async (req, res) => {
   try {
     const tenantId = req.tenant!.tenantId;
     const dataSource = await getDataSource();
@@ -226,7 +227,7 @@ const updateTenantSettingsSchema = z
   })
   .strict();
 
-router.put('/settings', validateBody(updateTenantSettingsSchema), asyncHandler(async (req, res) => {
+router.put('/settings', apiLimiter, validateBody(updateTenantSettingsSchema), asyncHandler(async (req, res) => {
   try {
     const tenantId = req.tenant!.tenantId;
     const body = req.body;

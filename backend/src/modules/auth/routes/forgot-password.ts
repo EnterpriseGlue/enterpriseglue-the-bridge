@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { getDataSource } from '@shared/db/data-source.js';
 import { User } from '@shared/db/entities/User.js';
 import { validateBody } from '@shared/middleware/validate.js';
-import { passwordResetLimiter } from '@shared/middleware/rateLimiter.js';
+import { passwordResetLimiter , apiLimiter} from '@shared/middleware/rateLimiter.js';
 import { sendPasswordResetEmail } from '@shared/services/email/index.js';
 import { hashPassword, verifyPassword } from '@shared/utils/password.js';
 import { generateId } from '@shared/utils/id.js';
@@ -33,7 +33,7 @@ const resetWithTokenSchema = z.object({
  * POST /api/auth/forgot-password
  * Request a password reset email
  */
-router.post('/api/auth/forgot-password', passwordResetLimiter, validateBody(forgotPasswordSchema), asyncHandler(async (req, res) => {
+router.post('/api/auth/forgot-password', apiLimiter, passwordResetLimiter, validateBody(forgotPasswordSchema), asyncHandler(async (req, res) => {
   const { email } = req.body;
   const dataSource = await getDataSource();
   const userRepo = dataSource.getRepository(User);
@@ -84,7 +84,7 @@ router.post('/api/auth/forgot-password', passwordResetLimiter, validateBody(forg
  * POST /api/auth/reset-password-with-token
  * Reset password using the token from email
  */
-router.post('/api/auth/reset-password-with-token', validateBody(resetWithTokenSchema), asyncHandler(async (req, res) => {
+router.post('/api/auth/reset-password-with-token', apiLimiter, validateBody(resetWithTokenSchema), asyncHandler(async (req, res) => {
   const { token, newPassword } = req.body;
   const dataSource = await getDataSource();
   const userRepo = dataSource.getRepository(User);
@@ -152,7 +152,7 @@ router.post('/api/auth/reset-password-with-token', validateBody(resetWithTokenSc
  * GET /api/auth/verify-reset-token
  * Verify if a reset token is valid (for frontend validation before showing form)
  */
-router.get('/api/auth/verify-reset-token', asyncHandler(async (req, res) => {
+router.get('/api/auth/verify-reset-token', apiLimiter, asyncHandler(async (req, res) => {
   const { token } = req.query;
 
   if (!token || typeof token !== 'string') {

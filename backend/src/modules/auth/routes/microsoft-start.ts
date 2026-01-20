@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { Errors } from '@shared/middleware/errorHandler.js';
 import { isMicrosoftAuthEnabled, getAuthorizationUrl } from '@shared/services/microsoft.js';
@@ -10,7 +11,7 @@ const router = Router();
  * Initiate Microsoft OAuth flow (no HTTP param inputs)
  * GET /api/auth/microsoft/start
  */
-router.get('/api/auth/microsoft/start', async (_req: Request, res: Response) => {
+router.get('/api/auth/microsoft/start', apiLimiter, async (_req: Request, res: Response) => {
   try {
     if (!isMicrosoftAuthEnabled()) {
       return res.status(503).json({

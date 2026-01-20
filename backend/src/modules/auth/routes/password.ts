@@ -11,7 +11,7 @@ import { getDataSource } from '@shared/db/data-source.js';
 import { User } from '@shared/db/entities/User.js';
 import { RefreshToken } from '@shared/db/entities/RefreshToken.js';
 import { validateBody } from '@shared/middleware/validate.js';
-import { passwordResetLimiter } from '@shared/middleware/rateLimiter.js';
+import { passwordResetLimiter , apiLimiter} from '@shared/middleware/rateLimiter.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 
 const router = Router();
@@ -31,7 +31,7 @@ const changePasswordSchema = z.object({
  * Reset password on first login (when must_reset_password is true)
  * ✨ Migrated to TypeORM
  */
-router.post('/api/auth/reset-password', requireAuth, passwordResetLimiter, validateBody(resetPasswordSchema), asyncHandler(async (req, res) => {
+router.post('/api/auth/reset-password', apiLimiter, requireAuth, passwordResetLimiter, validateBody(resetPasswordSchema), asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   // Validate new password complexity
@@ -130,7 +130,7 @@ router.post('/api/auth/reset-password', requireAuth, passwordResetLimiter, valid
  * Change password (when must_reset_password is false)
  * ✨ Migrated to TypeORM
  */
-router.post('/api/auth/change-password', requireAuth, validateBody(changePasswordSchema), asyncHandler(async (req, res) => {
+router.post('/api/auth/change-password', apiLimiter, requireAuth, validateBody(changePasswordSchema), asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   // Validate new password complexity

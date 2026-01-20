@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { validateQuery } from '@shared/middleware/validate.js';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -24,7 +25,7 @@ async function getActiveEngineIdOrNull(): Promise<string | null> {
 const r = Router();
 
 // List deployments
-r.get('/starbase-api/deployments', requireAuth, validateQuery(DeploymentQueryParams.partial()), asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/deployments', apiLimiter, requireAuth, validateQuery(DeploymentQueryParams.partial()), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const engineId = await getActiveEngineIdOrNull();
   if (!engineId || !(await engineService.hasEngineAccess(userId, engineId, ENGINE_VIEW_ROLES))) {
@@ -35,7 +36,7 @@ r.get('/starbase-api/deployments', requireAuth, validateQuery(DeploymentQueryPar
 }));
 
 // Get deployment by ID
-r.get('/starbase-api/deployments/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/deployments/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const engineId = await getActiveEngineIdOrNull();
   if (!engineId || !(await engineService.hasEngineAccess(userId, engineId, ENGINE_VIEW_ROLES))) {
@@ -46,7 +47,7 @@ r.get('/starbase-api/deployments/:id', requireAuth, asyncHandler(async (req: Req
 }));
 
 // Delete deployment
-r.delete('/starbase-api/deployments/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.delete('/starbase-api/deployments/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const engineId = await getActiveEngineIdOrNull();
   if (!engineId || !(await engineService.hasEngineAccess(userId, engineId, ENGINE_MANAGE_ROLES))) {
@@ -58,7 +59,7 @@ r.delete('/starbase-api/deployments/:id', requireAuth, asyncHandler(async (req: 
 }));
 
 // Get process definition diagram
-r.get('/starbase-api/process-definitions/:id/diagram', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/process-definitions/:id/diagram', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const engineId = await getActiveEngineIdOrNull();
   if (!engineId || !(await engineService.hasEngineAccess(userId, engineId, ENGINE_VIEW_ROLES))) {
@@ -71,7 +72,7 @@ r.get('/starbase-api/process-definitions/:id/diagram', requireAuth, asyncHandler
 // Create deployment (multipart/form-data)
 // Note: This requires multer middleware for file uploads
 // Implementation deferred until multer is configured
-r.post('/starbase-api/deployments', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.post('/starbase-api/deployments', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   res.status(501).json({ 
     message: 'Deployment creation requires multipart/form-data support and must go through the backend. Configure multer middleware to enable this endpoint.' 
   });

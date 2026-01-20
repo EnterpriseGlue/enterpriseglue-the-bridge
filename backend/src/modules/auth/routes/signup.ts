@@ -31,7 +31,7 @@ const checkSlugSchema = z.object({
   slug: z.string().min(2).max(60),
 });
 
-router.get('/api/auth/signup/check-slug', validateQuery(checkSlugSchema), asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/auth/signup/check-slug', apiLimiter, validateQuery(checkSlugSchema), asyncHandler(async (req: Request, res: Response) => {
   const slug = req.query.slug as string;
   
   const dataSource = await getDataSource();

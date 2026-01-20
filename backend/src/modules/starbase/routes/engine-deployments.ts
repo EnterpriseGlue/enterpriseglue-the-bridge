@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { requireAuth } from '@shared/middleware/auth.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { getDataSource } from '@shared/db/data-source.js';
@@ -26,7 +27,7 @@ interface FolderRow {
 
 const r = Router();
 
-r.get('/starbase-api/projects/:projectId/engine-deployments', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/projects/:projectId/engine-deployments', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
   const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '50'), 10) || 50));
@@ -59,7 +60,7 @@ r.get('/starbase-api/projects/:projectId/engine-deployments', requireAuth, async
   })));
 }));
 
-r.get('/starbase-api/projects/:projectId/engine-deployments/latest', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/projects/:projectId/engine-deployments/latest', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
   const scanLimit = Math.min(20000, Math.max(1, parseInt(String(req.query.limit || '5000'), 10) || 5000));

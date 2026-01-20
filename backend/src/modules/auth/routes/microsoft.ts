@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { asyncHandler } from '@shared/middleware/errorHandler.js';
 import { logger } from '@shared/utils/logger.js';
 import { 
@@ -31,7 +32,7 @@ function parseTenantSlug(value: unknown): string | null {
  * Check if Microsoft Entra ID is enabled
  * GET /api/auth/microsoft/status
  */
-router.get('/api/auth/microsoft/status', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/auth/microsoft/status', apiLimiter, asyncHandler(async (req: Request, res: Response) => {
   const enabled = isMicrosoftAuthEnabled();
   res.json({ 
     enabled,
@@ -44,7 +45,7 @@ router.get('/api/auth/microsoft/status', asyncHandler(async (req: Request, res: 
  * GET /api/auth/microsoft
  * Redirects user to Microsoft login page
  */
-router.get('/api/auth/microsoft', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/auth/microsoft', apiLimiter, asyncHandler(async (req: Request, res: Response) => {
   if (!isMicrosoftAuthEnabled()) {
       return res.status(503).json({ 
         error: 'Microsoft Entra ID authentication is not configured',
@@ -72,7 +73,7 @@ router.get('/api/auth/microsoft', asyncHandler(async (req: Request, res: Respons
  * GET /api/auth/microsoft/callback
  * Microsoft redirects here after user authenticates
  */
-router.get('/api/auth/microsoft/callback', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/auth/microsoft/callback', apiLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { code, state, error, error_description } = req.query;
 
     const tenantSlug = parseTenantSlug(req.cookies?.oauth_tenant_slug);

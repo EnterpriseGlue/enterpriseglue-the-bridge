@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -34,7 +35,7 @@ const updateEmailPlatformNameSchema = z.object({
   emailPlatformName: z.string().min(1).max(120),
 });
 
-router.get('/api/admin/email-platform-name', requireAuth, requirePlatformAdmin, async (_req: Request, res: Response) => {
+router.get('/api/admin/email-platform-name', apiLimiter, requireAuth, requirePlatformAdmin, async (_req: Request, res: Response) => {
   try {
     const dataSource = await getDataSource();
     const settingsRepo = dataSource.getRepository(PlatformSettings);
@@ -50,7 +51,7 @@ router.get('/api/admin/email-platform-name', requireAuth, requirePlatformAdmin, 
   }
 });
 
-router.put('/api/admin/email-platform-name', requireAuth, requirePlatformAdmin, validateBody(updateEmailPlatformNameSchema), asyncHandler(async (req: Request, res: Response) => {
+router.put('/api/admin/email-platform-name', apiLimiter, requireAuth, requirePlatformAdmin, validateBody(updateEmailPlatformNameSchema), asyncHandler(async (req: Request, res: Response) => {
   try {
     const body = req.body;
     const dataSource = await getDataSource();
@@ -87,7 +88,7 @@ router.put('/api/admin/email-platform-name', requireAuth, requirePlatformAdmin, 
  * GET /api/admin/email-templates
  * List all email templates (platform admin only)
  */
-router.get('/api/admin/email-templates', requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/admin/email-templates', apiLimiter, requireAuth, requirePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const dataSource = await getDataSource();
     const templateRepo = dataSource.getRepository(EmailTemplate);
@@ -113,7 +114,7 @@ router.get('/api/admin/email-templates', requireAuth, requirePlatformAdmin, asyn
  * GET /api/admin/email-templates/:id
  * Get a single email template (platform admin only)
  */
-router.get('/api/admin/email-templates/:id', requireAuth, requirePlatformAdmin, validateParams(idParamSchema), asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/admin/email-templates/:id', apiLimiter, requireAuth, requirePlatformAdmin, validateParams(idParamSchema), asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const dataSource = await getDataSource();
@@ -139,7 +140,7 @@ router.get('/api/admin/email-templates/:id', requireAuth, requirePlatformAdmin, 
  * PATCH /api/admin/email-templates/:id
  * Update an email template (platform admin only)
  */
-router.patch('/api/admin/email-templates/:id', requireAuth, requirePlatformAdmin, validateParams(idParamSchema), validateBody(updateTemplateSchema), asyncHandler(async (req: Request, res: Response) => {
+router.patch('/api/admin/email-templates/:id', apiLimiter, requireAuth, requirePlatformAdmin, validateParams(idParamSchema), validateBody(updateTemplateSchema), asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const body = req.body;
@@ -190,7 +191,7 @@ router.patch('/api/admin/email-templates/:id', requireAuth, requirePlatformAdmin
  * POST /api/admin/email-templates/:id/reset
  * Reset an email template to default (platform admin only)
  */
-router.post('/api/admin/email-templates/:id/reset', requireAuth, requirePlatformAdmin, validateParams(idParamSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/admin/email-templates/:id/reset', apiLimiter, requireAuth, requirePlatformAdmin, validateParams(idParamSchema), asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const dataSource = await getDataSource();
@@ -473,7 +474,7 @@ router.post('/api/admin/email-templates/:id/reset', requireAuth, requirePlatform
  * POST /api/admin/email-templates/:id/preview
  * Preview an email template with sample data (platform admin only)
  */
-router.post('/api/admin/email-templates/:id/preview', requireAuth, requirePlatformAdmin, validateParams(idParamSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/admin/email-templates/:id/preview', apiLimiter, requireAuth, requirePlatformAdmin, validateParams(idParamSchema), asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { variables } = req.body as { variables?: Record<string, string> };

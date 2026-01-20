@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { GitService } from '@shared/services/git/GitService.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { validateBody } from '@shared/middleware/validate.js';
@@ -17,7 +18,7 @@ const gitService = new GitService();
  * POST /git-api/deploy
  * Deploy a project (commit + push + tag)
  */
-router.post('/git-api/deploy', requireAuth, validateBody(DeployRequestSchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body' }), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/deploy', apiLimiter, requireAuth, validateBody(DeployRequestSchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body' }), asyncHandler(async (req: Request, res: Response) => {
   const validated = req.body;
   const userId = req.user!.userId;
 
@@ -84,7 +85,7 @@ async function listDeployments(projectId: string, limit: number) {
  * GET /git-api/deployments
  * List deployments for a project (query param style)
  */
-router.get('/git-api/deployments', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/deployments', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.query.projectId as string;
   const limit = parseInt(req.query.limit as string) || 50;
 
@@ -104,7 +105,7 @@ router.get('/git-api/deployments', requireAuth, asyncHandler(async (req: Request
  * GET /git-api/projects/:projectId/deployments
  * List deployments for a project (REST style)
  */
-router.get('/git-api/projects/:projectId/deployments', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/projects/:projectId/deployments', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const limit = parseInt(req.query.limit as string) || 50;
 
@@ -120,7 +121,7 @@ router.get('/git-api/projects/:projectId/deployments', requireAuth, asyncHandler
  * GET /git-api/deployments/:id
  * Get deployment details
  */
-router.get('/git-api/deployments/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/deployments/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const dataSource = await getDataSource();
@@ -143,7 +144,7 @@ router.get('/git-api/deployments/:id', requireAuth, asyncHandler(async (req: Req
  * POST /git-api/rollback
  * Rollback project to a specific commit
  */
-router.post('/git-api/rollback', requireAuth, validateBody(RollbackRequestSchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body' }), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/rollback', apiLimiter, requireAuth, validateBody(RollbackRequestSchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body' }), asyncHandler(async (req: Request, res: Response) => {
   const validated = req.body;
   const userId = req.user!.userId;
 
@@ -159,7 +160,7 @@ router.post('/git-api/rollback', requireAuth, validateBody(RollbackRequestSchema
  * GET /git-api/commits
  * Get commit history for a project
  */
-router.get('/git-api/commits', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/commits', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.query.projectId as string;
   const limit = parseInt(req.query.limit as string) || 100;
 

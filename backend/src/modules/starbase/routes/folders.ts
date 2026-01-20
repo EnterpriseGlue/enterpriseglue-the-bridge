@@ -4,6 +4,7 @@ import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js'
 import { requireAuth } from '@shared/middleware/auth.js'
 import { requireProjectAccess, requireProjectRole } from '@shared/middleware/projectAuth.js'
 import { validateBody, validateParams } from '@shared/middleware/validate.js'
+import { apiLimiter } from '@shared/middleware/rateLimiter.js'
 import { getDataSource } from '@shared/db/data-source.js'
 import { Project } from '@shared/db/entities/Project.js'
 import { Folder } from '@shared/db/entities/Folder.js'
@@ -173,7 +174,7 @@ async function buildPathForFile(folderId: string | null, fileName: string): Prom
  * GET project contents (folders + files) under optional parent folder
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/projects/:projectId/contents', requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/projects/:projectId/contents', apiLimiter, requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const folderId = typeof req.query?.folderId === 'string' ? String(req.query.folderId) : null;
   const dataSource = await getDataSource();
@@ -231,7 +232,7 @@ r.get('/starbase-api/projects/:projectId/contents', requireAuth, requireProjectA
  * GET all folders for a project (flat list)
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/projects/:projectId/folders', requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/projects/:projectId/folders', apiLimiter, requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const dataSource = await getDataSource();
   const folderRepo = dataSource.getRepository(Folder);
@@ -249,7 +250,7 @@ r.get('/starbase-api/projects/:projectId/folders', requireAuth, requireProjectAc
  * POST create folder
  * ✨ Migrated to TypeORM
  */
-r.post('/starbase-api/projects/:projectId/folders', requireAuth, validateParams(projectIdParamSchema), validateBody(createFolderBodySchema), requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
+r.post('/starbase-api/projects/:projectId/folders', apiLimiter, requireAuth, validateParams(projectIdParamSchema), validateBody(createFolderBodySchema), requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
   const { name, parentFolderId } = req.body;
@@ -293,7 +294,7 @@ r.post('/starbase-api/projects/:projectId/folders', requireAuth, validateParams(
  * PATCH update (rename/move)
  * ✨ Migrated to TypeORM
  */
-r.patch('/starbase-api/folders/:folderId', requireAuth, validateParams(folderIdParamSchema), validateBody(renameFolderBodySchema), asyncHandler(async (req: Request, res: Response) => {
+r.patch('/starbase-api/folders/:folderId', apiLimiter, requireAuth, validateParams(folderIdParamSchema), validateBody(renameFolderBodySchema), asyncHandler(async (req: Request, res: Response) => {
   const { folderId } = req.params;
   const userId = req.user!.userId;
   const { name, parentFolderId } = req.body;
@@ -357,7 +358,7 @@ r.patch('/starbase-api/folders/:folderId', requireAuth, validateParams(folderIdP
  * GET delete preview
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/folders/:folderId/delete-preview', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/folders/:folderId/delete-preview', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { folderId } = req.params;
   const userId = req.user!.userId;
   const dataSource = await getDataSource();
@@ -419,7 +420,7 @@ r.get('/starbase-api/folders/:folderId/delete-preview', requireAuth, asyncHandle
  * DELETE folder (cascade)
  * ✨ Migrated to TypeORM
  */
-r.delete('/starbase-api/folders/:folderId', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.delete('/starbase-api/folders/:folderId', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { folderId } = req.params;
   const userId = req.user!.userId;
   const dataSource = await getDataSource();
@@ -456,7 +457,7 @@ r.delete('/starbase-api/folders/:folderId', requireAuth, asyncHandler(async (req
  * Download a folder (and its subtree) as a zip file
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/folders/:folderId/download', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/folders/:folderId/download', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { folderId } = req.params;
   const userId = req.user!.userId;
   const dataSource = await getDataSource();
@@ -519,7 +520,7 @@ r.get('/starbase-api/folders/:folderId/download', requireAuth, asyncHandler(asyn
  * Download entire project as a zip (all folders/files)
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/projects/:projectId/download', requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/projects/:projectId/download', apiLimiter, requireAuth, requireProjectAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
 
   const dataSource = await getDataSource();

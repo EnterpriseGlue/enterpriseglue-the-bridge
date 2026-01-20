@@ -3,6 +3,7 @@
  */
 
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { validateBody } from '@shared/middleware/validate.js';
@@ -27,7 +28,7 @@ const updateSettingsSchema = z.object({
  * GET /api/platform-admin/admin/settings
  * Get platform settings
  */
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', apiLimiter, asyncHandler(async (req, res) => {
   try {
     const settings = await platformSettingsService.get();
     res.json(settings);

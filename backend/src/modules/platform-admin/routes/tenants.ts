@@ -3,6 +3,7 @@
  */
 
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { validateBody, validateParams } from '@shared/middleware/validate.js';
@@ -42,7 +43,7 @@ const tenantAdminBodySchema = z.object({ userId: z.string().uuid() });
 
 // ============ Tenant CRUD ============
 
-router.get('/', asyncHandler(async (_req, res) => {
+router.get('/', apiLimiter, asyncHandler(async (_req, res) => {
   try {
     const dataSource = await getDataSource();
     const tenantRepo = dataSource.getRepository(Tenant);
@@ -58,7 +59,7 @@ router.get('/', asyncHandler(async (_req, res) => {
   }
 }));
 
-router.post('/', validateBody(createTenantSchema), asyncHandler(async (req, res) => {
+router.post('/', apiLimiter, validateBody(createTenantSchema), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const tenantRepo = dataSource.getRepository(Tenant);
@@ -130,7 +131,7 @@ router.post('/', validateBody(createTenantSchema), asyncHandler(async (req, res)
   }
 }));
 
-router.put('/:tenantId', validateParams(tenantIdParamsSchema), validateBody(updateTenantSchema), asyncHandler(async (req, res) => {
+router.put('/:tenantId', apiLimiter, validateParams(tenantIdParamsSchema), validateBody(updateTenantSchema), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const tenantRepo = dataSource.getRepository(Tenant);
@@ -170,7 +171,7 @@ router.put('/:tenantId', validateParams(tenantIdParamsSchema), validateBody(upda
 
 // ============ Tenant Settings ============
 
-router.get('/:tenantId/settings', validateParams(tenantIdParamsSchema), asyncHandler(async (req, res) => {
+router.get('/:tenantId/settings', apiLimiter, validateParams(tenantIdParamsSchema), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const settingsRepo = dataSource.getRepository(TenantSettings);
@@ -247,7 +248,7 @@ router.put(
 
 // ============ Tenant Admins ============
 
-router.get('/:tenantId/admins', validateParams(tenantIdParamsSchema), asyncHandler(async (req, res) => {
+router.get('/:tenantId/admins', apiLimiter, validateParams(tenantIdParamsSchema), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const membershipRepo = dataSource.getRepository(TenantMembership);
@@ -274,7 +275,7 @@ router.get('/:tenantId/admins', validateParams(tenantIdParamsSchema), asyncHandl
   }
 }));
 
-router.post('/:tenantId/admins', validateParams(tenantIdParamsSchema), validateBody(tenantAdminBodySchema), asyncHandler(async (req, res) => {
+router.post('/:tenantId/admins', apiLimiter, validateParams(tenantIdParamsSchema), validateBody(tenantAdminBodySchema), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const tenantRepo = dataSource.getRepository(Tenant);
@@ -331,7 +332,7 @@ router.post('/:tenantId/admins', validateParams(tenantIdParamsSchema), validateB
   }
 }));
 
-router.delete('/:tenantId/admins/:userId', validateParams(tenantAdminParamsSchema), asyncHandler(async (req, res) => {
+router.delete('/:tenantId/admins/:userId', apiLimiter, validateParams(tenantAdminParamsSchema), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const membershipRepo = dataSource.getRepository(TenantMembership);

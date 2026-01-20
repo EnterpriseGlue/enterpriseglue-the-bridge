@@ -25,7 +25,7 @@ import { CascadeDeleteService } from '@shared/services/cascade-delete.js';
 import { generateId, unixTimestamp } from '@shared/utils/id.js';
 import { projectMemberService } from '@shared/services/platform-admin/ProjectMemberService.js';
 import { engineAccessService } from '@shared/services/platform-admin/index.js';
-import { projectCreateLimiter } from '@shared/middleware/rateLimiter.js';
+import { projectCreateLimiter, apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { MANAGE_ROLES, OWNER_ROLES, VIEW_ROLES } from '@shared/constants/roles.js';
 
 // Validation schemas
@@ -76,7 +76,7 @@ interface UserRow {
  * 
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/projects', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/projects', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const dataSource = await getDataSource();
   const projectRepo = dataSource.getRepository(Project);
@@ -263,7 +263,7 @@ r.get('/starbase-api/projects', requireAuth, asyncHandler(async (req: Request, r
  * 
  * ✨ Migrated to TypeORM
  */
-r.post('/starbase-api/projects', requireAuth, projectCreateLimiter, validateBody(createProjectBodySchema), asyncHandler(async (req: Request, res: Response) => {
+r.post('/starbase-api/projects', apiLimiter, requireAuth, projectCreateLimiter, validateBody(createProjectBodySchema), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const { name } = req.body;
   const trimmed = name.trim();
@@ -317,7 +317,7 @@ r.post('/starbase-api/projects', requireAuth, projectCreateLimiter, validateBody
  * 
  * ✨ Migrated to TypeORM
  */
-r.patch('/starbase-api/projects/:projectId', requireAuth, validateParams(projectIdParamSchema), validateBody(renameProjectBodySchema), requireProjectRole(MANAGE_ROLES), asyncHandler(async (req: Request, res: Response) => {
+r.patch('/starbase-api/projects/:projectId', apiLimiter, requireAuth, validateParams(projectIdParamSchema), validateBody(renameProjectBodySchema), requireProjectRole(MANAGE_ROLES), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const { name } = req.body;
   const trimmed = name.trim();
@@ -334,7 +334,7 @@ r.patch('/starbase-api/projects/:projectId', requireAuth, validateParams(project
  * 
  * ✨ Migrated to TypeORM
  */
-r.delete('/starbase-api/projects/:projectId', requireAuth, requireProjectRole(OWNER_ROLES), asyncHandler(async (req: Request, res: Response) => {
+r.delete('/starbase-api/projects/:projectId', apiLimiter, requireAuth, requireProjectRole(OWNER_ROLES), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
 
   // Delete project and all its resources using cascade delete service
@@ -350,7 +350,7 @@ r.delete('/starbase-api/projects/:projectId', requireAuth, requireProjectRole(OW
  * Get engine access status for a project (engines it has access to + pending requests)
  * ✨ Migrated to TypeORM
  */
-r.get('/starbase-api/projects/:projectId/engine-access', requireAuth, requireProjectRole(VIEW_ROLES), asyncHandler(async (req: Request, res: Response) => {
+r.get('/starbase-api/projects/:projectId/engine-access', apiLimiter, requireAuth, requireProjectRole(VIEW_ROLES), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
 
   const dataSource = await getDataSource();

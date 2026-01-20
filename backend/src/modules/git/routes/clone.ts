@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -48,7 +49,7 @@ type GitProviderType = 'github' | 'gitlab' | 'azure-devops' | 'bitbucket';
  * POST /git-api/repo-info
  * Get repository info (branches, default branch) before cloning
  */
-router.post('/git-api/repo-info', requireAuth, validateBody(repoInfoSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/repo-info', apiLimiter, requireAuth, validateBody(repoInfoSchema), asyncHandler(async (req: Request, res: Response) => {
   const { providerId, repoUrl } = req.body as RepoInfoBody;
   const userId = req.user!.userId;
 
@@ -117,7 +118,7 @@ router.post('/git-api/repo-info', requireAuth, validateBody(repoInfoSchema), asy
  * POST /git-api/clone
  * Clone a repository and create a new project
  */
-router.post('/git-api/clone', requireAuth, validateBody(cloneSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/clone', apiLimiter, requireAuth, validateBody(cloneSchema), asyncHandler(async (req: Request, res: Response) => {
   const { providerId, repoUrl, branch: requestedBranch, projectName } = req.body as CloneBody;
   const userId = req.user!.userId;
 

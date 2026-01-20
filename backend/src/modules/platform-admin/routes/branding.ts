@@ -3,6 +3,7 @@
  */
 
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { validateBody, validateParams } from '@shared/middleware/validate.js';
@@ -49,7 +50,7 @@ const updateTenantBrandingSchema = z.object({
  * Get platform branding settings
  * ✨ Migrated to TypeORM
  */
-router.get('/', asyncHandler(async (_req, res) => {
+router.get('/', apiLimiter, asyncHandler(async (_req, res) => {
   try {
     const dataSource = await getDataSource();
     const platformSettingsRepo = dataSource.getRepository(PlatformSettings);
@@ -146,7 +147,7 @@ router.put(
  * Reset platform branding to defaults
  * ✨ Migrated to TypeORM
  */
-router.delete('/', asyncHandler(async (req, res) => {
+router.delete('/', apiLimiter, asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const platformSettingsRepo = dataSource.getRepository(PlatformSettings);
@@ -178,7 +179,7 @@ router.delete('/', asyncHandler(async (req, res) => {
 
 // ============ Tenant Branding ============
 
-router.get('/tenants/:tenantId', validateParams(tenantIdParamsSchema), asyncHandler(async (req, res) => {
+router.get('/tenants/:tenantId', apiLimiter, validateParams(tenantIdParamsSchema), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const tenantSettingsRepo = dataSource.getRepository(TenantSettings);
@@ -269,7 +270,7 @@ router.put(
   })
 );
 
-router.delete('/tenants/:tenantId', validateParams(tenantIdParamsSchema), asyncHandler(async (req, res) => {
+router.delete('/tenants/:tenantId', apiLimiter, validateParams(tenantIdParamsSchema), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const tenantSettingsRepo = dataSource.getRepository(TenantSettings);

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
@@ -21,7 +22,7 @@ const refreshSchema = z.object({
  * POST /api/auth/refresh
  * Exchange refresh token for new access token
  */
-router.post('/api/auth/refresh', validateBody(refreshSchema), asyncHandler(async (req, res) => {
+router.post('/api/auth/refresh', apiLimiter, validateBody(refreshSchema), asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
   // Verify refresh token

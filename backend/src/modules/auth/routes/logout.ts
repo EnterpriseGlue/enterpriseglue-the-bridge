@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -18,7 +19,7 @@ const logoutSchema = z.object({
  * POST /api/auth/logout
  * Revoke refresh token(s)
  */
-router.post('/api/auth/logout', requireAuth, validateBody(logoutSchema), asyncHandler(async (req, res) => {
+router.post('/api/auth/logout', apiLimiter, requireAuth, validateBody(logoutSchema), asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
   const now = Date.now();
   const dataSource = await getDataSource();

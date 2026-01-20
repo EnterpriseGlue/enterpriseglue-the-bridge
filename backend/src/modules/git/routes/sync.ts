@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { z } from 'zod';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -40,7 +41,7 @@ const router = Router();
  * GET /git-api/sync/status
  * Get sync status for a project
  */
-router.get('/git-api/sync/status', requireAuth, validateQuery(syncStatusQuerySchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'query' }), asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/sync/status', apiLimiter, requireAuth, validateQuery(syncStatusQuerySchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'query' }), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const projectId = req.query.projectId as string;
 
@@ -94,7 +95,7 @@ router.get('/git-api/sync/status', requireAuth, validateQuery(syncStatusQuerySch
  * POST /git-api/sync
  * Sync project with remote repository
  */
-router.post('/git-api/sync', requireAuth, validateBody(syncBodySchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body' }), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/sync', apiLimiter, requireAuth, validateBody(syncBodySchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body' }), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const { projectId, direction, message } = req.body;
   const commitMessage = message.trim();
@@ -310,7 +311,7 @@ router.post('/git-api/sync', requireAuth, validateBody(syncBodySchema), requireP
  * GET /git-api/repositories
  * List repositories for user's projects
  */
-router.get('/git-api/repositories', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/repositories', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const { projectId } = req.query;
   const dataSource = await getDataSource();

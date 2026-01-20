@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -29,7 +30,7 @@ interface SetupStatus {
  * Check if the platform has been configured
  * Returns setup status and any required actions
  */
-router.get('/api/admin/setup-status', requireAuth, asyncHandler(async (req, res) => {
+router.get('/api/admin/setup-status', apiLimiter, requireAuth, asyncHandler(async (req, res) => {
   const dataSource = await getDataSource();
   const tenantRepo = dataSource.getRepository(Tenant);
   const userRepo = dataSource.getRepository(User);
@@ -73,7 +74,7 @@ router.get('/api/admin/setup-status', requireAuth, asyncHandler(async (req, res)
  * POST /api/admin/mark-setup-complete
  * Mark the platform as configured (stores flag to skip wizard)
  */
-router.post('/api/admin/mark-setup-complete', requireAuth, asyncHandler(async (req, res) => {
+router.post('/api/admin/mark-setup-complete', apiLimiter, requireAuth, asyncHandler(async (req, res) => {
   // Only admins can mark setup as complete
   if (req.user?.platformRole !== 'admin') {
     throw Errors.forbidden('Only platform admins can mark setup as complete');

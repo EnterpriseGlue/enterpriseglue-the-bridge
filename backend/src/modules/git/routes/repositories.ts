@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { z } from 'zod';
 import { GitService } from '@shared/services/git/GitService.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
@@ -27,7 +28,7 @@ const gitService = new GitService();
  * POST /git-api/repositories/init
  * Initialize a new Git repository for a project
  */
-router.post('/git-api/repositories/init', requireAuth, validateBody(initRepoBodySchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body', errorStatus: 403, errorMessage: 'Forbidden: Cannot manage Git for this project' }), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/repositories/init', apiLimiter, requireAuth, validateBody(initRepoBodySchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body', errorStatus: 403, errorMessage: 'Forbidden: Cannot manage Git for this project' }), asyncHandler(async (req: Request, res: Response) => {
   const { projectId, providerId, remoteUrl, namespace } = req.body;
   const userId = req.user!.userId;
 
@@ -40,7 +41,7 @@ router.post('/git-api/repositories/init', requireAuth, validateBody(initRepoBody
  * POST /git-api/repositories/clone
  * Clone an existing Git repository
  */
-router.post('/git-api/repositories/clone', requireAuth, validateBody(initRepoBodySchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body', errorStatus: 403, errorMessage: 'Forbidden: Cannot manage Git for this project' }), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/repositories/clone', apiLimiter, requireAuth, validateBody(initRepoBodySchema), requireProjectRole(EDIT_ROLES, { projectIdFrom: 'body', errorStatus: 403, errorMessage: 'Forbidden: Cannot manage Git for this project' }), asyncHandler(async (req: Request, res: Response) => {
   const { projectId, providerId, remoteUrl, namespace } = req.body;
   const userId = req.user!.userId;
 
@@ -54,7 +55,7 @@ router.post('/git-api/repositories/clone', requireAuth, validateBody(initRepoBod
  * List all repositories for the current user's projects
  * ✨ Migrated to TypeORM
  */
-router.get('/git-api/repositories', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/repositories', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const { projectId } = req.query;
   const dataSource = await getDataSource();
@@ -98,7 +99,7 @@ router.get('/git-api/repositories', requireAuth, asyncHandler(async (req: Reques
  * Get repository details
  * ✨ Migrated to TypeORM
  */
-router.get('/git-api/repositories/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/repositories/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.userId;
   const dataSource = await getDataSource();
@@ -135,7 +136,7 @@ router.get('/git-api/repositories/:id', requireAuth, asyncHandler(async (req: Re
  * DELETE /git-api/repositories/:id
  * Delete a repository (removes from database, keeps remote)
  */
-router.delete('/git-api/repositories/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.delete('/git-api/repositories/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.userId;
   const dataSource = await getDataSource();

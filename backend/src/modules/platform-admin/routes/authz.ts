@@ -5,6 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { z } from 'zod';
 import { logger } from '@shared/utils/logger.js';
 import { requireAuth } from '@shared/middleware/auth.js';
@@ -58,7 +59,7 @@ const router = Router();
  * Check if a user has permission to perform an action on a resource.
  * Returns the decision and the reason.
  */
-router.post('/api/authz/check', requireAuth, validateBody(authzCheckSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/authz/check', apiLimiter, requireAuth, validateBody(authzCheckSchema), asyncHandler(async (req: Request, res: Response) => {
   try {
     const { action, resourceType, resourceId, userAttributes, resourceAttributes } = req.body;
 
@@ -93,7 +94,7 @@ router.post('/api/authz/check', requireAuth, validateBody(authzCheckSchema), asy
  * POST /api/platform-admin/authz/check-batch
  * Check multiple permissions at once.
  */
-router.post('/api/authz/check-batch', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/authz/check-batch', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { checks } = req.body;
 
@@ -140,7 +141,7 @@ router.post('/api/authz/check-batch', requireAuth, asyncHandler(async (req: Requ
  * GET /api/platform-admin/authz/policies
  * List all authorization policies.
  */
-router.get('/api/authz/policies', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/authz/policies', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -158,7 +159,7 @@ router.get('/api/authz/policies', requireAuth, asyncHandler(async (req: Request,
  * POST /api/platform-admin/authz/policies
  * Create a new authorization policy.
  */
-router.post('/api/authz/policies', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/authz/policies', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -192,7 +193,7 @@ router.post('/api/authz/policies', requireAuth, asyncHandler(async (req: Request
  * PUT /api/platform-admin/authz/policies/:id
  * Update an authorization policy.
  */
-router.put('/api/authz/policies/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.put('/api/authz/policies/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -210,7 +211,7 @@ router.put('/api/authz/policies/:id', requireAuth, asyncHandler(async (req: Requ
  * DELETE /api/platform-admin/authz/policies/:id
  * Delete an authorization policy.
  */
-router.delete('/api/authz/policies/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.delete('/api/authz/policies/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -232,7 +233,7 @@ router.delete('/api/authz/policies/:id', requireAuth, asyncHandler(async (req: R
  * GET /api/platform-admin/authz/sso-mappings
  * List all SSO claims mappings.
  */
-router.get('/api/authz/sso-mappings', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/authz/sso-mappings', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -250,7 +251,7 @@ router.get('/api/authz/sso-mappings', requireAuth, asyncHandler(async (req: Requ
  * POST /api/platform-admin/authz/sso-mappings
  * Create a new SSO claims mapping.
  */
-router.post('/api/authz/sso-mappings', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/authz/sso-mappings', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -282,7 +283,7 @@ router.post('/api/authz/sso-mappings', requireAuth, asyncHandler(async (req: Req
  * PUT /api/platform-admin/authz/sso-mappings/:id
  * Update an SSO claims mapping.
  */
-router.put('/api/authz/sso-mappings/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.put('/api/authz/sso-mappings/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -300,7 +301,7 @@ router.put('/api/authz/sso-mappings/:id', requireAuth, asyncHandler(async (req: 
  * DELETE /api/platform-admin/authz/sso-mappings/:id
  * Delete an SSO claims mapping.
  */
-router.delete('/api/authz/sso-mappings/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.delete('/api/authz/sso-mappings/:id', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -318,7 +319,7 @@ router.delete('/api/authz/sso-mappings/:id', requireAuth, asyncHandler(async (re
  * POST /api/platform-admin/authz/sso-mappings/test
  * Test SSO claims against mappings (admin preview).
  */
-router.post('/api/authz/sso-mappings/test', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/api/authz/sso-mappings/test', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();
@@ -346,7 +347,7 @@ router.post('/api/authz/sso-mappings/test', requireAuth, asyncHandler(async (req
  * GET /api/platform-admin/authz/audit
  * Query authorization audit log.
  */
-router.get('/api/authz/audit', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/authz/audit', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   try {
     if (!isPlatformAdmin(req)) {
       throw Errors.adminRequired();

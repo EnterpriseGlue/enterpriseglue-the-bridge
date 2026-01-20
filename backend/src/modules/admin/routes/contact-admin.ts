@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { z } from 'zod';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { validateBody } from '@shared/middleware/validate.js';
@@ -17,7 +18,7 @@ const router = Router();
  * Send contact admin email from login page
  * Public endpoint (no authentication required)
  */
-router.post('/', validateBody(contactAdminSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/', apiLimiter, validateBody(contactAdminSchema), asyncHandler(async (req: Request, res: Response) => {
   const { userEmail, subject, message } = req.body;
 
   // Send email

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
@@ -17,7 +18,7 @@ const resendVerificationSchema = z.object({
  * GET /api/auth/verify-email
  * Verify user's email address using token from email
  */
-router.get('/api/auth/verify-email', asyncHandler(async (req, res) => {
+router.get('/api/auth/verify-email', apiLimiter, asyncHandler(async (req, res) => {
   const { token } = req.query;
 
   if (!token || typeof token !== 'string') {
@@ -66,7 +67,7 @@ router.get('/api/auth/verify-email', asyncHandler(async (req, res) => {
  * POST /api/auth/resend-verification
  * Resend verification email to user
  */
-router.post('/api/auth/resend-verification', validateBody(resendVerificationSchema), asyncHandler(async (req, res) => {
+router.post('/api/auth/resend-verification', apiLimiter, validateBody(resendVerificationSchema), asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   if (!email || typeof email !== 'string') {

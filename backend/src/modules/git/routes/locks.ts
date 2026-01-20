@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { LockManager } from '@shared/services/git/LockManager.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { validateBody } from '@shared/middleware/validate.js';
@@ -17,7 +18,7 @@ const lockManager = new LockManager();
  * POST /git-api/locks
  * Acquire a lock on a file
  */
-router.post('/git-api/locks', requireAuth, validateBody(AcquireLockRequestSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/git-api/locks', apiLimiter, requireAuth, validateBody(AcquireLockRequestSchema), asyncHandler(async (req: Request, res: Response) => {
   const validated = req.body;
   const userId = req.user!.userId;
 
@@ -60,7 +61,7 @@ router.post('/git-api/locks', requireAuth, validateBody(AcquireLockRequestSchema
  * DELETE /git-api/locks/:lockId
  * Release a lock
  */
-router.delete('/git-api/locks/:lockId', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.delete('/git-api/locks/:lockId', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { lockId } = req.params;
   const userId = req.user!.userId;
 
@@ -99,7 +100,7 @@ router.delete('/git-api/locks/:lockId', requireAuth, asyncHandler(async (req: Re
  * GET /git-api/locks
  * List active locks for a project
  */
-router.get('/git-api/locks', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/git-api/locks', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.query.projectId as string;
   const userId = req.user!.userId;
 
@@ -121,7 +122,7 @@ router.get('/git-api/locks', requireAuth, asyncHandler(async (req: Request, res:
  * PUT /git-api/locks/:lockId/heartbeat
  * Send heartbeat to extend lock
  */
-router.put('/git-api/locks/:lockId/heartbeat', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.put('/git-api/locks/:lockId/heartbeat', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { lockId } = req.params;
 
   const userId = req.user!.userId;

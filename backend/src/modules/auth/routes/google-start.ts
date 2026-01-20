@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { Errors } from '@shared/middleware/errorHandler.js';
 import { isGoogleAuthEnabled, getGoogleAuthorizationUrl } from '@shared/services/google.js';
@@ -10,7 +11,7 @@ const router = Router();
  * Initiate Google OAuth flow (no HTTP param inputs)
  * GET /api/auth/google/start
  */
-router.get('/api/auth/google/start', async (_req: Request, res: Response) => {
+router.get('/api/auth/google/start', apiLimiter, async (_req: Request, res: Response) => {
   try {
     const enabled = await isGoogleAuthEnabled();
     if (!enabled) {

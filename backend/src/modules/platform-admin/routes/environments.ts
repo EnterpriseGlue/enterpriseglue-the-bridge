@@ -3,6 +3,7 @@
  */
 
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { validateBody, validateParams } from '@shared/middleware/validate.js';
@@ -33,7 +34,7 @@ const reorderSchema = z.object({
  * GET /api/platform-admin/admin/environments
  * Get all environment tags
  */
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', apiLimiter, asyncHandler(async (req, res) => {
   try {
     const tags = await environmentTagService.getAll();
     res.json(tags);

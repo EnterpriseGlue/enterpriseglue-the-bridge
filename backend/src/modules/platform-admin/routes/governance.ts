@@ -3,6 +3,7 @@
  */
 
 import { Router } from 'express';
+import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { logger } from '@shared/utils/logger.js';
 import { z } from 'zod';
 import { validateBody, validateParams, validateQuery } from '@shared/middleware/validate.js';
@@ -36,7 +37,7 @@ const assignOwnerSchema = z.object({
  * GET /api/platform-admin/admin/users/search?q=email
  * Search users by email (for owner assignment)
  */
-router.get('/users/search', validateQuery(userSearchQuerySchema), asyncHandler(async (req, res) => {
+router.get('/users/search', apiLimiter, validateQuery(userSearchQuerySchema), asyncHandler(async (req, res) => {
   try {
     const qRaw = req.query?.q;
     if (typeof qRaw !== 'string') {
@@ -68,7 +69,7 @@ router.get('/users/search', validateQuery(userSearchQuerySchema), asyncHandler(a
  * GET /api/platform-admin/admin/governance/projects
  * List projects with owner info for governance
  */
-router.get('/projects', validateQuery(governanceSearchQuerySchema), asyncHandler(async (req, res) => {
+router.get('/projects', apiLimiter, validateQuery(governanceSearchQuerySchema), asyncHandler(async (req, res) => {
   try {
     const searchRaw = req.query['search'];
     const search = typeof searchRaw === 'string' ? searchRaw.trim() : '';
@@ -102,7 +103,7 @@ router.get('/projects', validateQuery(governanceSearchQuerySchema), asyncHandler
  * GET /api/platform-admin/admin/governance/engines
  * List engines with owner info for governance
  */
-router.get('/engines', validateQuery(governanceSearchQuerySchema), asyncHandler(async (req, res) => {
+router.get('/engines', apiLimiter, validateQuery(governanceSearchQuerySchema), asyncHandler(async (req, res) => {
   try {
     const searchRaw = req.query['search'];
     const search = typeof searchRaw === 'string' ? searchRaw.trim() : '';
