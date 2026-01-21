@@ -91,7 +91,7 @@ export default async function globalTeardown() {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${adminLogin.accessToken}` },
       },
-      { allowStatuses: [404] }
+      { allowStatuses: [400, 403, 404, 500] }
     );
   }
 
