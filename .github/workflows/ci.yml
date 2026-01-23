@@ -2,19 +2,49 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: "0 2 * * *"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  detect:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      run_tests: ${{ steps.detect.outputs.run_tests }}
+      current_sha: ${{ steps.detect.outputs.current_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes since last nightly run
+        id: detect
+        run: |
+          CURRENT_SHA=$(git rev-parse HEAD)
+          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          LAST_SHA=$(cat .sync/ci-main.sha 2>/dev/null || echo "")
+          if [ "$CURRENT_SHA" = "$LAST_SHA" ]; then
+            echo "run_tests=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.run_tests == 'true'
+    permissions:
+      contents: write
     services:
       postgres:
         image: postgres:15
@@ -42,6 +72,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -111,3 +143,18 @@ jobs:
         with:
           name: frontend-coverage
           path: frontend/coverage
+
+      - name: Update nightly CI marker
+        if: github.event_name == 'schedule'
+        run: |
+          mkdir -p .sync
+          echo "${{ needs.detect.outputs.current_sha }}" > .sync/ci-main.sha
+          git add .sync/ci-main.sha
+          if git diff --cached --quiet; then
+            echo "No marker changes to commit."
+            exit 0
+          fi
+          git config user.name "enterpriseglue-ci-bot"
+          git config user.email "ci-bot@enterpriseglue.ai"
+          git commit -m "chore: update nightly CI marker"
+          git push origin HEAD:main
