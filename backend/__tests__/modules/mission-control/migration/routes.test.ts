@@ -34,7 +34,7 @@ describe('mission-control migration routes', () => {
 
   it('generates migration plan', async () => {
     const response = await request(app)
-      .post('/mission-control-api/migration/plan/generate')
+      .post('/mission-control-api/migration/generate')
       .send({ sourceProcessDefinitionId: 'p1', targetProcessDefinitionId: 'p2' });
 
     expect(response.status).toBe(200);

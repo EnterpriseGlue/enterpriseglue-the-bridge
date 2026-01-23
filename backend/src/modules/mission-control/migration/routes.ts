@@ -40,16 +40,6 @@ r.post('/mission-control-api/migration/generate', asyncHandler(async (req: Reque
   }
 }))
 
-// Newer endpoint
-r.post('/mission-control-api/migration/plan/generate', asyncHandler(async (req: Request, res: Response) => {
-  try {
-    const enginePlan = await generateMigrationPlan(req.body)
-    res.status(200).json(enginePlan)
-  } catch (e: any) {
-    throw Errors.internal(e?.message || 'Failed to generate migration plan')
-  }
-}))
-
 // Validate migration plan
 r.post('/mission-control-api/migration/plan/validate', asyncHandler(async (req: Request, res: Response) => {
   try {
