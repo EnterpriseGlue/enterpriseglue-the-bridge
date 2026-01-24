@@ -30,6 +30,7 @@ interface PublicBranding {
   logoTitle: string | null;
   logoScale: number;
   titleFontWeight: string;
+  faviconUrl: string | null;
 }
 
 const BRANDING_CACHE_KEY = 'eg.platformBranding.v1';
@@ -44,6 +45,7 @@ function normalizeBranding(raw: any): PublicBranding {
     logoTitle: typeof r.logoTitle === 'string' ? r.logoTitle : null,
     logoScale: typeof r.logoScale === 'number' ? r.logoScale : 100,
     titleFontWeight: typeof r.titleFontWeight === 'string' ? r.titleFontWeight : '600',
+    faviconUrl: typeof r.faviconUrl === 'string' ? r.faviconUrl : null,
   };
 }
 
@@ -145,13 +147,6 @@ export default function Login() {
   });
   const logoObjectUrlRef = useRef<string | null>(logoObjectUrl);
   
-  // Contact admin modal state
-  const contactModal = useModal();
-  const [contactSubject, setContactSubject] = useState('Trouble logging in');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactMessage, setContactMessage] = useState('I forgot my password');
-  const [isSending, setIsSending] = useState(false);
-
   // Fetch enabled SSO providers
   useEffect(() => {
     setSsoLoading(true);
@@ -180,6 +175,30 @@ export default function Login() {
       }
     };
   }, [branding?.loginLogoUrl, branding?.logoUrl]);
+
+  // Apply favicon override from branding
+  useEffect(() => {
+    const faviconUrl = branding?.faviconUrl;
+    const links = Array.from(document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]')) as HTMLLinkElement[];
+    if (links.length === 0) return;
+
+    // Store default href on first run
+    for (const link of links) {
+      if (!link.dataset.defaultHref) {
+        link.dataset.defaultHref = link.href;
+      }
+    }
+
+    if (faviconUrl) {
+      for (const link of links) {
+        link.href = faviconUrl;
+      }
+    } else {
+      for (const link of links) {
+        if (link.dataset.defaultHref) link.href = link.dataset.defaultHref;
+      }
+    }
+  }, [branding?.faviconUrl]);
 
   // Fetch platform branding for the login page (public endpoint)
   useEffect(() => {
@@ -273,57 +292,6 @@ export default function Login() {
       case 'oidc':
       default:
         return <LoginIcon size={20} />;
-    }
-  };
-
-  const handleOpenContactModal = () => {
-    setContactEmail(email); // Pre-fill with login email if available
-    setContactSubject('Trouble logging in');
-    setContactMessage('I forgot my password');
-    contactModal.openModal();
-  };
-
-  const handleCloseContactModal = () => {
-    contactModal.closeModal();
-    setContactSubject('Trouble logging in');
-    setContactEmail('');
-    setContactMessage('I forgot my password');
-  };
-
-  const handleSendContactEmail = async () => {
-    // Validation
-    if (!contactEmail || !contactSubject) {
-      notify({
-        kind: 'error',
-        title: 'Missing details',
-        subtitle: 'Email and subject are required',
-      });
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(contactEmail)) {
-      notify({ kind: 'error', title: 'Invalid email', subtitle: 'Please enter a valid email address' });
-      return;
-    }
-
-    setIsSending(true);
-
-    try {
-      await apiClient.post('/api/contact-admin', {
-        userEmail: contactEmail,
-        subject: contactSubject,
-        message: contactMessage,
-      });
-
-      notify({ kind: 'success', title: 'Message sent', subtitle: 'Your message has been sent successfully' });
-      handleCloseContactModal();
-    } catch (err) {
-      const parsed = parseApiError(err, 'Failed to send message');
-      notify({ kind: 'error', title: 'Failed to send message', subtitle: parsed.message });
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -500,62 +468,8 @@ export default function Login() {
               </Link>
             </p>
           )}
-          <p style={{ fontSize: 'var(--text-12)', color: 'var(--color-text-secondary)' }}>
-            Need help?{' '}
-            <button
-              onClick={handleOpenContactModal}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#0000ee',
-                cursor: 'pointer',
-                padding: 0,
-                font: 'inherit',
-                fontSize: 'var(--text-12)'
-              }}
-            >
-              Contact your administrator
-            </button>
-          </p>
         </div>
       </div>
-
-      {/* Contact Admin Modal */}
-      <FormModal
-        open={contactModal.isOpen}
-        onClose={handleCloseContactModal}
-        onSubmit={handleSendContactEmail}
-        title="Contact Administrator"
-        submitText="Send"
-        busy={isSending}
-        submitDisabled={!contactEmail || !contactSubject}
-      >
-        <TextInput
-          id="contact-subject"
-          labelText="Subject"
-          value={contactSubject}
-          onChange={(e) => setContactSubject(e.target.value)}
-          disabled={isSending}
-          required
-        />
-        <TextInput
-          id="contact-email"
-          labelText="Username"
-          type="email"
-          value={contactEmail}
-          onChange={(e) => setContactEmail(e.target.value)}
-          disabled={isSending}
-          required
-        />
-        <TextArea
-          id="contact-message"
-          labelText="Message (optional)"
-          value={contactMessage}
-          onChange={(e) => setContactMessage(e.target.value)}
-          disabled={isSending}
-          rows={4}
-        />
-      </FormModal>
 
     </div>
   );

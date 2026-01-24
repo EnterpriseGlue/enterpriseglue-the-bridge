@@ -16,7 +16,8 @@ import {
 
 const r = Router()
 
-r.use(requireAuth, requireEngineDeployer({ engineIdFrom: 'body' }))
+// Apply auth middleware only to /mission-control-api routes (not globally)
+r.use('/mission-control-api', requireAuth, requireEngineDeployer({ engineIdFrom: 'body' }))
 
 // POST /mission-control-api/process-instances/:id/modify (sync)
 r.post('/mission-control-api/process-instances/:id/modify', validateBody(ProcessInstanceModificationRequest), asyncHandler(async (req: Request, res: Response) => {

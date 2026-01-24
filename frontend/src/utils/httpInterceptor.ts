@@ -10,6 +10,7 @@
 
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY } from '../constants/storageKeys';
 import { getErrorMessageFromResponse } from '../shared/api/apiErrorUtils';
+import { config } from '../config';
 
 const API_BASE_URL = '/api';
 const DEFAULT_TENANT_SLUG = 'default';
@@ -17,7 +18,9 @@ const DEFAULT_TENANT_SLUG = 'default';
 // API prefixes that are tenant-scoped (need /t/:tenantSlug prefix)
 const TENANT_SCOPED_API_PREFIXES = [
   '/starbase-api/',
+  '/mission-control-api/',
   '/engines-api/',
+  '/git-api/',
   '/vcs-api/',
   '/api/users',
   '/api/audit',
@@ -67,6 +70,13 @@ function addTenantPrefix(url: string): string {
   
   const tenantSlug = getTenantSlugFromPathname(window.location.pathname);
   return `/t/${encodeURIComponent(tenantSlug)}${url}`;
+}
+
+function applyApiBaseUrl(url: string): string {
+  if (!config.apiBaseUrl) return url;
+  if (/^https?:\/\//.test(url)) return url;
+  const base = config.apiBaseUrl.replace(/\/$/, '');
+  return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
 function getTenantLoginPath(pathname: string): string {
@@ -150,7 +160,7 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(applyApiBaseUrl(`${API_BASE_URL}/auth/refresh`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -200,6 +210,7 @@ export async function interceptedFetch(
 ): Promise<Response> {
   // Add tenant prefix to tenant-scoped URLs
   const prefixedUrl = addTenantPrefix(url);
+  const requestUrl = applyApiBaseUrl(prefixedUrl);
   
   // Don't intercept auth endpoints (login, refresh, logout)
   const isAuthEndpoint = prefixedUrl.includes('/auth/login') || 
@@ -210,7 +221,7 @@ export async function interceptedFetch(
   const onPublicRoute = isPublicRoute();
 
   // Make the original request with prefixed URL
-  let response = await fetch(prefixedUrl, options);
+  let response = await fetch(requestUrl, options);
 
   // Extract CSRF token from response headers
   updateCsrfToken(response);
@@ -237,7 +248,7 @@ export async function interceptedFetch(
           headers: newHeaders,
         };
         
-        response = await fetch(prefixedUrl, newOptions);
+        response = await fetch(requestUrl, newOptions);
         updateCsrfToken(response);
       } else {
         // Refresh failed, user will be redirected to login
@@ -261,7 +272,7 @@ export async function interceptedFetch(
           headers: newHeaders,
         };
         
-        response = await fetch(prefixedUrl, newOptions);
+        response = await fetch(requestUrl, newOptions);
         updateCsrfToken(response);
       }
     }

@@ -132,6 +132,10 @@ jobs:
       - name: Run smoke e2e
         run: npm run test:e2e:smoke
 
+      - name: Cleanup test data
+        if: always()
+        run: npm --prefix backend run db:cleanup-test-data
+
       - name: Upload backend coverage
         uses: actions/upload-artifact@v4
         with:

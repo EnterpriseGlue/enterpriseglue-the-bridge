@@ -226,7 +226,7 @@ export default function UserManagement() {
     name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-',
     platformRole: user.platformRole || 'user',
     status: user.isActive ? 'Active' : 'Inactive',
-    created: new Date(user.createdAt).toLocaleDateString(),
+    created: user.createdAt ? new Date(Number(user.createdAt)).toLocaleDateString() : '-',
     user, // Store full user object for actions
   }));
 

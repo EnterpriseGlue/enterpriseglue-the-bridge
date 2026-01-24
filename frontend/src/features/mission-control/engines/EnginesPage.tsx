@@ -88,7 +88,7 @@ export default function Engines() {
   const { notify } = useToast()
   const isAdmin = user?.platformRole === 'admin'
   const [editing, setEditing] = React.useState<any | null>(null)
-  const [form, setForm] = React.useState<any>({ name: '', baseUrl: '', type: 'camunda7', authType: 'none', username: '', passwordEnc: '', environmentTagId: '' })
+  const [form, setForm] = React.useState<any>({ name: '', baseUrl: '', type: 'camunda7', authType: 'basic', username: '', passwordEnc: '', environmentTagId: '' })
   const [searchQuery, setSearchQuery] = React.useState('')
 
   // Engine members panel state
@@ -102,7 +102,7 @@ export default function Engines() {
   const [selectedMemberUser, setSelectedMemberUser] = React.useState<UserSearchItem | null>(null)
 
   const TYPE_ITEMS = React.useMemo(() => ([{ id: 'camunda7', label: 'Camunda 7' }, { id: 'operaton', label: 'Operaton (Camunda 7 fork)' }]), [])
-  const AUTH_ITEMS = React.useMemo(() => ([{ id: 'none', label: 'None' }, { id: 'basic', label: 'Basic' }]), [])
+  const AUTH_ITEMS = React.useMemo(() => ([{ id: 'basic', label: 'Basic Auth (Username/Password)' }, { id: 'bearer', label: 'Bearer Token (SSO/OAuth2)' }]), [])
 
   // Fetch environment tags (read-only, used by engine owners/delegates too)
   const envTagsQ = useQuery({ queryKey: ['engines', 'environment-tags'], queryFn: () => apiClient.get<any[]>('/engines-api/environment-tags', undefined, { credentials: 'include' }) })
@@ -155,7 +155,7 @@ export default function Engines() {
     setEditing(null)
     // Auto-assign environment tag if there's only one
     const autoTagId = hasSingleTag ? envTags![0].id : ''
-    setForm({ name: '', baseUrl: '', type: 'camunda7', authType: 'none', username: '', passwordEnc: '', environmentTagId: autoTagId })
+    setForm({ name: '', baseUrl: '', type: 'camunda7', authType: 'basic', username: '', passwordEnc: '', environmentTagId: autoTagId })
     engineModal.openModal()
   }
   function openEdit(row: any) {
@@ -164,7 +164,7 @@ export default function Engines() {
       name: row.name || '',
       baseUrl: row.baseUrl || '',
       type: row.type || 'camunda7',
-      authType: row.authType || (row.username ? 'basic' : 'none'),
+      authType: row.authType || 'basic',
       username: row.username || '',
       passwordEnc: row.passwordEnc || '',
       environmentTagId: row.environmentTagId || '',
@@ -600,9 +600,9 @@ export default function Engines() {
         }}
         onSubmit={() => {
           const payload: any = { ...form }
-          if (payload.authType !== 'basic') {
+          if (payload.authType === 'bearer') {
+            // Bearer auth only uses token (stored in passwordEnc), not username
             payload.username = undefined
-            payload.passwordEnc = undefined
           }
           if (editing) updateM.mutate(payload)
           else createM.mutate(payload)
@@ -692,6 +692,17 @@ export default function Engines() {
               disabled={createM.isPending || updateM.isPending}
             />
           </>
+        )}
+        {form.authType === 'bearer' && (
+          <TextInput
+            id="eng-token"
+            type="password"
+            labelText="Bearer Token"
+            placeholder="Enter your API token"
+            value={form.passwordEnc}
+            onChange={(e) => setForm((f: any) => ({ ...f, passwordEnc: (e.target as any).value }))}
+            disabled={createM.isPending || updateM.isPending}
+          />
         )}
       </FormModal>
     </PageLayout>

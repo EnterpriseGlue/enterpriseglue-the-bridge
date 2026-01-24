@@ -23,7 +23,8 @@ import {
 
 const r = Router();
 
-r.use(requireAuth, requireEngineReadOrWrite());
+// Apply auth middleware only to /mission-control-api routes (not globally)
+r.use('/mission-control-api', requireAuth, requireEngineReadOrWrite());
 
 // Fetch and lock external tasks
 r.post('/mission-control-api/external-tasks/fetchAndLock', validateBody(FetchAndLockRequest), asyncHandler(async (req: Request, res: Response) => {

@@ -8,7 +8,8 @@ import { MetricsQueryParams } from '@shared/schemas/mission-control/metrics.js';
 
 const r = Router();
 
-r.use(requireAuth, requireEngineReadOrWrite({ engineIdFrom: 'query' }));
+// Apply auth middleware only to /mission-control-api routes (not globally)
+r.use('/mission-control-api', requireAuth, requireEngineReadOrWrite({ engineIdFrom: 'query' }));
 
 // Query metrics
 r.get('/mission-control-api/metrics', validateQuery(MetricsQueryParams.partial()), asyncHandler(async (req: Request, res: Response) => {

@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../../../../shared/api/client'
 import { getUiErrorMessage } from '../../../../shared/api/apiErrorUtils'
+import { useSelectedEngine } from '../../../../components/EngineSelector'
 
 export interface MigrationDataParams {
   instanceIds: string[]
@@ -12,16 +13,20 @@ export interface MigrationDataParams {
 
 export function useMigrationData({ instanceIds, preselectedKey, preselectedVersion }: MigrationDataParams) {
   const navigate = useNavigate()
+  const selectedEngineId = useSelectedEngine()
 
   // Process definitions query
   const defsQ = useQuery({
-    queryKey: ['mission-control', 'defs'],
-    queryFn: () =>
-      apiClient.get<Array<{ id: string; key: string; name?: string; version: number }>>(
-        '/mission-control-api/process-definitions',
+    queryKey: ['mission-control', 'defs', selectedEngineId],
+    queryFn: () => {
+      const params = selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''
+      return apiClient.get<Array<{ id: string; key: string; name?: string; version: number }>>(
+        `/mission-control-api/process-definitions${params}`,
         undefined,
         { credentials: 'include' }
-      ),
+      )
+    },
+    enabled: !!selectedEngineId,
   })
   const defs = defsQ.data || []
 
@@ -237,31 +242,33 @@ export function useMigrationData({ instanceIds, preselectedKey, preselectedVersi
   const srcDefId = React.useMemo(() => idFor(srcKey, srcVer), [srcKey, srcVer, defsQ.data])
 
   const targetXmlQ = useQuery({
-    queryKey: ['mission-control', 'migration', 'tgt-xml', tgtDefId],
+    queryKey: ['mission-control', 'migration', 'tgt-xml', tgtDefId, selectedEngineId],
     queryFn: async () => {
       if (!tgtDefId) return null as any
+      const params = selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''
       const data = await apiClient.get<{ bpmn20Xml: string }>(
-        `/mission-control-api/process-definitions/${tgtDefId}/xml`,
+        `/mission-control-api/process-definitions/${tgtDefId}/xml${params}`,
         undefined,
         { credentials: 'include' }
       )
       return data?.bpmn20Xml || null
     },
-    enabled: !!tgtDefId,
+    enabled: !!tgtDefId && !!selectedEngineId,
   })
 
   const sourceXmlQ = useQuery({
-    queryKey: ['mission-control', 'migration', 'src-xml', srcDefId],
+    queryKey: ['mission-control', 'migration', 'src-xml', srcDefId, selectedEngineId],
     queryFn: async () => {
       if (!srcDefId) return null as any
+      const params = selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''
       const data = await apiClient.get<{ bpmn20Xml: string }>(
-        `/mission-control-api/process-definitions/${srcDefId}/xml`,
+        `/mission-control-api/process-definitions/${srcDefId}/xml${params}`,
         undefined,
         { credentials: 'include' }
       )
       return data?.bpmn20Xml || null
     },
-    enabled: !!srcDefId,
+    enabled: !!srcDefId && !!selectedEngineId,
   })
 
   // Active source activities

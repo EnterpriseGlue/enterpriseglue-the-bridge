@@ -4,7 +4,7 @@ import { getDataSource } from '@shared/db/data-source.js'
 import { Engine } from '@shared/db/entities/Engine.js'
 import { SavedFilter } from '@shared/db/entities/SavedFilter.js'
 import { EngineHealth } from '@shared/db/entities/EngineHealth.js'
-import { In, Not } from 'typeorm'
+import { In, Not, IsNull } from 'typeorm'
 import { fetch } from 'undici'
 import { requireAuth } from '@shared/middleware/auth.js'
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js'
@@ -40,15 +40,15 @@ r.get('/engines-api/engines', engineLimiter, requireAuth, asyncHandler(async (re
   const tenantId = req.tenant?.tenantId
 
   if (isPlatformAdmin(req)) {
-    // Platform admins see all engines in current tenant (or all if no tenant context)
+    // Platform admins see all engines in current tenant (or null tenantId for legacy data)
     const rows = tenantId 
-      ? await engineRepo.find({ where: { tenantId } })
+      ? await engineRepo.find({ where: [{ tenantId }, { tenantId: IsNull() }] })
       : await engineRepo.find()
     // Platform admins can manage all engines - add myRole: 'admin' for UI consistency
     return res.json(rows.map(engine => ({ ...engine, myRole: 'admin' })))
   }
 
-  // Filter engines by tenant context
+  // Filter engines by tenant context (including null tenantId for legacy data)
   const userEngines = await engineService.getUserEngines(req.user!.userId, tenantId)
   res.json(userEngines.map(({ engine, role }) => {
     const out = { ...engine, myRole: role }
@@ -77,6 +77,8 @@ r.post('/engines-api/engines', engineLimiter, requireAuth, asyncHandler(async (r
     ownerId: req.user!.userId,
     delegateId: null,
     version: req.body?.version ?? null,
+    environmentTagId: req.body?.environmentTagId || null,
+    environmentLocked: false,
     tenantId,
     createdAt: now,
     updatedAt: now,

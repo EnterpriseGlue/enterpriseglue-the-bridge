@@ -4,6 +4,8 @@ import { Project } from '@shared/db/entities/Project.js';
 import { Engine } from '@shared/db/entities/Engine.js';
 import { ProjectMember } from '@shared/db/entities/ProjectMember.js';
 import { ProjectMemberRole } from '@shared/db/entities/ProjectMemberRole.js';
+import { RefreshToken } from '@shared/db/entities/RefreshToken.js';
+import { AuditLog } from '@shared/db/entities/AuditLog.js';
 import { generateAccessToken } from '@shared/utils/jwt.js';
 import { generateId, unixTimestamp } from '@shared/utils/id.js';
 import { getAdapter } from '@shared/db/adapters/index.js';
@@ -226,8 +228,26 @@ export async function cleanupSeededData(
   const memberRepo = dataSource.getRepository(ProjectMember);
   const memberRoleRepo = dataSource.getRepository(ProjectMemberRole);
   const userRepo = dataSource.getRepository(User);
+  const refreshTokenRepo = dataSource.getRepository(RefreshToken);
+  const auditLogRepo = dataSource.getRepository(AuditLog);
   const fileRepo = dataSource.getRepository((await import('@shared/db/entities/File.js')).File);
   const folderRepo = dataSource.getRepository((await import('@shared/db/entities/Folder.js')).Folder);
+
+  if (userIds.length > 0) {
+    await refreshTokenRepo.delete({ userId: userIds as any });
+    await auditLogRepo.createQueryBuilder()
+      .delete()
+      .where('userId IN (:...userIds)', { userIds })
+      .execute();
+  }
+
+  const resourceIds = [...projectIds, ...fileIds, ...folderIds].filter(Boolean);
+  if (resourceIds.length > 0) {
+    await auditLogRepo.createQueryBuilder()
+      .delete()
+      .where('resourceId IN (:...resourceIds)', { resourceIds })
+      .execute();
+  }
 
   if (fileIds.length > 0) {
     await fileRepo.delete({ id: fileIds as any });
@@ -277,4 +297,88 @@ export async function cleanupEngines(engineIds: string[]) {
   if (engineIds.length > 0) {
     await engineRepo.delete({ id: engineIds as any });
   }
+}
+
+/**
+ * Clean up all stale test data from previous test runs.
+ * Call this in beforeAll to ensure clean state even if previous tests failed.
+ */
+export async function cleanupStaleTestData() {
+  const dataSource = await getDataSource();
+  
+  // Clean old test engines (older than 1 hour based on timestamp in name)
+  const oneHourAgo = Date.now() - 3600000;
+  await dataSource.query(`
+    DELETE FROM main.engine_members 
+    WHERE engine_id IN (
+      SELECT id FROM main.engines 
+      WHERE name LIKE 'test_%' OR name LIKE 'test_camunda_%'
+    )
+  `);
+  await dataSource.query(`
+    DELETE FROM main.engine_health 
+    WHERE engine_id IN (
+      SELECT id FROM main.engines 
+      WHERE name LIKE 'test_%' OR name LIKE 'test_camunda_%'
+    )
+  `);
+  await dataSource.query(`
+    DELETE FROM main.engines 
+    WHERE name LIKE 'test_%' OR name LIKE 'test_camunda_%'
+  `);
+  
+  await dataSource.query(`
+    DELETE FROM main.refresh_tokens
+    WHERE user_id IN (
+      SELECT id FROM main.users
+      WHERE email LIKE 'e2e-%@example.com'
+         OR email LIKE 'test_%@example.com'
+    )
+  `);
+
+  await dataSource.query(`
+    DELETE FROM main.audit_logs
+    WHERE user_id IN (
+      SELECT id FROM main.users
+      WHERE email LIKE 'e2e-%@example.com'
+         OR email LIKE 'test_%@example.com'
+    )
+       OR resource_id IN (
+      SELECT id FROM main.projects
+      WHERE name LIKE 'test_%' OR name LIKE 'e2e-%'
+    )
+       OR resource_id IN (
+      SELECT id FROM main.engines
+      WHERE name LIKE 'test_%' OR name LIKE 'test_camunda_%'
+    )
+       OR details LIKE '%e2e-%@example.com%'
+       OR details LIKE '%test_%@example.com%'
+  `);
+
+  // Clean old test users
+  await dataSource.query(`
+    DELETE FROM main.users 
+    WHERE email LIKE 'e2e-%@example.com' 
+       OR email LIKE 'test_%@example.com'
+  `);
+  
+  // Clean old test projects
+  await dataSource.query(`
+    DELETE FROM main.project_member_roles 
+    WHERE project_id IN (
+      SELECT id FROM main.projects 
+      WHERE name LIKE 'test_%' OR name LIKE 'e2e-%'
+    )
+  `);
+  await dataSource.query(`
+    DELETE FROM main.project_members 
+    WHERE project_id IN (
+      SELECT id FROM main.projects 
+      WHERE name LIKE 'test_%' OR name LIKE 'e2e-%'
+    )
+  `);
+  await dataSource.query(`
+    DELETE FROM main.projects 
+    WHERE name LIKE 'test_%' OR name LIKE 'e2e-%'
+  `);
 }

@@ -57,7 +57,7 @@ import type {
   CamundaVariables,
 } from '@shared/types/bpmn-engine-api.js'
 
-type EngineCfg = { baseUrl: string; authType: 'none' | 'basic'; username?: string | null; password?: string | null }
+type EngineCfg = { baseUrl: string; authType: 'basic' | 'bearer'; username?: string | null; password?: string | null }
 
 async function getEngine(engineId: string): Promise<EngineCfg> {
   if (!engineId) throw Errors.validation('engineId is required')
@@ -67,10 +67,10 @@ async function getEngine(engineId: string): Promise<EngineCfg> {
   if (!row || !row.baseUrl) throw Errors.engineNotFound(engineId)
 
   const engineRow = row as Engine & { authType?: string; passwordEnc?: string; username?: string }
-  const authType = engineRow.authType || ((engineRow.username ? 'basic' : 'none') as 'none' | 'basic')
+  const authType = (engineRow.authType || 'basic') as 'basic' | 'bearer'
   const encryptedPassword = engineRow.passwordEnc || null
   const password = encryptedPassword ? safeDecrypt(encryptedPassword) : null
-  return { baseUrl: String(row.baseUrl), authType: authType as 'none' | 'basic', username: engineRow.username || null, password }
+  return { baseUrl: String(row.baseUrl), authType: authType as 'basic' | 'bearer', username: engineRow.username || null, password }
 }
 
 function buildHeaders(cfg: EngineCfg): Record<string, string> {
@@ -78,6 +78,9 @@ function buildHeaders(cfg: EngineCfg): Record<string, string> {
   if (cfg.authType === 'basic' && cfg.username) {
     const token = Buffer.from(`${cfg.username}:${cfg.password ?? ''}`).toString('base64')
     h['Authorization'] = `Basic ${token}`
+  } else if (cfg.authType === 'bearer' && cfg.password) {
+    // Bearer token auth - token stored in password field
+    h['Authorization'] = `Bearer ${cfg.password}`
   }
   return h
 }

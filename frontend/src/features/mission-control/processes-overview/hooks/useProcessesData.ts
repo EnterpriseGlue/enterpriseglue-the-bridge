@@ -83,7 +83,8 @@ export function useProcessesData({
   // Fetch all process definitions (filtered by engine)
   const defsQ = useQuery({ 
     queryKey: ['mission-control', 'defs', selectedEngineId], 
-    queryFn: () => listProcessDefinitions(selectedEngineId || undefined)
+    queryFn: () => listProcessDefinitions(selectedEngineId || undefined),
+    enabled: !!selectedEngineId,
   })
 
   // Build list of unique processes for dropdown
@@ -154,23 +155,23 @@ export function useProcessesData({
 
   // Fetch BPMN XML for diagram
   const xmlQ = useQuery({
-    queryKey: ['mission-control', 'def-xml', defIdForVersion],
-    queryFn: () => fetchProcessDefinitionXml(defIdForVersion!),
-    enabled: !!defIdForVersion,
+    queryKey: ['mission-control', 'def-xml', defIdForVersion, selectedEngineId],
+    queryFn: () => fetchProcessDefinitionXml(defIdForVersion!, selectedEngineId),
+    enabled: !!defIdForVersion && !!selectedEngineId,
   })
 
   // Fetch activity counts for badges (legacy - active only)
   const countsQ = useQuery({
-    queryKey: ['mission-control', 'def-counts', defIdForVersion],
-    queryFn: () => getActiveActivityCounts(defIdForVersion!),
-    enabled: !!defIdForVersion,
+    queryKey: ['mission-control', 'def-counts', defIdForVersion, selectedEngineId],
+    queryFn: () => getActiveActivityCounts(defIdForVersion!, selectedEngineId),
+    enabled: !!defIdForVersion && !!selectedEngineId,
   })
 
   // Fetch activity counts by state for badges
   const countsByStateQ = useQuery({
-    queryKey: ['mission-control', 'def-counts-by-state', defIdForVersion],
-    queryFn: () => fetchActivityCountsByState(defIdForVersion!),
-    enabled: !!defIdForVersion,
+    queryKey: ['mission-control', 'def-counts-by-state', defIdForVersion, selectedEngineId],
+    queryFn: () => fetchActivityCountsByState(defIdForVersion!, selectedEngineId),
+    enabled: !!defIdForVersion && !!selectedEngineId,
   })
 
   // Build preview count body for advanced filters
@@ -225,7 +226,7 @@ export function useProcessesData({
         startedBefore: startedBefore || undefined,
       })
     },
-    enabled: !selectedVersion || !!defIdForVersion,
+    enabled: !!selectedEngineId && (!selectedVersion || !!defIdForVersion),
   })
 
 

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import type { ProcessDefinition } from '../types'
+import { useSelectedEngine } from '../../../../../components/EngineSelector'
 import {
   getProcessInstance,
   getProcessInstanceVariables,
@@ -16,6 +17,8 @@ import {
 } from '../../api/processInstances'
 
 export function useInstanceData(instanceId: string) {
+  const selectedEngineId = useSelectedEngine()
+
   // Historical instance data
   const histQ = useQuery({
     queryKey: ['mission-control', 'hist-inst', instanceId],
@@ -33,8 +36,9 @@ export function useInstanceData(instanceId: string) {
 
   // Process definitions
   const defsQ = useQuery({
-    queryKey: ['mission-control', 'defs'],
-    queryFn: () => listProcessDefinitions() as Promise<ProcessDefinition[]>,
+    queryKey: ['mission-control', 'defs', selectedEngineId],
+    queryFn: () => listProcessDefinitions(selectedEngineId) as Promise<ProcessDefinition[]>,
+    enabled: !!selectedEngineId,
   })
 
   // Derived process definition info
@@ -47,9 +51,9 @@ export function useInstanceData(instanceId: string) {
 
   // Process definition XML
   const xmlQ = useQuery({
-    queryKey: ['mission-control', 'def-xml', defId],
-    queryFn: () => defId ? fetchProcessDefinitionXml(defId) : Promise.resolve(null as any),
-    enabled: !!defId,
+    queryKey: ['mission-control', 'def-xml', defId, selectedEngineId],
+    queryFn: () => defId ? fetchProcessDefinitionXml(defId, selectedEngineId) : Promise.resolve(null as any),
+    enabled: !!defId && !!selectedEngineId,
   })
 
   // Variables

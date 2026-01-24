@@ -10,7 +10,7 @@ import { Engine } from '@shared/db/entities/Engine.js';
 import { EngineMember } from '@shared/db/entities/EngineMember.js';
 import { EnvironmentTag } from '@shared/db/entities/EnvironmentTag.js';
 import { User } from '@shared/db/entities/User.js';
-import { In } from 'typeorm';
+import { In, IsNull } from 'typeorm';
 import { generateId } from '@shared/utils/id.js';
 
 type EngineRole = 'owner' | 'delegate' | 'deployer' | 'viewer';
@@ -81,11 +81,10 @@ export class EngineService {
     const tagRepo = dataSource.getRepository(EnvironmentTag);
     const results: EngineWithDetails[] = [];
 
-    // Build base query condition with optional tenant filter
-    const tenantCondition = tenantId ? { tenantId } : {};
-
-    // Get engines where user is owner
-    const ownedEngines = await engineRepo.find({ where: { ownerId: userId, ...tenantCondition } });
+    // Get engines where user is owner (include null tenantId for legacy data)
+    const ownedEngines = tenantId
+      ? await engineRepo.find({ where: [{ ownerId: userId, tenantId }, { ownerId: userId, tenantId: IsNull() }] })
+      : await engineRepo.find({ where: { ownerId: userId } });
     const tagIds = new Set<string>();
     ownedEngines.forEach(e => e.environmentTagId && tagIds.add(e.environmentTagId));
     
@@ -97,8 +96,10 @@ export class EngineService {
       });
     }
 
-    // Get engines where user is delegate
-    const delegatedEngines = await engineRepo.find({ where: { delegateId: userId, ...tenantCondition } });
+    // Get engines where user is delegate (include null tenantId for legacy data)
+    const delegatedEngines = tenantId
+      ? await engineRepo.find({ where: [{ delegateId: userId, tenantId }, { delegateId: userId, tenantId: IsNull() }] })
+      : await engineRepo.find({ where: { delegateId: userId } });
     delegatedEngines.forEach(e => e.environmentTagId && tagIds.add(e.environmentTagId));
     
     for (const engine of delegatedEngines) {
@@ -117,9 +118,9 @@ export class EngineService {
 
     if (memberships.length > 0) {
       const memberEngineIds = memberships.map(m => m.engineId);
-      // Filter member engines by tenant if specified
+      // Filter member engines by tenant if specified (include null tenantId for legacy data)
       const memberEngines = tenantId 
-        ? await engineRepo.find({ where: { id: In(memberEngineIds), tenantId } })
+        ? await engineRepo.find({ where: [{ id: In(memberEngineIds), tenantId }, { id: In(memberEngineIds), tenantId: IsNull() }] })
         : await engineRepo.find({ where: { id: In(memberEngineIds) } });
       memberEngines.forEach(e => e.environmentTagId && tagIds.add(e.environmentTagId));
 

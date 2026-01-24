@@ -16,7 +16,7 @@ import { Dropdown, Checkbox, ComboBox, TextInput, DatePicker, DatePickerInput, T
 import { useQuery } from '@tanstack/react-query'
 import { useFeatureFlag } from '../../../shared/hooks/useFeatureFlag'
 import { useLayoutStore } from '../stores/layoutStore'
-import { EngineSelector } from '../../../components/EngineSelector'
+import { EngineSelector, useSelectedEngine } from '../../../components/EngineSelector'
 import { useDashboardThemeStore } from '../../../stores/dashboardThemeStore'
 import { useProcessesFilterStore } from '../../mission-control/shared/stores/processesFilterStore'
 import { useDecisionsFilterStore } from '../../mission-control/shared/stores/decisionsFilterStore'
@@ -156,19 +156,22 @@ export default function ProSidebar() {
     reset: resetDecisionFilters,
   } = useDecisionsFilterStore()
 
+  const selectedEngineId = useSelectedEngine()
+
   // Fetch process definitions for the dropdown
   const defsQ = useQuery({ 
-    queryKey: ['mission-control', 'defs'], 
+    queryKey: ['mission-control', 'defs', selectedEngineId], 
     queryFn: async () => {
+      const params = selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''
       return apiClient.get<Array<{ id: string; key: string; name: string; version: number }>>(
-        '/mission-control-api/process-definitions',
+        `/mission-control-api/process-definitions${params}`,
         undefined,
         {
         credentials: 'include',
         }
       )
     },
-    enabled: onProcessesPage
+    enabled: onProcessesPage && !!selectedEngineId
   })
 
   // Build list of unique processes for dropdown

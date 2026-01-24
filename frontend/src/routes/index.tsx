@@ -119,7 +119,7 @@ export function createProtectedChildRoutes(isRootLevel: boolean): RouteObject[] 
         </ProtectedRoute>
       )
     }] : []),
-    ...((isMultiTenantEnabled() && !isRootLevel) ? [{
+    ...((!isMultiTenantEnabled() || !isRootLevel) ? [{
       path: `${pathPrefix}admin/audit-logs`,
       element: (
         <ProtectedRoute requireAdmin={isRootLevel}>

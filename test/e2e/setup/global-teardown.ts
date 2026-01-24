@@ -57,6 +57,63 @@ async function fetchJson<T>(
   return data as T;
 }
 
+async function cleanupDatabaseArtifacts(userId: string, engineId?: string | null) {
+  const pgModule = await import('../../../backend/node_modules/pg/lib/index.js');
+  const Pool = (pgModule.default?.Pool || pgModule.Pool) as typeof import('pg').Pool;
+  const schema = process.env.POSTGRES_SCHEMA || 'main';
+  const pool = new Pool({
+    host: process.env.POSTGRES_HOST,
+    port: process.env.POSTGRES_PORT ? Number(process.env.POSTGRES_PORT) : 5432,
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DATABASE,
+    ssl: process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    options: `-c search_path=${schema}`,
+  });
+
+  const projectIdsResult = await pool.query(
+    `SELECT id FROM ${schema}.projects WHERE owner_id = $1`,
+    [userId]
+  );
+  const projectIds = projectIdsResult.rows.map((row) => row.id);
+
+  if (projectIds.length > 0) {
+    await pool.query(
+      `DELETE FROM ${schema}.project_member_roles WHERE project_id = ANY($1::uuid[])`,
+      [projectIds]
+    );
+    await pool.query(
+      `DELETE FROM ${schema}.project_members WHERE project_id = ANY($1::uuid[])`,
+      [projectIds]
+    );
+    await pool.query(
+      `DELETE FROM ${schema}.files WHERE project_id = ANY($1::uuid[])`,
+      [projectIds]
+    );
+    await pool.query(
+      `DELETE FROM ${schema}.folders WHERE project_id = ANY($1::uuid[])`,
+      [projectIds]
+    );
+    await pool.query(
+      `DELETE FROM ${schema}.projects WHERE id = ANY($1::uuid[])`,
+      [projectIds]
+    );
+  }
+
+  await pool.query(`DELETE FROM ${schema}.refresh_tokens WHERE user_id = $1`, [userId]);
+  await pool.query(
+    `DELETE FROM ${schema}.audit_logs WHERE user_id = $1 OR resource_id = ANY($2::uuid[])`,
+    [userId, projectIds]
+  );
+
+  if (engineId) {
+    await pool.query(`DELETE FROM ${schema}.engines WHERE id = $1`, [engineId]);
+  }
+
+  await pool.query(`DELETE FROM ${schema}.users WHERE id = $1`, [userId]);
+  await pool.end();
+}
+
 export default async function globalTeardown() {
   if (process.env.E2E_SEED_USER === 'false') {
     return;
@@ -120,29 +177,34 @@ export default async function globalTeardown() {
         { allowStatuses: [400, 403, 404, 500] }
       );
     }
+
+    if (data.userId) {
+      try {
+        await cleanupDatabaseArtifacts(data.userId, data.engineId || null);
+      } catch (error) {
+        console.warn('E2E DB cleanup failed after API cleanup.', error);
+      }
+    }
   } else {
     try {
-      const pgModule = await import('../../../backend/node_modules/pg/lib/index.js');
-      const Pool = (pgModule.default?.Pool || pgModule.Pool) as typeof import('pg').Pool;
-      const schema = process.env.POSTGRES_SCHEMA || 'main';
-      const pool = new Pool({
-        host: process.env.POSTGRES_HOST,
-        port: process.env.POSTGRES_PORT ? Number(process.env.POSTGRES_PORT) : 5432,
-        user: process.env.POSTGRES_USER,
-        password: process.env.POSTGRES_PASSWORD,
-        database: process.env.POSTGRES_DATABASE,
-        ssl: process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false,
-        options: `-c search_path=${schema}`,
-      });
+      await cleanupDatabaseArtifacts(data.userId, data.engineId || null);
 
-      if (data.engineId) {
-        await pool.query(`DELETE FROM ${schema}.engines WHERE id = $1`, [data.engineId]);
-      }
-      await pool.query(`DELETE FROM ${schema}.users WHERE id = $1`, [data.userId]);
       if (data.cleanupAdmin && data.adminUserId) {
+        const pgModule = await import('../../../backend/node_modules/pg/lib/index.js');
+        const Pool = (pgModule.default?.Pool || pgModule.Pool) as typeof import('pg').Pool;
+        const schema = process.env.POSTGRES_SCHEMA || 'main';
+        const pool = new Pool({
+          host: process.env.POSTGRES_HOST,
+          port: process.env.POSTGRES_PORT ? Number(process.env.POSTGRES_PORT) : 5432,
+          user: process.env.POSTGRES_USER,
+          password: process.env.POSTGRES_PASSWORD,
+          database: process.env.POSTGRES_DATABASE,
+          ssl: process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false,
+          options: `-c search_path=${schema}`,
+        });
         await pool.query(`DELETE FROM ${schema}.users WHERE id = $1`, [data.adminUserId]);
+        await pool.end();
       }
-      await pool.end();
     } catch (error) {
       console.warn('E2E cleanup skipped: missing ADMIN_EMAIL/ADMIN_PASSWORD and DB cleanup failed.', error);
       return;

@@ -9,8 +9,8 @@
     "test:integration": "npm --prefix backend run test:integration",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep @smoke",
-    "test:ci": "npm run test:unit && npm run test:integration && npm run test:e2e",
-    "test:ci:pr": "npm run test:unit && npm run test:integration && npm run test:e2e:smoke"
+    "test:ci": "npm run test:unit && npm run test:integration && npm run test:e2e && npm --prefix backend run db:cleanup-test-data",
+    "test:ci:pr": "npm run test:unit && npm run test:integration && npm run test:e2e:smoke && npm --prefix backend run db:cleanup-test-data"
   },
   "dependencies": {
     "simple-git": "^3.30.0"

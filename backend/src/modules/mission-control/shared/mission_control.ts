@@ -53,7 +53,8 @@ interface ProcessInstanceOutput {
   hasIncident?: boolean;
 }
 
-r.use(requireAuth, requireEngineReadOrWrite())
+// Apply auth middleware only to /mission-control-api routes (not globally)
+r.use('/mission-control-api', requireAuth, requireEngineReadOrWrite())
 
 // -----------------------------
 // Process Definitions

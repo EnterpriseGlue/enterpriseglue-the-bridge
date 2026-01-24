@@ -14,7 +14,8 @@ import {
 
 const r = Router()
 
-r.use(requireAuth, requireEngineReadOrWrite({ engineIdFrom: 'body' }))
+// Apply auth middleware only to /mission-control-api routes (not globally)
+r.use('/mission-control-api', requireAuth, requireEngineReadOrWrite({ engineIdFrom: 'body' }))
 
 // Preview affected instances count
 r.post('/mission-control-api/migration/preview', asyncHandler(async (req: Request, res: Response) => {

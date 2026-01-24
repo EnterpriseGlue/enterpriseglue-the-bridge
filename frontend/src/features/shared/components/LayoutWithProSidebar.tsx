@@ -181,12 +181,44 @@ export default function LayoutWithProSidebar() {
 
   const clearNotificationsM = useMutation({
     mutationFn: () => apiClient.delete('/api/notifications', { credentials: 'include' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['notifications'] })
+      // Snapshot previous value
+      const previous = queryClient.getQueryData(['notifications', notificationStates.join(',')])
+      // Optimistically clear notifications
+      queryClient.setQueryData(['notifications', notificationStates.join(',')], { notifications: [], unreadCount: 0 })
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      if (context?.previous) {
+        queryClient.setQueryData(['notifications', notificationStates.join(',')], context.previous)
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   })
 
   const clearNotificationM = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/api/notifications/${encodeURIComponent(id)}`, { credentials: 'include' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['notifications'] })
+      const previous = queryClient.getQueryData(['notifications', notificationStates.join(',')]) as { notifications: NotificationItem[]; unreadCount: number } | undefined
+      if (previous) {
+        const filtered = previous.notifications.filter((n) => n.id !== id)
+        queryClient.setQueryData(['notifications', notificationStates.join(',')], { 
+          notifications: filtered, 
+          unreadCount: Math.max(0, previous.unreadCount - (previous.notifications.find(n => n.id === id && !n.readAt) ? 1 : 0))
+        })
+      }
+      return { previous }
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['notifications', notificationStates.join(',')], context.previous)
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   })
 
   const [enterpriseNavItems, setEnterpriseNavItems] = useState<EnterpriseNavItem[]>([])
@@ -699,8 +731,68 @@ export default function LayoutWithProSidebar() {
                     ))}
                   </HeaderMenu>
                 )}
+                {!isMultiTenant && (
+                  <HeaderMenu menuLinkName="Admin">
+                    <HeaderMenuItem
+                      href={toTenantPath('/admin/users')}
+                      isCurrentPage={effectivePathname === '/admin/users'}
+                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/users')); (document.activeElement as HTMLElement)?.blur() }}
+                    >
+                      Users
+                    </HeaderMenuItem>
+                    <HeaderMenuItem
+                      href={toTenantPath('/admin/audit-logs')}
+                      isCurrentPage={effectivePathname === '/admin/audit-logs'}
+                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/audit-logs')); (document.activeElement as HTMLElement)?.blur() }}
+                    >
+                      Audit Logs
+                    </HeaderMenuItem>
+                    <HeaderMenuItem
+                      href={toTenantPath('/admin/domains')}
+                      isCurrentPage={effectivePathname === '/admin/domains'}
+                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/domains')); (document.activeElement as HTMLElement)?.blur() }}
+                    >
+                      Domains
+                    </HeaderMenuItem>
+                    <HeaderMenuItem
+                      href={toTenantPath('/admin/sso')}
+                      isCurrentPage={effectivePathname === '/admin/sso'}
+                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/sso')); (document.activeElement as HTMLElement)?.blur() }}
+                    >
+                      SSO
+                    </HeaderMenuItem>
+                    <HeaderMenuItem
+                      href={toTenantPath('/admin/invite-policies')}
+                      isCurrentPage={effectivePathname === '/admin/invite-policies'}
+                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/invite-policies')); (document.activeElement as HTMLElement)?.blur() }}
+                    >
+                      Invite Policies
+                    </HeaderMenuItem>
+                    <HeaderMenuItem
+                      href={toTenantPath('/admin/email')}
+                      isCurrentPage={effectivePathname === '/admin/email'}
+                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/email')); (document.activeElement as HTMLElement)?.blur() }}
+                    >
+                      Email Settings
+                    </HeaderMenuItem>
+                    <HeaderMenuItem
+                      href={toTenantPath('/admin/email-templates')}
+                      isCurrentPage={effectivePathname === '/admin/email-templates'}
+                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/email-templates')); (document.activeElement as HTMLElement)?.blur() }}
+                    >
+                      Email Templates
+                    </HeaderMenuItem>
+                    <HeaderMenuItem
+                      href={toTenantPath('/admin/branding')}
+                      isCurrentPage={effectivePathname === '/admin/branding'}
+                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/branding')); (document.activeElement as HTMLElement)?.blur() }}
+                    >
+                      Branding
+                    </HeaderMenuItem>
+                  </HeaderMenu>
+                )}
                 {/* Tenant Admin menu - only shows if EE plugin registers tenant-admin nav items */}
-                {!isPlatformAdmin && tenantAdminChecked && isTenantAdmin && getNavItemsBySection('tenant-admin').length > 0 && (
+                {isMultiTenant && !isPlatformAdmin && tenantAdminChecked && isTenantAdmin && getNavItemsBySection('tenant-admin').length > 0 && (
                   <HeaderMenu menuLinkName="Admin">
                     {getNavItemsBySection('tenant-admin').map((item: NavExtension) => (
                       <HeaderMenuItem
@@ -714,7 +806,7 @@ export default function LayoutWithProSidebar() {
                     ))}
                   </HeaderMenu>
                 )}
-                {isPlatformAdmin && (
+                {isMultiTenant && isPlatformAdmin && (
                   <HeaderMenu menuLinkName="Admin">
                     {/* EE-only admin nav items (e.g., Tenants) - rendered from extension registry */}
                     {getNavItemsBySection('admin').map((item: NavExtension) => (
@@ -727,49 +819,6 @@ export default function LayoutWithProSidebar() {
                         {item.label}
                       </HeaderMenuItem>
                     ))}
-                    <HeaderMenuItem
-                      href={'/admin/users'}
-                      isCurrentPage={effectivePathname === '/admin/users'}
-                      onClick={(e) => { e.preventDefault(); navigate('/admin/users'); (document.activeElement as HTMLElement)?.blur() }}
-                    >
-                      User Management
-                    </HeaderMenuItem>
-                    {!isMultiTenant && (
-                      <HeaderMenuItem
-                        href={'/admin/settings'}
-                        isCurrentPage={effectivePathname === '/admin/settings'}
-                        onClick={(e) => { e.preventDefault(); navigate('/admin/settings'); (document.activeElement as HTMLElement)?.blur() }}
-                      >
-                        Platform Settings
-                      </HeaderMenuItem>
-                    )}
-                    {!isMultiTenant && (
-                      <HeaderMenuItem
-                        href={toTenantPath('/admin/email')}
-                        isCurrentPage={effectivePathname === '/admin/email'}
-                        onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/email')); (document.activeElement as HTMLElement)?.blur() }}
-                      >
-                        Email Settings
-                      </HeaderMenuItem>
-                    )}
-                    {!isMultiTenant && (
-                      <HeaderMenuItem
-                        href={toTenantPath('/admin/email-templates')}
-                        isCurrentPage={effectivePathname === '/admin/email-templates'}
-                        onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/email-templates')); (document.activeElement as HTMLElement)?.blur() }}
-                      >
-                        Email Templates
-                      </HeaderMenuItem>
-                    )}
-                    {!isMultiTenant && (
-                      <HeaderMenuItem
-                        href={toTenantPath('/admin/branding')}
-                        isCurrentPage={effectivePathname === '/admin/branding'}
-                        onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/branding')); (document.activeElement as HTMLElement)?.blur() }}
-                      >
-                        Branding
-                      </HeaderMenuItem>
-                    )}
                   </HeaderMenu>
                 )}
               </HeaderNavigation>

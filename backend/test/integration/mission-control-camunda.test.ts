@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { createApp as CreateAppFn } from '../../src/app.js';
-import { seedUser, seedEngine, cleanupEngines } from '../utils/seed.js';
+import { seedUser, seedEngine, cleanupEngines, cleanupStaleTestData } from '../utils/seed.js';
 import { createCamundaFetchMock } from '../utils/camunda-mock.js';
 
 const prefix = `test_camunda_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -13,6 +13,9 @@ let app: ReturnType<typeof CreateAppFn>;
 
 describe('Mission control Camunda integration', () => {
   beforeAll(async () => {
+    // Clean up stale test data from previous runs
+    await cleanupStaleTestData();
+
     vi.resetModules();
     vi.doMock('undici', () => ({
       fetch: vi.fn(),

@@ -25,7 +25,8 @@ import {
 
 const r = Router();
 
-r.use(requireAuth, requireEngineReadOrWrite());
+// Apply auth middleware only to /mission-control-api routes (not globally)
+r.use('/mission-control-api', requireAuth, requireEngineReadOrWrite());
 
 // Query tasks
 r.get('/mission-control-api/tasks', validateQuery(TaskQueryParams.partial()), asyncHandler(async (req: Request, res: Response) => {

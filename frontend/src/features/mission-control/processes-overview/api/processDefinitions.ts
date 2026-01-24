@@ -38,12 +38,14 @@ export async function listProcessDefinitions(engineId?: string): Promise<Process
   return apiClient.get<ProcessDefinition[]>(`/mission-control-api/process-definitions?${params}`, undefined, { credentials: 'include' })
 }
 
-export async function getActiveActivityCounts(definitionId: string): Promise<Record<string, number>> {
-  return apiClient.get<Record<string, number>>(`/mission-control-api/process-definitions/${definitionId}/active-activity-counts`, undefined, { credentials: 'include' })
+export async function getActiveActivityCounts(definitionId: string, engineId?: string): Promise<Record<string, number>> {
+  const params = engineId ? `?engineId=${encodeURIComponent(engineId)}` : ''
+  return apiClient.get<Record<string, number>>(`/mission-control-api/process-definitions/${definitionId}/active-activity-counts${params}`, undefined, { credentials: 'include' })
 }
 
-export async function fetchActivityCountsByState(definitionId: string): Promise<ActivityCountsByState> {
-  return apiClient.get<ActivityCountsByState>(`/mission-control-api/process-definitions/${definitionId}/activity-counts-by-state`, undefined, { credentials: 'include' })
+export async function fetchActivityCountsByState(definitionId: string, engineId?: string): Promise<ActivityCountsByState> {
+  const params = engineId ? `?engineId=${encodeURIComponent(engineId)}` : ''
+  return apiClient.get<ActivityCountsByState>(`/mission-control-api/process-definitions/${definitionId}/activity-counts-by-state${params}`, undefined, { credentials: 'include' })
 }
 
 export interface GetProcessInstancesParams {

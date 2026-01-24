@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useSelectedEngine } from '../../../../components/EngineSelector';
 import {
   Button,
   Form,
@@ -85,10 +86,16 @@ export default function BatchOperationForm({ operationType }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const selectedEngineId = useSelectedEngine();
+
   // Fetch process definitions for dropdown
   const q = useQuery({
-    queryKey: ['mission-control', 'batch-process-definitions'],
-    queryFn: () => apiClient.get<any[]>('/mission-control-api/process-definitions', undefined, { credentials: 'include' }),
+    queryKey: ['mission-control', 'batch-process-definitions', selectedEngineId],
+    queryFn: () => {
+      const params = selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : '';
+      return apiClient.get<any[]>(`/mission-control-api/process-definitions${params}`, undefined, { credentials: 'include' });
+    },
+    enabled: !!selectedEngineId,
   });
 
   const processDefinitions = q.data || []

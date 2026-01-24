@@ -60,6 +60,8 @@ export async function getCalledProcessInstances(instanceId: string): Promise<unk
   return apiClient.get<unknown[]>(`/mission-control-api/process-instances/${instanceId}/called-process-instances`, undefined, { credentials: 'include' })
 }
 
-export async function listProcessDefinitions(): Promise<ProcessDefinition[]> {
-  return apiClient.get<ProcessDefinition[]>('/mission-control-api/process-definitions', undefined, { credentials: 'include' })
+export async function listProcessDefinitions(engineId?: string): Promise<ProcessDefinition[]> {
+  const params = new URLSearchParams()
+  if (engineId) params.set('engineId', engineId)
+  return apiClient.get<ProcessDefinition[]>(`/mission-control-api/process-definitions?${params}`, undefined, { credentials: 'include' })
 }

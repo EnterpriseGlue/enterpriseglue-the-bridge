@@ -97,6 +97,7 @@ export default function Dashboard() {
       engineId: selectedEngineId || undefined,
       startedAfter: timePeriod ? startedAfter : undefined,
     }).catch(() => []),
+    enabled: !!selectedEngineId,
   })
 
   // Compute stats

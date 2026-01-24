@@ -88,7 +88,7 @@ export const platformAdminApi = {
 
   // Users
   getUsers: (params?: { limit?: number; offset?: number }) =>
-    apiClient.get<UserListItem[]>('/api/admin/users', params),
+    apiClient.get<UserListItem[]>('/api/users', params),
 
   searchUsers: (query: string) =>
     apiClient.get<UserListItem[]>('/api/admin/users/search', { q: query }),

@@ -20,7 +20,8 @@ import {
 
 const r = Router();
 
-r.use(requireAuth, requireEngineReadOrWrite({ engineIdFrom: 'query' }));
+// Apply auth middleware only to /mission-control-api routes (not globally)
+r.use('/mission-control-api', requireAuth, requireEngineReadOrWrite({ engineIdFrom: 'query' }));
 
 // Get historic task instances
 r.get('/mission-control-api/history/tasks', validateQuery(HistoricTaskQueryParams.partial()), asyncHandler(async (req: Request, res: Response) => {
