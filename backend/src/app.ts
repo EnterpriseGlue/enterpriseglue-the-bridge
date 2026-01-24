@@ -100,7 +100,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     });
   });
 
-  // Apply global rate limiting (100 requests per 15 minutes per IP)
+  // Apply global rate limiting (100000 requests per 15 minutes per user/IP)
   if (includeRateLimiting) {
     app.use('/api', apiLimiter);
     app.use('/starbase-api', apiLimiter);
