@@ -56,7 +56,7 @@ describe('httpInterceptor', () => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
 
       await interceptedFetch('/api/test');
-      
+
       const headers = getAuthHeaders();
       expect(headers['X-CSRF-Token']).toBe('csrf-token-123');
     });
@@ -74,7 +74,7 @@ describe('httpInterceptor', () => {
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
 
       const result = await interceptedFetch('/api/data');
-      
+
       expect(result.status).toBe(200);
       expect(fetchMock).toHaveBeenCalledWith('/api/data', {});
     });
@@ -87,7 +87,7 @@ describe('httpInterceptor', () => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
 
       await interceptedFetch('/api/test');
-      
+
       const headers = getAuthHeaders();
       expect(headers['X-CSRF-Token']).toBe('new-csrf');
     });
@@ -97,7 +97,7 @@ describe('httpInterceptor', () => {
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
 
       const result = await interceptedFetch('/api/auth/login');
-      
+
       expect(result.status).toBe(401);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
@@ -108,7 +108,7 @@ describe('httpInterceptor', () => {
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
 
       const result = await interceptedFetch('/api/data');
-      
+
       expect(result.status).toBe(401);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
@@ -141,7 +141,7 @@ describe('httpInterceptor', () => {
           .mockResolvedValueOnce(retrySuccess);
 
         const result = await interceptedFetch('/api/data');
-        
+
         expect(result.status).toBe(200);
         expect(fetchMock).toHaveBeenCalledTimes(3);
         expect(localStorage.getItem(ACCESS_TOKEN_KEY)).toBe('new-access-token');
@@ -152,7 +152,7 @@ describe('httpInterceptor', () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
 
         await interceptedFetch('/api/data');
-        
+
         expect(localStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
         expect(localStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull();
         expect(localStorage.getItem(USER_KEY)).toBeNull();
@@ -165,7 +165,7 @@ describe('httpInterceptor', () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
 
         await interceptedFetch('/api/data');
-        
+
         expect(window.location.href).toBe('/t/acme/login');
       });
 
@@ -180,7 +180,7 @@ describe('httpInterceptor', () => {
           .mockResolvedValueOnce(refreshFail);
 
         await interceptedFetch('/api/data');
-        
+
         expect(localStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull();
         expect(window.location.href).toBe('/t/default/login');
       });
@@ -195,7 +195,7 @@ describe('httpInterceptor', () => {
           .mockRejectedValueOnce(new Error('Network error'));
 
         await interceptedFetch('/api/data');
-        
+
         expect(localStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull();
         expect(window.location.href).toBe('/t/default/login');
       });
@@ -216,7 +216,7 @@ describe('httpInterceptor', () => {
         window.location.pathname = '/login';
 
         await interceptedFetch('/api/data');
-        
+
         // Should not change href since already on login
         expect(window.location.href).toBe('http://localhost/login');
       });
@@ -262,7 +262,7 @@ describe('httpInterceptor', () => {
       };
 
       await interceptedFetch('/api/test', options);
-      
+
       expect(fetchMock).toHaveBeenCalledWith('/api/test', options);
     });
   });

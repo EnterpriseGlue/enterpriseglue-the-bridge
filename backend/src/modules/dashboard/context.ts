@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { logger } from '@shared/utils/logger.js';
 import { requireAuth } from '@shared/middleware/auth.js';
+import { dashboardLimiter } from '@shared/middleware/rateLimiter.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { getDataSource } from '@shared/db/data-source.js';
 import { Project } from '@shared/db/entities/Project.js';
@@ -37,7 +38,7 @@ export type DashboardContext = {
  * GET /api/dashboard/context
  * Returns the user's dashboard context for role-based visibility
  */
-r.get('/api/dashboard/context', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+r.get('/api/dashboard/context', requireAuth, dashboardLimiter, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const dataSource = await getDataSource();
   const engineRepo = dataSource.getRepository(Engine);

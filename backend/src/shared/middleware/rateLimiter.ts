@@ -10,15 +10,15 @@ import rateLimit from 'express-rate-limit';
  */
 function getClientIdentifier(req: any): string {
   // Use user ID if authenticated, otherwise fall back to IP
-  if (req.user?.userId) {
-    return `user:${req.user.userId}`;
-  }
-  
-  // Use x-forwarded-for header if behind a proxy, otherwise req.ip
-  // This properly handles both IPv4 and IPv6 addresses
-  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || req.socket.remoteAddress;
-  
-  return `ip:${ip}`;
+  const identity = req.user?.userId
+    ? `user:${req.user.userId}`
+    : `ip:${(req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || req.socket.remoteAddress}`;
+
+  const prefix = typeof req.rateLimitKeyPrefix === 'string' && req.rateLimitKeyPrefix.trim()
+    ? `${req.rateLimitKeyPrefix.trim()}:`
+    : '';
+
+  return `${prefix}${identity}`;
 }
 
 /**
@@ -44,11 +44,11 @@ function isAuthRequest(req: any): boolean {
 /**
  * General API rate limiter
  * Development: 10000000 requests per 15 minutes
- * Production: 1000000 requests per 15 minutes per user/IP
+ * Production: 100000 requests per 15 minutes per user/IP
  */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 1000000 : 10000000, // Higher limit for notification filtering
+  max: process.env.NODE_ENV === 'production' ? 100000 : 10000000,
   message: { error: 'Too many requests, please try again later.' },
   standardHeaders: true, // Return rate limit info in RateLimit-* headers
   legacyHeaders: false, // Disable X-RateLimit-* headers
@@ -77,12 +77,12 @@ export const engineLimiter = rateLimit({
 /**
  * Strict rate limiter for authentication endpoints
  * Development: 1000000 requests per 15 minutes (for local testing)
- * Production: 5000 requests per 15 minutes per IP
+ * Production: 1000 requests per 15 minutes per IP
  * Protects against brute force attacks
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 5000 : 1000000, // More lenient for dev
+  max: process.env.NODE_ENV === 'production' ? 1000 : 1000000, // More lenient for dev
   skipSuccessfulRequests: true, // Don't count successful requests
   message: { error: 'Too many login attempts, please try again later.' },
   standardHeaders: true,
@@ -91,12 +91,12 @@ export const authLimiter = rateLimit({
 
 /**
  * Create user rate limiter (admin only)
- * 20000 user creations per hour
+ * 1000 user creations per hour
  * Prevents mass account creation abuse
  */
 export const createUserLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20000, // Limit to 20000 user creations per hour
+  max: 1000, // Limit to 1000 user creations per hour
   message: { error: 'Too many user creation requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -104,11 +104,11 @@ export const createUserLimiter = rateLimit({
 
 /**
  * Password reset rate limiter
- * 3000 requests per hour per IP
+ * 300 requests per hour per IP
  */
 export const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3000, // Limit to 3000 password reset attempts per hour
+  max: 300, // Limit to 300 password reset attempts per hour
   message: { error: 'Too many password reset attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -116,11 +116,11 @@ export const passwordResetLimiter = rateLimit({
 
 /**
  * Project creation rate limiter
- * 10000 projects per hour per user
+ * 500 projects per hour per user
  */
 export const projectCreateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10000, // Limit to 10000 projects per hour
+  max: 500, // Limit to 500 projects per hour
   message: { error: 'Too many projects created, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -132,11 +132,11 @@ export const projectCreateLimiter = rateLimit({
 
 /**
  * File operations rate limiter
- * 100000 file operations per 5 minutes per user
+ * 25000 file operations per 5 minutes per user
  */
 export const fileOperationsLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 100000, // Limit to 100000 file operations per 5 minutes
+  max: 25000, // Limit to 25000 file operations per 5 minutes
   message: { error: 'Too many file operations, please slow down.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -144,4 +144,69 @@ export const fileOperationsLimiter = rateLimit({
     return getClientIdentifier(req);
   },
 });
+
+/**
+ * Audit endpoints rate limiter
+ * Production: 300 requests per 15 minutes per user
+ */
+export const auditLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 300 : 1000000,
+  message: { error: 'Too many audit requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => getClientIdentifier(req),
+});
+
+/**
+ * Notifications endpoints rate limiter
+ * Production: 1200 requests per 5 minutes per user
+ */
+export const notificationsLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: process.env.NODE_ENV === 'production' ? 1200 : 1000000,
+  message: { error: 'Too many notification requests, please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => getClientIdentifier(req),
+});
+
+/**
+ * Dashboard endpoints rate limiter
+ * Production: 600 requests per 15 minutes per user
+ */
+export const dashboardLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 600 : 1000000,
+  message: { error: 'Too many dashboard requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => getClientIdentifier(req),
+});
+
+/**
+ * Mission control task endpoints rate limiter
+ * Production: 1000 requests per 5 minutes per user
+ */
+export const missionControlLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: process.env.NODE_ENV === 'production' ? 1000 : 1000000,
+  message: { error: 'Too many mission control requests, please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => getClientIdentifier(req),
+});
+
+/**
+ * Password reset token verification limiter
+ * Production: 600 requests per 15 minutes per IP
+ */
+export const passwordResetVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 600 : 1000000,
+  message: { error: 'Too many token verification attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 

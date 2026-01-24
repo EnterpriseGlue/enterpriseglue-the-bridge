@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { asyncHandler } from '@shared/middleware/errorHandler.js';
 import { validateBody, validateQuery } from '@shared/middleware/validate.js';
 import { requireAuth } from '@shared/middleware/auth.js';
+import { missionControlLimiter } from '@shared/middleware/rateLimiter.js';
 import { requireEngineReadOrWrite } from '@shared/middleware/engineAuth.js';
 import {
   listTasks,
@@ -26,7 +27,7 @@ import {
 const r = Router();
 
 // Apply auth middleware only to /mission-control-api routes (not globally)
-r.use('/mission-control-api', requireAuth, requireEngineReadOrWrite());
+r.use('/mission-control-api', requireAuth, requireEngineReadOrWrite(), missionControlLimiter);
 
 // Query tasks
 r.get('/mission-control-api/tasks', validateQuery(TaskQueryParams.partial()), asyncHandler(async (req: Request, res: Response) => {

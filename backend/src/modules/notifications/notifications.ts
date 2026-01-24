@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { IsNull } from 'typeorm';
 import { requireAuth } from '@shared/middleware/auth.js';
+import { notificationsLimiter } from '@shared/middleware/rateLimiter.js';
 import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
 import { validateBody } from '@shared/middleware/validate.js';
 import { getDataSource } from '@shared/db/data-source.js';
@@ -15,7 +16,7 @@ const createNotificationSchema = z.object({
   subtitle: z.string().optional().nullable(),
 });
 
-router.get('/api/notifications', requireAuth, asyncHandler(async (req, res) => {
+router.get('/api/notifications', requireAuth, notificationsLimiter, asyncHandler(async (req, res) => {
   const dataSource = await getDataSource();
   const notificationRepo = dataSource.getRepository(Notification);
   const userId = req.user!.userId;
@@ -82,7 +83,7 @@ router.get('/api/notifications', requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
-router.post('/api/notifications', requireAuth, validateBody(createNotificationSchema), asyncHandler(async (req, res) => {
+router.post('/api/notifications', requireAuth, notificationsLimiter, validateBody(createNotificationSchema), asyncHandler(async (req, res) => {
   const dataSource = await getDataSource();
   const notificationRepo = dataSource.getRepository(Notification);
   const userId = req.user!.userId;
@@ -113,7 +114,7 @@ router.post('/api/notifications', requireAuth, validateBody(createNotificationSc
   });
 }));
 
-router.patch('/api/notifications/read', requireAuth, asyncHandler(async (req, res) => {
+router.patch('/api/notifications/read', requireAuth, notificationsLimiter, asyncHandler(async (req, res) => {
   const dataSource = await getDataSource();
   const notificationRepo = dataSource.getRepository(Notification);
   const userId = req.user!.userId;
@@ -140,7 +141,7 @@ router.patch('/api/notifications/read', requireAuth, asyncHandler(async (req, re
   res.json({ updated: result.affected || 0 });
 }));
 
-router.delete('/api/notifications', requireAuth, asyncHandler(async (req, res) => {
+router.delete('/api/notifications', requireAuth, notificationsLimiter, asyncHandler(async (req, res) => {
   const dataSource = await getDataSource();
   const notificationRepo = dataSource.getRepository(Notification);
   const userId = req.user!.userId;
@@ -160,7 +161,7 @@ router.delete('/api/notifications', requireAuth, asyncHandler(async (req, res) =
   res.json({ deleted: result.affected || 0 });
 }));
 
-router.delete('/api/notifications/:id', requireAuth, asyncHandler(async (req, res) => {
+router.delete('/api/notifications/:id', requireAuth, notificationsLimiter, asyncHandler(async (req, res) => {
   const id = String(req.params.id || '').trim();
   if (!id) throw Errors.validation('Notification id is required');
 
