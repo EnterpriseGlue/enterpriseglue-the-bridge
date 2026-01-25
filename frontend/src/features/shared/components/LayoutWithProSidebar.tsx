@@ -731,42 +731,21 @@ export default function LayoutWithProSidebar() {
                     ))}
                   </HeaderMenu>
                 )}
-                {!isMultiTenant && (
+                {!isMultiTenant && isPlatformAdmin && (
                   <HeaderMenu menuLinkName="Admin">
                     <HeaderMenuItem
-                      href={toTenantPath('/admin/users')}
+                      href={'/admin/users'}
                       isCurrentPage={effectivePathname === '/admin/users'}
-                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/users')); (document.activeElement as HTMLElement)?.blur() }}
+                      onClick={(e) => { e.preventDefault(); navigate('/admin/users'); (document.activeElement as HTMLElement)?.blur() }}
                     >
-                      Users
+                      User Management
                     </HeaderMenuItem>
                     <HeaderMenuItem
-                      href={toTenantPath('/admin/audit-logs')}
-                      isCurrentPage={effectivePathname === '/admin/audit-logs'}
-                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/audit-logs')); (document.activeElement as HTMLElement)?.blur() }}
+                      href={'/admin/settings'}
+                      isCurrentPage={effectivePathname === '/admin/settings'}
+                      onClick={(e) => { e.preventDefault(); navigate('/admin/settings'); (document.activeElement as HTMLElement)?.blur() }}
                     >
-                      Audit Logs
-                    </HeaderMenuItem>
-                    <HeaderMenuItem
-                      href={toTenantPath('/admin/domains')}
-                      isCurrentPage={effectivePathname === '/admin/domains'}
-                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/domains')); (document.activeElement as HTMLElement)?.blur() }}
-                    >
-                      Domains
-                    </HeaderMenuItem>
-                    <HeaderMenuItem
-                      href={toTenantPath('/admin/sso')}
-                      isCurrentPage={effectivePathname === '/admin/sso'}
-                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/sso')); (document.activeElement as HTMLElement)?.blur() }}
-                    >
-                      SSO
-                    </HeaderMenuItem>
-                    <HeaderMenuItem
-                      href={toTenantPath('/admin/invite-policies')}
-                      isCurrentPage={effectivePathname === '/admin/invite-policies'}
-                      onClick={(e) => { e.preventDefault(); navigate(toTenantPath('/admin/invite-policies')); (document.activeElement as HTMLElement)?.blur() }}
-                    >
-                      Invite Policies
+                      Platform Settings
                     </HeaderMenuItem>
                     <HeaderMenuItem
                       href={toTenantPath('/admin/email')}

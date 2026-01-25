@@ -127,30 +127,33 @@ export function createProtectedChildRoutes(isRootLevel: boolean): RouteObject[] 
         </ProtectedRoute>
       )
     }] : []),
-    { 
-      path: `${pathPrefix}admin/domains`, 
-      element: (
-        <ProtectedRoute requireAdmin={isRootLevel}>
-          {(isRootLevel || !isMultiTenantEnabled()) ? <PlatformSettingsPage /> : <ExtensionPage name="tenant-domains-page" />}
-        </ProtectedRoute>
-      )
-    },
-    { 
-      path: `${pathPrefix}admin/sso`, 
-      element: (
-        <ProtectedRoute requireAdmin={isRootLevel}>
-          {(isRootLevel || !isMultiTenantEnabled()) ? <PlatformSettingsPage /> : <ExtensionPage name="tenant-sso-page" />}
-        </ProtectedRoute>
-      )
-    },
-    { 
-      path: `${pathPrefix}admin/invite-policies`, 
-      element: (
-        <ProtectedRoute requireAdmin={isRootLevel}>
-          {(isRootLevel || !isMultiTenantEnabled()) ? <PlatformSettingsPage /> : <ExtensionPage name="tenant-invite-policies-page" />}
-        </ProtectedRoute>
-      )
-    },
+    // EE-only tenant-scoped admin pages (domains, sso, invite-policies)
+    ...(isMultiTenantEnabled() && !isRootLevel ? [
+      { 
+        path: `${pathPrefix}admin/domains`, 
+        element: (
+          <ProtectedRoute requireAdmin={false}>
+            <ExtensionPage name="tenant-domains-page" />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: `${pathPrefix}admin/sso`, 
+        element: (
+          <ProtectedRoute requireAdmin={false}>
+            <ExtensionPage name="tenant-sso-page" />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: `${pathPrefix}admin/invite-policies`, 
+        element: (
+          <ProtectedRoute requireAdmin={false}>
+            <ExtensionPage name="tenant-invite-policies-page" />
+          </ProtectedRoute>
+        )
+      },
+    ] : []),
     ...(!isMultiTenantEnabled() ? [{
       path: `${pathPrefix}admin/email`, 
       element: (
@@ -193,14 +196,23 @@ export function createProtectedChildRoutes(isRootLevel: boolean): RouteObject[] 
         </ProtectedRoute>
       )
     }] : []),
-    { 
+    // User Management - OSS uses root-level UserManagement, EE multi-tenant uses tenant-scoped page
+    ...(!isMultiTenantEnabled() ? [{
+      path: `${pathPrefix}admin/users`, 
+      element: (
+        <ProtectedRoute requireAdmin>
+          <UserManagement />
+        </ProtectedRoute>
+      )
+    }] : []),
+    ...(isMultiTenantEnabled() ? [{
       path: `${pathPrefix}admin/users`, 
       element: (
         <ProtectedRoute requireAdmin={isRootLevel}>
-          {(isRootLevel || !isMultiTenantEnabled()) ? <UserManagement /> : <ExtensionPage name="tenant-users-page" />}
+          {isRootLevel ? <UserManagement /> : <ExtensionPage name="tenant-users-page" />}
         </ProtectedRoute>
       )
-    },
+    }] : []),
 
     // TenantSetupWizard is EE-only (multi-tenant mode)
     ...(isMultiTenantEnabled() ? [{ 
