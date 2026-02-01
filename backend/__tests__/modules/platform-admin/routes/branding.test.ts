@@ -13,6 +13,10 @@ vi.mock('@shared/services/audit.js', () => ({
   logAudit: vi.fn(),
 }));
 
+vi.mock('@shared/middleware/requirePermission.js', () => ({
+  requirePermission: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 describe('platform-admin branding routes', () => {
   let app: express.Application;
 

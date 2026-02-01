@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { randomBytes } from 'node:crypto';
 import { requireAuth } from '@shared/middleware/auth.js';
 import { validateBody, validateParams } from '@shared/middleware/validate.js';
-import { asyncHandler, Errors } from '@shared/middleware/errorHandler.js';
+import { asyncHandler, AppError, Errors } from '@shared/middleware/errorHandler.js';
 import { apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { engineService, engineAccessService, projectMemberService } from '@shared/services/platform-admin/index.js';
 import { getDataSource } from '@shared/db/data-source.js';
@@ -166,6 +166,9 @@ router.post(
       throw Errors.notFound('User not found. The user must be registered before they can be added to an engine. Invitations are available in the Enterprise Edition.');
     } catch (error) {
       logger.error('Add engine member error:', error);
+      if (error instanceof AppError) {
+        throw error;
+      }
       throw Errors.internal('Failed to add engine member');
     }
   })

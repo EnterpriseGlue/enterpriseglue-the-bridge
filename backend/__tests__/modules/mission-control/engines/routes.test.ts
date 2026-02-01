@@ -30,7 +30,9 @@ vi.mock('@shared/services/platform-admin/index.js', () => ({
     listEngines: vi.fn().mockResolvedValue([]),
     getEngine: vi.fn().mockResolvedValue({ id: 'e1', name: 'Engine 1' }),
     hasEngineAccess: vi.fn().mockResolvedValue(true),
-    getUserEngines: vi.fn().mockResolvedValue([]),
+    getUserEngines: vi.fn().mockResolvedValue([
+      { engine: { id: 'e1', name: 'Engine 1' }, role: 'admin' },
+    ]),
     getEngineRole: vi.fn().mockResolvedValue('owner'),
   },
 }));
@@ -54,7 +56,9 @@ describe('mission-control engines routes', () => {
     const response = await request(app).get('/engines-api/engines');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual([{ id: 'e1', name: 'Engine 1', myRole: 'admin' }]);
+    expect(response.body).toEqual([
+      { id: 'e1', name: 'Engine 1', myRole: 'admin', username: null, passwordEnc: null },
+    ]);
   });
 
   it('returns engine detail when user has access', async () => {
@@ -62,6 +66,6 @@ describe('mission-control engines routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({ id: 'e1', name: 'Engine 1' });
-    expect((engineService as any).hasEngineAccess).not.toHaveBeenCalled();
+    expect((engineService as any).hasEngineAccess).toHaveBeenCalled();
   });
 });

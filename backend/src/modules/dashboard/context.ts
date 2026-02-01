@@ -97,6 +97,7 @@ r.get('/api/dashboard/context', requireAuth, dashboardLimiter, asyncHandler(asyn
   // Compute visibility flags based on roles
   const isEngineOperator = engineMemberRows.some((m) => m.role === 'operator');
   const isEngineOwnerOrDelegateOrOperator = ownedEngineIds.length > 0 || delegatedEngineIds.length > 0 || isEngineOperator;
+  const hasProjectMemberships = projectMemberships.length > 0;
 
   const context: DashboardContext = {
     isPlatformAdmin: isAdmin,
@@ -109,7 +110,7 @@ r.get('/api/dashboard/context', requireAuth, dashboardLimiter, asyncHandler(asyn
     canViewAllProjects: isAdmin,
     canViewEngines: isEngineOwnerOrDelegateOrOperator,
     canViewProcessData: isEngineOwnerOrDelegateOrOperator,
-    canViewDeployments: isEngineOwnerOrDelegateOrOperator,
+    canViewDeployments: isEngineOwnerOrDelegateOrOperator || hasProjectMemberships,
     canViewMetrics: isEngineOwnerOrDelegateOrOperator,
   };
 

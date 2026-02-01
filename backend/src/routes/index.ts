@@ -59,6 +59,7 @@ import {
   verifyEmailRoute,
   microsoftRoute,
   forgotPasswordRoute,
+  ssoConfigRoute,
   googleRoute,
   googleStartRoute,
   microsoftStartRoute,
@@ -162,6 +163,7 @@ export function registerRoutes(app: Express): void {
   app.use(refreshRoute);
   app.use(passwordRoute);
   app.use(forgotPasswordRoute);
+  app.use(ssoConfigRoute);
   app.use(meRoute);
   app.use(verifyEmailRoute);
   app.use(microsoftRoute);

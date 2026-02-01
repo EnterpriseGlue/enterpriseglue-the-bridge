@@ -11,6 +11,7 @@ import meRoute from './me.js';
 import verifyEmailRoute from './verify-email.js';
 import microsoftRoute from './microsoft.js';
 import forgotPasswordRoute from './forgot-password.js';
+import ssoConfigRoute from './sso-config.js';
 
 export {
   loginRoute,
@@ -21,4 +22,5 @@ export {
   verifyEmailRoute,
   microsoftRoute,
   forgotPasswordRoute,
+  ssoConfigRoute,
 };

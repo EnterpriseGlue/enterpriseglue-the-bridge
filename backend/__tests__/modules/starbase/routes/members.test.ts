@@ -5,6 +5,7 @@ import membersRouter from '../../../../src/modules/starbase/routes/members.js';
 import { getDataSource } from '../../../../src/shared/db/data-source.js';
 import { ProjectMember } from '../../../../src/shared/db/entities/ProjectMember.js';
 import { User } from '../../../../src/shared/db/entities/User.js';
+import { errorHandler } from '../../../../src/shared/middleware/errorHandler.js';
 import { logAudit } from '../../../../src/shared/services/audit.js';
 
 vi.mock('@shared/db/data-source.js', () => ({
@@ -50,6 +51,7 @@ describe('starbase members routes', () => {
     app = express();
     app.use(express.json());
     app.use(membersRouter);
+    app.use(errorHandler);
     vi.clearAllMocks();
   });
 

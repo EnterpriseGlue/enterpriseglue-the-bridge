@@ -4,6 +4,7 @@ import express from 'express';
 import managementRouter from '../../../src/modules/engines/management.js';
 import { getDataSource } from '../../../src/shared/db/data-source.js';
 import { User } from '../../../src/shared/db/entities/User.js';
+import { errorHandler } from '../../../src/shared/middleware/errorHandler.js';
 import { logAudit } from '../../../src/shared/services/audit.js';
 
 vi.mock('@shared/db/data-source.js', () => ({
@@ -47,6 +48,7 @@ describe('engines management routes', () => {
     app = express();
     app.use(express.json());
     app.use(managementRouter);
+    app.use(errorHandler);
     vi.clearAllMocks();
 
     (getDataSource as unknown as Mock).mockResolvedValue({

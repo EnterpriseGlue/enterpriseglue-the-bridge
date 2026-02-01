@@ -50,7 +50,13 @@ const TAG_COLORS = [
   '#a2191f', // Dark Red
 ];
 
-export default function PlatformSettingsPage() {
+type PlatformSettingsSection = 'git' | 'projects' | 'engines' | 'sso';
+
+interface PlatformSettingsPageProps {
+  section?: PlatformSettingsSection;
+}
+
+export default function PlatformSettingsPage({ section }: PlatformSettingsPageProps) {
   const { data: settings, isLoading, error } = usePlatformSettings();
   const { data: envTags, isLoading: envLoading } = useEnvironmentTags();
   const { data: gitProviders, isLoading: gitProvidersLoading } = useAdminGitProviders();
@@ -159,7 +165,7 @@ export default function PlatformSettingsPage() {
     e.preventDefault();
     if (!draggedTagId || draggedTagId === targetTagId || !envTags) return;
 
-    const currentOrder = envTags.map(t => t.id);
+    const currentOrder = envTags.map((t: EnvironmentTag) => t.id);
     const draggedIndex = currentOrder.indexOf(draggedTagId);
     const targetIndex = currentOrder.indexOf(targetTagId);
 
@@ -229,8 +235,91 @@ export default function PlatformSettingsPage() {
     const current = Array.isArray(settings.defaultDeployRoles) ? settings.defaultDeployRoles : [];
     const updated = checked
       ? [...current, role]
-      : current.filter(r => r !== role);
+      : current.filter((r: string) => r !== role);
     updateSettings.mutate({ defaultDeployRoles: updated });
+  };
+
+  const headerTitle = section
+    ? `${section.charAt(0).toUpperCase()}${section.slice(1)} Settings`
+    : 'Platform Settings';
+  const headerSubtitle = section
+    ? 'Configure platform defaults for this area'
+    : 'Configure global platform behavior and defaults';
+
+  const renderGit = () => (
+    <GitSettingsSection
+      settings={settings}
+      gitProviders={gitProviders || []}
+      gitProvidersLoading={gitProvidersLoading}
+      onToggle={handleToggle}
+      onUpdateGitProvider={async (id, updates) => {
+        await updateGitProvider.mutateAsync({ id, updates });
+      }}
+    />
+  );
+
+  const renderProjects = () => (
+    <ProjectsSettingsSection
+      allProjects={allProjects}
+      projectsLoading={projectsLoading}
+      selectedProject={selectedProject}
+      setSelectedProject={setSelectedProject}
+      projectComboKey={projectComboKey}
+      setProjectComboKey={setProjectComboKey}
+      onAssignOwner={(target) => openAssignModal('projectOwner', target)}
+      onAssignDelegate={(target) => openAssignModal('projectDelegate', target)}
+      inviteAllowAll={inviteAllowAll}
+      normalizedInviteDomains={normalizedInviteDomains}
+      inviteDomainInput={inviteDomainInput}
+      setInviteDomainInput={setInviteDomainInput}
+      addInviteDomain={addInviteDomain}
+      removeInviteDomain={removeInviteDomain}
+      onToggleInviteAllowAll={(checked) => updateSettings.mutate({ inviteAllowAllDomains: checked } as any)}
+    />
+  );
+
+  const renderEngines = () => (
+    <EnginesSettingsSection
+      settings={settings}
+      allEngines={allEngines}
+      enginesLoading={enginesLoading}
+      selectedEngine={selectedEngine}
+      setSelectedEngine={setSelectedEngine}
+      engineComboKey={engineComboKey}
+      setEngineComboKey={setEngineComboKey}
+      onAssignOwner={(target) => openAssignModal('engineOwner', target)}
+      onAssignDelegate={(target) => openAssignModal('engineDelegate', target)}
+      onDeployRoleToggle={handleDeployRoleToggle}
+      envTags={envTags}
+      envLoading={envLoading}
+      onOpenCreateModal={openCreateModal}
+      onOpenEditModal={openEditModal}
+      onDeleteTag={setDeleteConfirmTag}
+      draggedTagId={draggedTagId}
+      dragOverTagId={dragOverTagId}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onDragEnd={handleDragEnd}
+    />
+  );
+
+  const renderSso = () => <SsoSettingsTab />;
+
+  const renderSection = () => {
+    switch (section) {
+      case 'git':
+        return renderGit();
+      case 'projects':
+        return renderProjects();
+      case 'engines':
+        return renderEngines();
+      case 'sso':
+        return renderSso();
+      default:
+        return null;
+    }
   };
 
   const normalizedInviteDomains = Array.isArray((settings as any)?.inviteAllowedDomains)
@@ -315,108 +404,66 @@ export default function PlatformSettingsPage() {
     >
       <PageHeader
         icon={Settings}
-        title="Platform Settings"
-        subtitle="Configure global platform behavior and defaults"
+        title={headerTitle}
+        subtitle={headerSubtitle}
         gradient={PAGE_GRADIENTS.red}
       />
 
-      {/* Tabbed Settings */}
-      <Tabs>
-        <TabList aria-label="Platform settings tabs">
-          <Tab>Git</Tab>
-          <Tab>Projects</Tab>
-          <Tab>Engines</Tab>
-          <Tab>SSO</Tab>
-        </TabList>
-        <TabPanels>
-          {/* Tab 1: Git */}
-          <TabPanel
-            style={{
-              paddingInline: 0,
-              paddingBlock: 'var(--cds-layout-density-padding-inline-local)',
-            }}
-          >
-            <GitSettingsSection
-              settings={settings}
-              gitProviders={gitProviders || []}
-              gitProvidersLoading={gitProvidersLoading}
-              onToggle={handleToggle}
-              onUpdateGitProvider={async (id, updates) => {
-                await updateGitProvider.mutateAsync({ id, updates });
+      {section ? (
+        <div style={{ paddingInline: 0, paddingBlock: 'var(--cds-layout-density-padding-inline-local)' }}>
+          {renderSection()}
+        </div>
+      ) : (
+        <Tabs>
+          <TabList aria-label="Platform settings tabs">
+            <Tab>Git</Tab>
+            <Tab>Projects</Tab>
+            <Tab>Engines</Tab>
+            <Tab>SSO</Tab>
+          </TabList>
+          <TabPanels>
+            {/* Tab 1: Git */}
+            <TabPanel
+              style={{
+                paddingInline: 0,
+                paddingBlock: 'var(--cds-layout-density-padding-inline-local)',
               }}
-            />
-          </TabPanel>
+            >
+              {renderGit()}
+            </TabPanel>
 
-          {/* Tab 2: Projects */}
-          <TabPanel
-            style={{
-              paddingInline: 0,
-              paddingBlock: 'var(--cds-layout-density-padding-inline-local)',
-            }}
-          >
-            <ProjectsSettingsSection
-              allProjects={allProjects}
-              projectsLoading={projectsLoading}
-              selectedProject={selectedProject}
-              setSelectedProject={setSelectedProject}
-              projectComboKey={projectComboKey}
-              setProjectComboKey={setProjectComboKey}
-              onAssignOwner={(target) => openAssignModal('projectOwner', target)}
-              onAssignDelegate={(target) => openAssignModal('projectDelegate', target)}
-              inviteAllowAll={inviteAllowAll}
-              normalizedInviteDomains={normalizedInviteDomains}
-              inviteDomainInput={inviteDomainInput}
-              setInviteDomainInput={setInviteDomainInput}
-              addInviteDomain={addInviteDomain}
-              removeInviteDomain={removeInviteDomain}
-              onToggleInviteAllowAll={(checked) => updateSettings.mutate({ inviteAllowAllDomains: checked } as any)}
-            />
-          </TabPanel>
+            {/* Tab 2: Projects */}
+            <TabPanel
+              style={{
+                paddingInline: 0,
+                paddingBlock: 'var(--cds-layout-density-padding-inline-local)',
+              }}
+            >
+              {renderProjects()}
+            </TabPanel>
 
-          {/* Tab 3: Engines */}
-          <TabPanel
-            style={{
-              paddingInline: 0,
-              paddingBlock: 'var(--cds-layout-density-padding-inline-local)',
-            }}
-          >
-            <EnginesSettingsSection
-              settings={settings}
-              allEngines={allEngines}
-              enginesLoading={enginesLoading}
-              selectedEngine={selectedEngine}
-              setSelectedEngine={setSelectedEngine}
-              engineComboKey={engineComboKey}
-              setEngineComboKey={setEngineComboKey}
-              onAssignOwner={(target) => openAssignModal('engineOwner', target)}
-              onAssignDelegate={(target) => openAssignModal('engineDelegate', target)}
-              onDeployRoleToggle={handleDeployRoleToggle}
-              envTags={envTags}
-              envLoading={envLoading}
-              onOpenCreateModal={openCreateModal}
-              onOpenEditModal={openEditModal}
-              onDeleteTag={setDeleteConfirmTag}
-              draggedTagId={draggedTagId}
-              dragOverTagId={dragOverTagId}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-            />
-          </TabPanel>
+            {/* Tab 3: Engines */}
+            <TabPanel
+              style={{
+                paddingInline: 0,
+                paddingBlock: 'var(--cds-layout-density-padding-inline-local)',
+              }}
+            >
+              {renderEngines()}
+            </TabPanel>
 
-          {/* Tab 4: SSO */}
-          <TabPanel
-            style={{
-              paddingInline: 0,
-              paddingBlock: 'var(--cds-layout-density-padding-inline-local)',
-            }}
-          >
-            <SsoSettingsTab />
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
+            {/* Tab 4: SSO */}
+            <TabPanel
+              style={{
+                paddingInline: 0,
+                paddingBlock: 'var(--cds-layout-density-padding-inline-local)',
+              }}
+            >
+              {renderSso()}
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+      )}
 
       {/* Create Environment Modal */}
       <Modal
@@ -429,7 +476,13 @@ export default function PlatformSettingsPage() {
         primaryButtonDisabled={!formName.trim() || createTag.isPending}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', paddingTop: 'var(--spacing-4)' }}>
-          <TextInput id="tag-name" labelText="Name" placeholder="e.g., Development" value={formName} onChange={(e) => setFormName(e.target.value)} />
+          <TextInput
+            id="tag-name"
+            labelText="Name"
+            placeholder="e.g., Development"
+            value={formName}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormName(e.target.value)}
+          />
           <div>
             <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', fontSize: '12px', fontWeight: 500 }}>Color</label>
             <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
@@ -479,7 +532,12 @@ export default function PlatformSettingsPage() {
         primaryButtonDisabled={!formName.trim() || updateTag.isPending}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', paddingTop: 'var(--spacing-4)' }}>
-          <TextInput id="edit-tag-name" labelText="Name" value={formName} onChange={(e) => setFormName(e.target.value)} />
+          <TextInput
+            id="edit-tag-name"
+            labelText="Name"
+            value={formName}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormName(e.target.value)}
+          />
           <div>
             <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', fontSize: '12px', fontWeight: 500 }}>Color</label>
             <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
@@ -558,12 +616,13 @@ export default function PlatformSettingsPage() {
               item ? `${item.firstName || ''} ${item.lastName || ''} (${item.email})`.trim() : ''
             }
             selectedItem={selectedUser}
-            onChange={({ selectedItem }) => {
+            onChange={({ selectedItem }: { selectedItem?: UserListItem | null }) => {
               setSelectedUser(selectedItem ?? null);
             }}
-            shouldFilterItem={({ item, inputValue }) => {
-              if (!inputValue) return true;
-              const search = inputValue.toLowerCase();
+            shouldFilterItem={({ item, inputValue }: { item: UserListItem; inputValue: string | null }) => {
+              const searchValue = (inputValue ?? '').toLowerCase();
+              if (!searchValue) return true;
+              const search = searchValue;
               return (
                 item.email.toLowerCase().includes(search) ||
                 (item.firstName?.toLowerCase() || '').includes(search) ||
@@ -578,7 +637,7 @@ export default function PlatformSettingsPage() {
             labelText="Reason (required)"
             placeholder="e.g., Employee departure, project transfer..."
             value={assignReason}
-            onChange={(e) => setAssignReason(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAssignReason(e.target.value)}
             rows={3}
           />
         </div>
