@@ -41,7 +41,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     // No token found in either location
     if (!token) {
-      throw Errors.unauthorized('No token provided');
+      return next(Errors.unauthorized('No token provided'));
     }
 
     // Verify token
@@ -82,12 +82,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     if (error instanceof AppError) {
-      throw error;
+      return next(error);
     }
     if (error instanceof Error) {
-      throw Errors.unauthorized(error.message);
+      return next(Errors.unauthorized(error.message));
     }
-    throw Errors.unauthorized('Authentication failed');
+    return next(Errors.unauthorized('Authentication failed'));
   }
 }
 
@@ -97,11 +97,11 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
  */
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
-    throw Errors.unauthorized('Authentication required');
+    return next(Errors.unauthorized('Authentication required'));
   }
 
   if (req.user.platformRole !== 'admin') {
-    throw Errors.adminRequired();
+    return next(Errors.adminRequired());
   }
 
   next();
