@@ -243,8 +243,8 @@ export default function Login() {
     }
   }, [location, navigate, notify]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const submitLogin = async () => {
+    if (isLoading) return;
     setIsLoading(true);
 
     try {
@@ -266,6 +266,11 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    submitLogin();
   };
 
   const handleSsoLogin = (provider: SsoProviderButton) => {
@@ -369,7 +374,15 @@ export default function Login() {
         </div>
 
         {/* Login form */}
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              submitLogin();
+            }
+          }}
+        >
           <div style={{ marginBottom: 'var(--spacing-5)' }}>
             <TextInput
               id="email"

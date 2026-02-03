@@ -6,7 +6,7 @@ import ProcessInstanceDetailPage from '@src/features/mission-control/process-ins
 vi.mock('react-router-dom', () => ({
   useParams: () => ({}),
   useNavigate: () => vi.fn(),
-  useLocation: () => ({ search: '' }),
+  useLocation: () => ({ search: '', pathname: '/mission-control/processes' }),
 }));
 
 vi.mock('@src/features/mission-control/shared/stores/processesFilterStore', () => ({

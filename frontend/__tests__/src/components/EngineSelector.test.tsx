@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { EngineSelector } from '@src/components/EngineSelector';
 
 const dropdownSpy = vi.fn();
@@ -29,8 +29,8 @@ describe('EngineSelector', () => {
     const { useQuery } = await import('@tanstack/react-query');
     (useQuery as any).mockReturnValue({
       data: [
-        { id: 'e1', name: 'Engine 1', baseUrl: 'http://e1', active: true },
-        { id: 'e2', name: 'Engine 2', baseUrl: 'http://e2', active: true },
+        { id: 'e1', name: 'Engine 1', baseUrl: 'http://e1', active: true, myRole: 'owner' },
+        { id: 'e2', name: 'Engine 2', baseUrl: 'http://e2', active: true, myRole: 'operator' },
       ],
       isLoading: false,
     });
@@ -45,12 +45,14 @@ describe('EngineSelector', () => {
   it('auto-selects single engine', async () => {
     const { useQuery } = await import('@tanstack/react-query');
     (useQuery as any).mockReturnValue({
-      data: [{ id: 'only-1', name: 'Only', baseUrl: 'http://only', active: true }],
+      data: [{ id: 'only-1', name: 'Only', baseUrl: 'http://only', active: true, myRole: 'owner' }],
       isLoading: false,
     });
 
     render(<EngineSelector />);
 
-    expect(setSelectedEngineId).toHaveBeenCalledWith('only-1');
+    await waitFor(() => {
+      expect(setSelectedEngineId).toHaveBeenCalledWith('only-1');
+    });
   });
 });

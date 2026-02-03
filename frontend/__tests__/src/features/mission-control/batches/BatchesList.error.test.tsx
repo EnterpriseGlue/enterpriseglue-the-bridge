@@ -6,8 +6,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { server } from '@test/mocks/server';
 import BatchesPage from '@src/features/mission-control/batches/BatchesPage';
+import { useEngineSelectorStore } from '@src/stores/engineSelectorStore';
 
 function renderWithProviders() {
+  useEngineSelectorStore.setState({ selectedEngineId: 'engine-1' });
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

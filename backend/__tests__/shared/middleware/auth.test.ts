@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { requireAuth, requireAdmin, optionalAuth } from '../../../src/shared/middleware/auth.js';
+import { AppError } from '../../../src/shared/middleware/errorHandler.js';
 import * as jwt from '../../../src/shared/utils/jwt.js';
 import { getDataSource } from '../../../src/shared/db/data-source.js';
 import { User } from '../../../src/shared/db/entities/User.js';
@@ -58,15 +59,25 @@ describe('auth middleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
-    it('throws on missing token', async () => {
-      await expect(requireAuth(req as Request, res as Response, next)).rejects.toThrow('No token provided');
+    it('reports missing token', async () => {
+      await requireAuth(req as Request, res as Response, next);
+
+      expect(next).toHaveBeenCalled();
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error?.message).toContain('No token provided');
     });
 
-    it('throws on invalid token type', async () => {
+    it('reports invalid token type', async () => {
       req.headers = { authorization: 'Bearer refresh-token' };
       (jwt.verifyToken as any).mockReturnValue({ userId: 'user-1', type: 'refresh', email: 'user@example.com' });
 
-      await expect(requireAuth(req as Request, res as Response, next)).rejects.toThrow('Invalid token type');
+      await requireAuth(req as Request, res as Response, next);
+
+      expect(next).toHaveBeenCalled();
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error?.message).toContain('Invalid token type');
     });
 
     it('blocks unverified users from protected paths', async () => {
@@ -74,12 +85,19 @@ describe('auth middleware', () => {
       (jwt.verifyToken as any).mockReturnValue({ userId: 'user-1', type: 'access', platformRole: 'user', email: 'user@example.com' });
       (getDataSource as any).mockResolvedValue({
         getRepository: (entity: unknown) => {
-          if (entity === User) return { findOneBy: vi.fn().mockResolvedValue({ isActive: true, isEmailVerified: false }) };
+          if (entity === User) {
+            return { findOneBy: vi.fn().mockResolvedValue({ isActive: true, isEmailVerified: false, email: 'user@example.com' }) };
+          }
           throw new Error('Unexpected repository');
         },
       });
 
-      await expect(requireAuth(req as Request, res as Response, next)).rejects.toThrow('Email verification required');
+      await requireAuth(req as Request, res as Response, next);
+
+      expect(next).toHaveBeenCalled();
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error?.message).toContain('Email verification required');
     });
   });
 
@@ -92,14 +110,24 @@ describe('auth middleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
-    it('throws for non-admin users', () => {
+    it('reports non-admin users', () => {
       req.user = { userId: 'user-1', type: 'access', platformRole: 'user', email: 'user@example.com' };
 
-      expect(() => requireAdmin(req as Request, res as Response, next)).toThrow('Admin access required');
+      requireAdmin(req as Request, res as Response, next);
+
+      expect(next).toHaveBeenCalled();
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error?.message).toContain('Admin access required');
     });
 
-    it('throws when no user', () => {
-      expect(() => requireAdmin(req as Request, res as Response, next)).toThrow('Authentication required');
+    it('reports when no user', () => {
+      requireAdmin(req as Request, res as Response, next);
+
+      expect(next).toHaveBeenCalled();
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error?.message).toContain('Authentication required');
     });
   });
 

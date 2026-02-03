@@ -67,7 +67,7 @@ describe('batches API', () => {
       await getBatches();
 
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/mission-control-api/batches?',
+        '/mission-control-api/batches',
         undefined,
         { credentials: 'include' }
       );
@@ -125,7 +125,7 @@ describe('batches API', () => {
     it('deletes batch with cascade true', async () => {
       vi.mocked(apiClient.delete).mockResolvedValue(undefined);
 
-      await deleteBatch('b1', true);
+      await deleteBatch('b1', undefined, true);
 
       expect(apiClient.delete).toHaveBeenCalledWith(
         '/mission-control-api/batches/b1?cascade=true',
@@ -136,7 +136,7 @@ describe('batches API', () => {
     it('deletes batch with cascade false', async () => {
       vi.mocked(apiClient.delete).mockResolvedValue(undefined);
 
-      await deleteBatch('b1', false);
+      await deleteBatch('b1', undefined, false);
 
       expect(apiClient.delete).toHaveBeenCalledWith(
         '/mission-control-api/batches/b1?cascade=false',

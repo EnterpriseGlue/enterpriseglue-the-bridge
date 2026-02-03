@@ -30,7 +30,9 @@ export default function BatchesList() {
     queryFn: () => {
       const params = new URLSearchParams()
       if (selectedEngineId) params.set('engineId', selectedEngineId)
-      return apiClient.get<Batch[]>(`/mission-control-api/batches?${params}`, undefined, { credentials: 'include' })
+      const query = params.toString()
+      const suffix = query ? `?${query}` : ''
+      return apiClient.get<Batch[]>(`/mission-control-api/batches${suffix}`, undefined, { credentials: 'include' })
     }, 
     refetchInterval: 5000,
     enabled: !!selectedEngineId,
@@ -81,7 +83,9 @@ export default function BatchesList() {
   const cancelBatch = React.useCallback(async (id: string) => {
     const params = new URLSearchParams()
     if (selectedEngineId) params.set('engineId', selectedEngineId)
-    await apiClient.delete(`/mission-control-api/batches/${encodeURIComponent(id)}?${params}`, { credentials: 'include' })
+    const query = params.toString()
+    const suffix = query ? `?${query}` : ''
+    await apiClient.delete(`/mission-control-api/batches/${encodeURIComponent(id)}${suffix}`, { credentials: 'include' })
     await listQ.refetch()
     if (batchId === id) {
       closeModal()
@@ -91,7 +95,9 @@ export default function BatchesList() {
   const deleteBatch = React.useCallback(async (id: string) => {
     const params = new URLSearchParams()
     if (selectedEngineId) params.set('engineId', selectedEngineId)
-    await apiClient.delete(`/mission-control-api/batches/${encodeURIComponent(id)}/record?${params}`, { credentials: 'include' })
+    const query = params.toString()
+    const suffix = query ? `?${query}` : ''
+    await apiClient.delete(`/mission-control-api/batches/${encodeURIComponent(id)}/record${suffix}`, { credentials: 'include' })
     await listQ.refetch()
     if (batchId === id) {
       closeModal()

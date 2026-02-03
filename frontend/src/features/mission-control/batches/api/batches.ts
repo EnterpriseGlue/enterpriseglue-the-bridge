@@ -28,26 +28,34 @@ export type BatchStatistics = {
 export async function getBatches(engineId?: string): Promise<Batch[]> {
   const params = new URLSearchParams()
   if (engineId) params.set('engineId', engineId)
-  return apiClient.get<Batch[]>(`/mission-control-api/batches?${params}`, undefined, { credentials: 'include' })
+  const query = params.toString()
+  const suffix = query ? `?${query}` : ''
+  return apiClient.get<Batch[]>(`/mission-control-api/batches${suffix}`, undefined, { credentials: 'include' })
 }
 
 export async function getBatch(batchId: string, engineId?: string): Promise<Batch> {
   const params = new URLSearchParams()
   if (engineId) params.set('engineId', engineId)
-  return apiClient.get<Batch>(`/mission-control-api/batches/${batchId}?${params}`, undefined, { credentials: 'include' })
+  const query = params.toString()
+  const suffix = query ? `?${query}` : ''
+  return apiClient.get<Batch>(`/mission-control-api/batches/${batchId}${suffix}`, undefined, { credentials: 'include' })
 }
 
 export async function getBatchStatistics(batchId: string, engineId?: string): Promise<BatchStatistics> {
   const params = new URLSearchParams()
   if (engineId) params.set('engineId', engineId)
-  return apiClient.get<BatchStatistics>(`/mission-control-api/batches/${batchId}/statistics?${params}`, undefined, { credentials: 'include' })
+  const query = params.toString()
+  const suffix = query ? `?${query}` : ''
+  return apiClient.get<BatchStatistics>(`/mission-control-api/batches/${batchId}/statistics${suffix}`, undefined, { credentials: 'include' })
 }
 
 export async function deleteBatch(batchId: string, engineId?: string, cascade = true): Promise<void> {
   const params = new URLSearchParams()
   if (engineId) params.set('engineId', engineId)
   params.set('cascade', String(cascade))
-  return apiClient.delete(`/mission-control-api/batches/${batchId}?${params}`, { credentials: 'include' })
+  const query = params.toString()
+  const suffix = query ? `?${query}` : ''
+  return apiClient.delete(`/mission-control-api/batches/${batchId}${suffix}`, { credentials: 'include' })
 }
 
 export async function suspendBatch(batchId: string, engineId?: string): Promise<void> {

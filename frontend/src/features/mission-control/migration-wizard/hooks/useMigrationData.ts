@@ -98,13 +98,18 @@ export function useMigrationData({ instanceIds, preselectedKey, preselectedVersi
     try {
       setGenerating(true)
       setError(null)
+      if (!selectedEngineId) throw new Error('Select an engine')
       const sourceDefinitionId = idFor(srcKey, srcVer)
       const targetDefinitionId = idFor(tgtKey, tgtVer)
       if (!sourceDefinitionId || !targetDefinitionId)
         throw new Error('Select both source and target process+version')
       const next = await apiClient.post<any>(
         '/mission-control-api/migration/generate',
-        { sourceProcessDefinitionId: sourceDefinitionId, targetProcessDefinitionId: targetDefinitionId },
+        {
+          engineId: selectedEngineId,
+          sourceProcessDefinitionId: sourceDefinitionId,
+          targetProcessDefinitionId: targetDefinitionId,
+        },
         { credentials: 'include' }
       )
       const enginePlan =
@@ -172,7 +177,7 @@ export function useMigrationData({ instanceIds, preselectedKey, preselectedVersi
     queryFn: async () =>
       await apiClient.post<{ count: number }>(
         '/mission-control-api/migration/preview',
-        { plan: planWithOverrides, processInstanceIds: instanceIds },
+        { engineId: selectedEngineId, plan: planWithOverrides, processInstanceIds: instanceIds },
         { credentials: 'include' }
       ),
     enabled: !!planWithOverrides,
@@ -183,7 +188,7 @@ export function useMigrationData({ instanceIds, preselectedKey, preselectedVersi
     mutationFn: async () =>
       apiClient.post<any>(
         '/mission-control-api/migration/plan/validate',
-        { plan: planWithOverrides },
+        { engineId: selectedEngineId, plan: planWithOverrides },
         { credentials: 'include' }
       ),
     onSuccess: (data) => setValidation(data),
@@ -216,7 +221,14 @@ export function useMigrationData({ instanceIds, preselectedKey, preselectedVersi
     mutationFn: async () =>
       apiClient.post<{ id: string }>(
         '/mission-control-api/migration/execute-async',
-        { plan: planWithOverrides, processInstanceIds: instanceIds, skipCustomListeners, skipIoMappings, variables: varsObj },
+        {
+          engineId: selectedEngineId,
+          plan: planWithOverrides,
+          processInstanceIds: instanceIds,
+          skipCustomListeners,
+          skipIoMappings,
+          variables: varsObj,
+        },
         { credentials: 'include' }
       ),
     onSuccess: (data) => navigate(`/mission-control/batches/${data.id}`),
@@ -227,7 +239,14 @@ export function useMigrationData({ instanceIds, preselectedKey, preselectedVersi
     mutationFn: async () =>
       apiClient.post<{ ok: boolean }>(
         '/mission-control-api/migration/execute-direct',
-        { plan: planWithOverrides, processInstanceIds: instanceIds, skipCustomListeners, skipIoMappings, variables: varsObj },
+        {
+          engineId: selectedEngineId,
+          plan: planWithOverrides,
+          processInstanceIds: instanceIds,
+          skipCustomListeners,
+          skipIoMappings,
+          variables: varsObj,
+        },
         { credentials: 'include' }
       ),
     onSuccess: () => {
@@ -278,7 +297,7 @@ export function useMigrationData({ instanceIds, preselectedKey, preselectedVersi
       if (instanceIds.length === 0) return {} as Record<string, number>
       return await apiClient.post<Record<string, number>>(
         '/mission-control-api/migration/active-sources',
-        { processInstanceIds: instanceIds },
+        { engineId: selectedEngineId, processInstanceIds: instanceIds },
         { credentials: 'include' }
       )
     },
