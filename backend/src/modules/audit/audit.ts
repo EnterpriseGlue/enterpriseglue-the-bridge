@@ -12,12 +12,14 @@ import { PlatformPermissions } from '@shared/services/platform-admin/permissions
 
 const router = Router();
 
+router.use(auditLimiter);
+
 /**
  * GET /api/audit/logs
  * Get all audit logs (admin only)
  * Query params: limit, offset, action, userId, resourceType
  */
-router.get('/api/audit/logs', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), auditLimiter, asyncHandler(async (req, res) => {
+router.get('/api/audit/logs', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), asyncHandler(async (req, res) => {
   try {
     const limitNum = parseInt(req.query.limit as string) || 100;
     const offsetNum = parseInt(req.query.offset as string) || 0;
@@ -77,7 +79,7 @@ router.get('/api/audit/logs', requireAuth, requirePermission({ permission: Platf
  * GET /api/audit/logs/user/:userId
  * Get audit logs for specific user
  */
-router.get('/api/audit/logs/user/:userId', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), auditLimiter, asyncHandler(async (req, res) => {
+router.get('/api/audit/logs/user/:userId', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), asyncHandler(async (req, res) => {
   try {
     const { userId } = req.params;
     const limit = parseInt(req.query.limit as string) || 100;
@@ -94,7 +96,7 @@ router.get('/api/audit/logs/user/:userId', requireAuth, requirePermission({ perm
  * GET /api/audit/logs/resource/:resourceType/:resourceId
  * Get audit logs for specific resource
  */
-router.get('/api/audit/logs/resource/:resourceType/:resourceId', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), auditLimiter, asyncHandler(async (req, res) => {
+router.get('/api/audit/logs/resource/:resourceType/:resourceId', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), asyncHandler(async (req, res) => {
   try {
     const { resourceType, resourceId } = req.params;
     const limit = parseInt(req.query.limit as string) || 50;
@@ -111,7 +113,7 @@ router.get('/api/audit/logs/resource/:resourceType/:resourceId', requireAuth, re
  * GET /api/audit/stats
  * Get audit log statistics (admin only)
  */
-router.get('/api/audit/stats', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), auditLimiter, asyncHandler(async (req, res) => {
+router.get('/api/audit/stats', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), asyncHandler(async (req, res) => {
   try {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     const dataSource = await getDataSource();
@@ -166,7 +168,7 @@ router.get('/api/audit/stats', requireAuth, requirePermission({ permission: Plat
  * GET /api/audit/actions
  * Get list of all available audit actions
  */
-router.get('/api/audit/actions', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), auditLimiter, asyncHandler(async (req, res) => {
+router.get('/api/audit/actions', requireAuth, requirePermission({ permission: PlatformPermissions.AUDIT_VIEW }), asyncHandler(async (req, res) => {
   try {
     const dataSource = await getDataSource();
     const auditRepo = dataSource.getRepository(AuditLog);
