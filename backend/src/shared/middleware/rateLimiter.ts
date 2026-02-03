@@ -147,11 +147,11 @@ export const fileOperationsLimiter = rateLimit({
 
 /**
  * Audit endpoints rate limiter
- * Production: 300 requests per 15 minutes per user
+ * Production: 1000 requests per 15 minutes per user
  */
 export const auditLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 300 : 1000000,
+  max: process.env.NODE_ENV === 'production' ? 1000 : 1000000,
   message: { error: 'Too many audit requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
