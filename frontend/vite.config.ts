@@ -29,6 +29,34 @@ export default defineConfig(({ mode }) => {
         'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://1.www.s81c.com; font-src 'self' data: https://fonts.gstatic.com https://1.www.s81c.com; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:8787;",
       },
       proxy: {
+        '^/t/[^/]+/api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/engines-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/starbase-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/mission-control-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/git-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/vcs-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/health': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
         '/api': {
           target: proxyTarget,
           changeOrigin: true,
@@ -61,6 +89,34 @@ export default defineConfig(({ mode }) => {
     },
     preview: {
       proxy: {
+        '^/t/[^/]+/api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/engines-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/starbase-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/mission-control-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/git-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/vcs-api': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        '^/t/[^/]+/health': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
         '/api': {
           target: proxyTarget,
           changeOrigin: true,
