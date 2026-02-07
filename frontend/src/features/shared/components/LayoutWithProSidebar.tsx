@@ -644,18 +644,7 @@ export default function LayoutWithProSidebar() {
             onChange={(e) => setProfileLastName(e.target.value)}
           />
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              kind="tertiary"
-              size="sm"
-              onClick={() => {
-                handleCloseProfile()
-                navigate(toTenantPath('/settings/git-connections'))
-              }}
-            >
-              Git Connections
-            </Button>
-          </div>
+          {/* Git Connections moved to Project → (⋯) → Git Settings */}
         </div>
       </Modal>
       {/* Entire app shell uses g100 dark theme - header menus inherit this */}

@@ -44,7 +44,7 @@ export default function Breadcrumbs() {
     onUserManagement: effectivePathname === '/admin/users',
     onAuditLogs: effectivePathname === '/admin/audit-logs',
     onPlatformSettings: effectivePathname === '/admin/settings',
-    onGitConnections: effectivePathname === '/settings/git-connections',
+    onGitConnections: false, // Git Connections page removed — redirects to StarBase
   }
   
   const folderId = searchParams.get('folder') || null

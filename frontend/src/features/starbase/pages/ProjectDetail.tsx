@@ -24,6 +24,7 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  InlineNotification,
 } from '@carbon/react'
 import { Upload, Add, CloudUpload, TrashCan, Commit, Events, IbmWatsonMachineLearning, Renew, Information } from '@carbon/icons-react'
 import { BreadcrumbItem } from '@carbon/react'
@@ -35,6 +36,7 @@ import { ProjectAccessError, isProjectAccessError } from '../components/ProjectA
 import { validateAndUploadFile } from '../utils/uploadValidation'
 import { useInlineRename } from '../hooks/useInlineRename'
 import { SyncModal } from '../../git/components'
+import { ProjectGitSettings } from '../../git/components/ProjectGitSettings'
 import { usePlatformSyncSettings } from '../../platform-admin/hooks/usePlatformSyncSettings'
 import { apiClient } from '../../../shared/api/client'
 import { useSelectedEngine } from '../../../components/EngineSelector'
@@ -89,6 +91,7 @@ export default function ProjectDetail() {
   const moveModal = useModal<{ id: string; name: string; type: 'folder' | 'file' }>()
   const deployModal = useModal()
   const syncModal = useModal()
+  const [gitSettingsOpen, setGitSettingsOpen] = React.useState(false)
   const [batchDeleteIds, setBatchDeleteIds] = React.useState<string[] | null>(null)
   const [batchCancelSelection, setBatchCancelSelection] = React.useState<null | (() => void)>(null)
   
@@ -222,6 +225,14 @@ export default function ProjectDetail() {
       if (!Array.isArray(repos) || repos.length === 0) return null
       return repos[0] || null
     },
+    enabled: !!projectId,
+    staleTime: 60 * 1000,
+  })
+
+  // Fetch project-level Git connection info (for token warning banner)
+  const gitConnectionQ = useQuery({
+    queryKey: ['git-connection', projectId],
+    queryFn: () => apiClient.get<{ connected: boolean; lastValidatedAt?: number | null }>('/git-api/project-connection', { projectId }),
     enabled: !!projectId,
     staleTime: 60 * 1000,
   })
@@ -773,8 +784,30 @@ export default function ProjectDetail() {
           subtitle={subtitle}
           projectId={projectId}
           onDownloadProject={downloadProject}
+          onOpenGitSettings={() => setGitSettingsOpen(true)}
         />
 
+        {/* Git token warning banner */}
+        {gitConnectionQ.data?.connected && (() => {
+          const STALE_MS = 7 * 24 * 60 * 60 * 1000
+          const lv = gitConnectionQ.data.lastValidatedAt
+          const stale = lv ? (Date.now() - lv) > STALE_MS : true
+          return stale ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+              <InlineNotification
+                kind="warning"
+                title="Git token may be expired"
+                subtitle="The service token hasn't been validated recently. Open Git Settings to update it."
+                hideCloseButton
+                lowContrast
+                style={{ marginBottom: 0, flex: 1 }}
+              />
+              <Button kind="ghost" size="sm" onClick={() => setGitSettingsOpen(true)}>
+                Update token
+              </Button>
+            </div>
+          ) : null
+        })()}
 
         {contentsQ.isLoading && (
           <StarbaseTableShell>
@@ -1045,6 +1078,15 @@ export default function ProjectDetail() {
           setSelectedEngineForRequest={setSelectedEngineForRequest}
           requestEngineAccessM={requestEngineAccessM}
         />
+
+        {/* Project Git Connection Settings */}
+        {projectId && (
+          <ProjectGitSettings
+            projectId={projectId}
+            open={gitSettingsOpen}
+            onClose={() => setGitSettingsOpen(false)}
+          />
+        )}
       </div>
     </div>
   )

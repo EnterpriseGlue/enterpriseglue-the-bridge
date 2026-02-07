@@ -25,6 +25,21 @@ export class GitRepository extends AppBaseEntity {
   @Column({ name: 'default_branch', type: 'text', default: 'main' })
   defaultBranch!: string;
 
+  @Column({ name: 'encrypted_token', type: 'text', nullable: true })
+  encryptedToken!: string | null;
+
+  @Column({ name: 'last_validated_at', type: 'bigint', nullable: true })
+  lastValidatedAt!: number | null;
+
+  @Column({ name: 'token_scope_hint', type: 'text', nullable: true })
+  tokenScopeHint!: string | null;
+
+  @Column({ name: 'auto_push_enabled', type: 'boolean', nullable: true })
+  autoPushEnabled!: boolean | null;
+
+  @Column({ name: 'auto_pull_enabled', type: 'boolean', nullable: true })
+  autoPullEnabled!: boolean | null;
+
   @Column({ name: 'last_commit_sha', type: 'text', nullable: true })
   lastCommitSha!: string | null;
 

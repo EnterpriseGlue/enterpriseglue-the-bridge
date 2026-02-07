@@ -11,6 +11,7 @@ import { GitDeployment } from '@shared/db/entities/GitDeployment.js';
 import { GitAuditLog } from '@shared/db/entities/GitAuditLog.js';
 import { generateId } from '@shared/utils/id.js';
 import { logger } from '@shared/utils/logger.js';
+import { decrypt } from '@shared/services/encryption.js';
 import { vcsService } from '@shared/services/versioning/index.js';
 import { remoteGitService } from './RemoteGitService.js';
 import { credentialService } from './CredentialService.js';
@@ -31,6 +32,21 @@ export class GitService {
 
   constructor() {
     // VCS will be initialized on first use
+  }
+
+  /**
+   * Resolve the access token for a project's Git connection.
+   * Reads from git_repositories.encryptedToken (project-level).
+   */
+  static async getProjectAccessToken(repo: GitRepository, _actingUserId?: string): Promise<string | null> {
+    if (repo.encryptedToken) {
+      try {
+        return decrypt(repo.encryptedToken);
+      } catch (err) {
+        logger.error('Failed to decrypt project-level token – re-save the token in Git Settings', { projectId: repo.projectId, error: err });
+      }
+    }
+    return null;
   }
 
   /**
@@ -181,7 +197,8 @@ export class GitService {
 
       // Pull files from remote repository (only .bpmn and .dmn files)
       try {
-        const accessToken = await credentialService.getAccessToken(userId, providerId);
+        const savedRepo = await repoRepo.findOne({ where: { projectId }, order: { createdAt: 'DESC' } });
+        const accessToken = savedRepo ? await GitService.getProjectAccessToken(savedRepo, userId) : null;
         if (accessToken) {
           const repoFullName = namespace ? `${namespace}/${repositoryName}` : repositoryName;
           const pullResult = await remoteGitService.pullFromRemote(
@@ -297,14 +314,7 @@ export class GitService {
       throw new Error('Project is not connected to Git');
     }
 
-    const platformSettings = await platformSettingsService.get();
-    let accessToken = await credentialService.getAccessToken(options.userId, repo.providerId);
-    if (!accessToken && platformSettings.gitProjectTokenSharingEnabled && repo.connectedByUserId) {
-      const connectedByUserId = String(repo.connectedByUserId);
-      if (connectedByUserId && connectedByUserId !== options.userId) {
-        accessToken = await credentialService.getAccessToken(connectedByUserId, repo.providerId);
-      }
-    }
+    const accessToken = await GitService.getProjectAccessToken(repo, options.userId);
 
     if (!accessToken) {
       throw new Error('No Git credentials found for this provider');
@@ -318,6 +328,9 @@ export class GitService {
     const client = await remoteGitService.getClient(repo.providerId, accessToken);
     await client.testWriteAccess(repoFullName);
     logger.info('Deploy preflight passed', { projectId: options.projectId, ms: Date.now() - preflightStart });
+
+    // Update lastValidatedAt — token is confirmed working
+    await repoRepo.update({ id: repo.id }, { lastValidatedAt: Date.now() });
 
     // Always create VCS checkpoint before deploy to ensure consistency
     const vcsStart = Date.now();
@@ -466,14 +479,7 @@ export class GitService {
     });
 
     // Prefer remote commit history when we have credentials
-    const platformSettings = await platformSettingsService.get();
-    let accessToken = await credentialService.getAccessToken(userId, repo.providerId);
-    if (!accessToken && platformSettings.gitProjectTokenSharingEnabled && repo.connectedByUserId) {
-      const connectedByUserId = String(repo.connectedByUserId);
-      if (connectedByUserId && connectedByUserId !== userId) {
-        accessToken = await credentialService.getAccessToken(connectedByUserId, repo.providerId);
-      }
-    }
+    const accessToken = await GitService.getProjectAccessToken(repo, userId);
 
     if (accessToken) {
       try {

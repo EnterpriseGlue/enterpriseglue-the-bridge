@@ -18,6 +18,7 @@ import { ProjectMemberRole } from '@shared/db/entities/ProjectMemberRole.js';
 import { generateId } from '@shared/utils/id.js';
 import { logger } from '@shared/utils/logger.js';
 import { credentialService } from '@shared/services/git/CredentialService.js';
+import { encrypt } from '@shared/services/encryption.js';
 import { remoteGitService } from '@shared/services/git/RemoteGitService.js';
 import { vcsService } from '@shared/services/versioning/index.js';
 
@@ -212,6 +213,8 @@ router.post('/git-api/create-online', apiLimiter, requireAuth, validateBody(crea
       namespace: namespaceStr || null,
       repositoryName: remoteRepo.name,
       defaultBranch: remoteRepo.defaultBranch,
+      encryptedToken: accessToken ? encrypt(accessToken) : null,
+      lastValidatedAt: now,
       lastCommitSha: null,
       lastSyncAt: null,
       clonePath: `vcs://${projectId}`,
@@ -220,21 +223,6 @@ router.post('/git-api/create-online', apiLimiter, requireAuth, validateBody(crea
     });
 
     logger.info('Repository linked to project', { projectId, repoId, remoteUrl: remoteRepo.cloneUrl });
-
-    // Save token if provided (for future operations)
-    if (token) {
-      try {
-        await credentialService.saveCredential({
-          userId,
-          providerId,
-          authType: 'pat',
-          accessToken: token,
-        });
-        logger.info('Token saved for future use', { userId, providerId });
-      } catch (saveError) {
-        logger.warn('Failed to save token (non-fatal)', { error: saveError });
-      }
-    }
 
     // Return success
     res.status(201).json({

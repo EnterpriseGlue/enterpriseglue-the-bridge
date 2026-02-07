@@ -73,14 +73,7 @@ export function CreateOnlineProjectAuthSection({
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-3)' }}>
         <div style={{ fontWeight: 500 }}>Authentication</div>
-        <Button
-          kind="ghost"
-          size="sm"
-          onClick={() => navigate(toTenantPath('/settings/git-connections'))}
-          style={{ padding: 0, minHeight: 'unset' }}
-        >
-          Manage Git Connections
-        </Button>
+        {/* Git connections now managed per-project in Git Settings */}
       </div>
 
       {existingCredentials.length > 0 && connectionMode === 'select' ? (

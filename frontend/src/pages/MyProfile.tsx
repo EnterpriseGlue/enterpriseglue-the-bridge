@@ -114,13 +114,7 @@ export default function MyProfile() {
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
-              <Button
-                kind="secondary"
-                renderIcon={LinkIcon}
-                onClick={() => navigate(toTenantPath('/settings/git-connections'))}
-              >
-                Git Connections
-              </Button>
+              {/* Git Connections moved to Project Settings → Git tab */}
             </div>
           </div>
         </Tile>

@@ -20,6 +20,7 @@ import { ProjectMemberRole } from '@shared/db/entities/ProjectMemberRole.js';
 import { logger } from '@shared/utils/logger.js';
 import { createGitProviderClient, detectProviderFromUrl } from '@shared/services/git/providers/index.js';
 import { credentialService } from '@shared/services/git/CredentialService.js';
+import { encrypt } from '@shared/services/encryption.js';
 import { vcsService } from '@shared/services/versioning/index.js';
 import { generateId, unixTimestamp } from '@shared/utils/id.js';
 
@@ -367,6 +368,8 @@ router.post('/git-api/clone', apiLimiter, requireAuth, validateBody(cloneSchema)
       namespace,
       repositoryName: repoInfo.name,
       defaultBranch: branch,
+      encryptedToken: accessToken ? encrypt(accessToken) : null,
+      lastValidatedAt: Date.now(),
       lastCommitSha: null,
       lastSyncAt: Date.now(),
       clonePath: `vcs://${projectId}`,

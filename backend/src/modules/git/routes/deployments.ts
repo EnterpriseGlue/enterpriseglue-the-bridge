@@ -60,14 +60,14 @@ router.post('/git-api/deploy', apiLimiter, requireAuth, validateBody(DeployReque
     if (msg.includes('Project is not connected to Git')) {
       return res.status(400).json({
         error: 'Project is not connected to Git',
-        hint: 'Connect Git from Starbase → Project Overview (⋯) → Connect to Git',
+        hint: 'Open the project → (⋯) → Git Settings to connect a repository and provide a service token.',
       })
     }
 
     if (msg.includes('No Git credentials found')) {
       return res.status(403).json({
         error: 'No Git credentials found for this provider',
-        hint: 'Go to your Git connections and re-save your access token. The stored token may have been encrypted with a different key.',
+        hint: 'Ask a project admin to update the service token in Project → (⋯) → Git Settings.',
       })
     }
 
@@ -80,15 +80,15 @@ router.post('/git-api/deploy', apiLimiter, requireAuth, validateBody(DeployReque
 
     if (msg.includes('not accessible by personal access token') || msg.includes('Resource not accessible')) {
       return res.status(403).json({
-        error: 'Your personal access token does not have sufficient permissions to push to this repository',
-        hint: 'Update your token permissions: for fine-grained tokens enable "Contents: Read and write", for classic tokens enable the "repo" scope. Then update the token in Settings → Git Connections.',
+        error: 'The service token does not have sufficient permissions to push to this repository',
+        hint: 'Update the token in Project → (⋯) → Git Settings. For fine-grained tokens enable "Contents: Read and write", for classic tokens enable the "repo" scope.',
       })
     }
 
     if (msg.includes('Bad credentials') || msg.includes('401') || msg.includes('Unauthorized')) {
       return res.status(401).json({
-        error: 'Git authentication failed — your access token may be expired or revoked',
-        hint: 'Generate a new token from your Git provider and update it in Settings → Git Connections.',
+        error: 'Git authentication failed — the service token may be expired or revoked',
+        hint: 'Ask a project admin to generate a new token and update it in Project → (⋯) → Git Settings.',
       })
     }
 

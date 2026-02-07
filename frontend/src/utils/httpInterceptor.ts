@@ -233,8 +233,20 @@ export async function interceptedFetch(
       onTokenRefreshed(success);
       
       if (success) {
-        // Retry the original request (new access token is in the cookie)
-        response = await fetch(requestUrl, fetchOptions);
+        // After refresh the accessToken cookie changed; get a fresh CSRF token
+        // by making a lightweight GET that goes through CSRF middleware.
+        try {
+          const csrfResp = await fetch(applyApiBaseUrl('/api/auth/me'), { credentials: 'include' });
+          updateCsrfToken(csrfResp);
+        } catch { /* best effort */ }
+
+        // Rebuild headers with the fresh CSRF token for the retry
+        const retryHeaders = new Headers(getAuthHeaders());
+        if (fetchOptions.headers) {
+          const orig = new Headers(fetchOptions.headers);
+          orig.forEach((v, k) => { if (k.toLowerCase() !== 'x-csrf-token') retryHeaders.set(k, v); });
+        }
+        response = await fetch(requestUrl, { ...fetchOptions, headers: retryHeaders });
         updateCsrfToken(response);
       } else {
         // Refresh failed, user will be redirected to login
@@ -249,8 +261,13 @@ export async function interceptedFetch(
       });
       
       if (success) {
-        // Retry (new access token is in the cookie)
-        response = await fetch(requestUrl, fetchOptions);
+        // Rebuild headers with fresh CSRF token after refresh
+        const retryHeaders = new Headers(getAuthHeaders());
+        if (fetchOptions.headers) {
+          const orig = new Headers(fetchOptions.headers);
+          orig.forEach((v, k) => { if (k.toLowerCase() !== 'x-csrf-token') retryHeaders.set(k, v); });
+        }
+        response = await fetch(requestUrl, { ...fetchOptions, headers: retryHeaders });
         updateCsrfToken(response);
       }
     }

@@ -53,14 +53,7 @@ export function GitSettingsSection({
                 toggled={settings?.syncPullEnabled ?? false}
                 onToggle={(checked) => onToggle('syncPullEnabled', checked)}
               />
-              <Toggle
-                id="git-project-token-sharing"
-                labelText="Allow project Git token reuse"
-                labelA="Off"
-                labelB="On"
-                toggled={settings?.gitProjectTokenSharingEnabled ?? false}
-                onToggle={(checked) => onToggle('gitProjectTokenSharingEnabled', checked)}
-              />
+              {/* Token reuse toggle removed — tokens now stored at project level */}
             </div>
           </Tile>
         </PlatformCol>

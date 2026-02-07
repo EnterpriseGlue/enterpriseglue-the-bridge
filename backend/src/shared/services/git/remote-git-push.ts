@@ -20,6 +20,7 @@ export interface PushToRemoteResult {
   skippedFilesCount: number;
   totalFilesCount: number;
   usedRemoteTree: boolean;
+  isFirstSync: boolean;
 }
 
 export interface PushOptions {
@@ -61,6 +62,7 @@ export async function pushToRemote(
   mark('loadRepoManifestMs', manifestStart);
 
   let previousManifest: Record<string, string> | null = null;
+  const isFirstSync = !repoRow?.lastPushedManifest;
   if (repoRow?.lastPushedManifest) {
     try {
       const parsed = JSON.parse(String(repoRow.lastPushedManifest));
@@ -197,6 +199,7 @@ export async function pushToRemote(
       skippedFilesCount,
       totalFilesCount: fileEntries.length,
       usedRemoteTree,
+      isFirstSync,
     };
   }
 
@@ -230,7 +233,7 @@ export async function pushToRemote(
         await vcsService.commit(
           mainBranch.id,
           options.userId,
-          options.message || `Pushed to remote: ${options.repo}`,
+          options.message ? `Pushed to Git: ${options.message}` : `Pushed to Git: ${options.repo}`,
           { isRemote: true, source: 'sync-push' }
         );
       }
@@ -261,5 +264,6 @@ export async function pushToRemote(
     skippedFilesCount,
     totalFilesCount: fileEntries.length,
     usedRemoteTree,
+    isFirstSync,
   };
 }

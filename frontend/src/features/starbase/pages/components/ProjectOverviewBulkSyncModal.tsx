@@ -133,6 +133,15 @@ export function ProjectOverviewBulkSyncModal({
           {pullEnabled && <SelectItem value="pull" text="Pull" />}
         </Select>
 
+        <InlineNotification
+          kind="info"
+          title="First sync note"
+          subtitle="Projects syncing for the first time will push all files, which may take a moment."
+          lowContrast
+          hideCloseButton
+          style={{ marginBottom: 0 }}
+        />
+
         <TextInput
           id="bulk-sync-message"
           labelText="Commit message"

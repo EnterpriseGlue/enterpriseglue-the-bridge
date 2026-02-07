@@ -221,6 +221,17 @@ export default function SyncModal({
             <InlineLoading description="Checking Git credentials..." />
           )}
 
+          {/* First sync warning */}
+          {repo && !repo.lastSyncAt && (
+            <InlineNotification
+              kind="info"
+              title="First sync"
+              subtitle="This is the first sync for this project. All files will be pushed which may take a moment."
+              lowContrast
+              hideCloseButton
+            />
+          )}
+
           {/* Version Message - Required */}
           <TextArea
             id="commit-message"

@@ -161,6 +161,7 @@ class RemoteGitService {
     mark('loadRepoManifestMs', manifestStart);
 
     let previousManifest: Record<string, string> | null = null;
+    const isFirstSync = !repoRow?.lastPushedManifest;
     if (repoRow?.lastPushedManifest) {
       try {
         const parsed = JSON.parse(String(repoRow.lastPushedManifest));
@@ -353,6 +354,7 @@ class RemoteGitService {
         skippedFilesCount,
         totalFilesCount: filesToPush.length,
         usedRemoteTree,
+        isFirstSync,
       };
     }
 
@@ -387,10 +389,11 @@ class RemoteGitService {
         const mainBranch = await vcsService.getMainBranch(projectId);
         if (mainBranch) {
           // Commit current state to VCS
+          const vcsMessage = options.message ? `Pushed to Git: ${options.message}` : `Pushed to Git: ${options.repo}@${branch}`;
           const vcsCommit = await vcsService.commit(
             mainBranch.id,
             options.userId,
-            options.message || `Push to remote: ${options.repo}@${branch}`,
+            vcsMessage,
             { isRemote: true, source: 'sync-push' }
           );
           vcsCommitId = vcsCommit.id;
@@ -428,6 +431,7 @@ class RemoteGitService {
       skippedFilesCount,
       totalFilesCount: filesToPush.length,
       usedRemoteTree,
+      isFirstSync,
     };
   }
 
@@ -642,7 +646,7 @@ class RemoteGitService {
       const commit = await vcsService.commit(
         mainBranch.id,
         userId,
-        remoteCommitMessage || `Pull from remote: ${options.repo}@${branch}`,
+        remoteCommitMessage ? `Pulled from Git: ${remoteCommitMessage}` : `Pulled from Git: ${options.repo}@${branch}`,
         { isRemote: true, source: 'sync-pull' } // Mark as remote since it came from Git
       );
       logger.info('Created checkpoint for pull', { commitId: commit.id, message: remoteCommitMessage, filesChanged: filesActuallyChanged });

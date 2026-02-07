@@ -88,7 +88,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
 
   const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
     getSecret: () => config.jwtSecret,
-    getSessionIdentifier: (req) => req.cookies?.accessToken ?? req.ip ?? '',
+    getSessionIdentifier: (req) => req.cookies?.refreshToken ?? req.cookies?.accessToken ?? req.ip ?? '',
     cookieName: 'csrf_secret',
     cookieOptions: {
       httpOnly: true,

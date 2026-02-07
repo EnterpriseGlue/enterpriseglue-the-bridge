@@ -8,6 +8,7 @@ interface ProjectDetailHeaderProps {
   subtitle: string
   projectId?: string | null
   onDownloadProject: (projectId: string, projectName: string) => void
+  onOpenGitSettings?: () => void
 }
 
 export function ProjectDetailHeader({
@@ -15,6 +16,7 @@ export function ProjectDetailHeader({
   subtitle,
   projectId,
   onDownloadProject,
+  onOpenGitSettings,
 }: ProjectDetailHeaderProps) {
   return (
     <PageHeader
@@ -24,6 +26,12 @@ export function ProjectDetailHeader({
       gradient={PAGE_GRADIENTS.blue}
       actions={
         <OverflowMenu size="sm" flipped wrapperClasses="eg-no-tooltip" iconDescription="Project options">
+          {onOpenGitSettings && (
+            <OverflowMenuItem
+              itemText="Git Settings"
+              onClick={onOpenGitSettings}
+            />
+          )}
           <OverflowMenuItem
             itemText="Download project"
             onClick={() => {

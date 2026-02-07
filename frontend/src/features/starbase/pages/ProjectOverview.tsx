@@ -19,6 +19,7 @@ import { usePlatformSyncSettings } from '../../platform-admin/hooks/usePlatformS
 import { ProjectOverviewTable } from './components/ProjectOverviewTable'
 import { ProjectOverviewBulkSyncModal } from './components/ProjectOverviewBulkSyncModal'
 import { ProjectOverviewModals } from './components/ProjectOverviewModals'
+import { ProjectGitSettings } from '../../git/components/ProjectGitSettings'
 import type { Project, ProjectMember, EngineAccessData, SyncDirection, BulkSyncResult } from './projectOverviewTypes'
 import styles from './ProjectOverview.module.css'
  
@@ -99,6 +100,7 @@ export default function ProjectOverview() {
   const [engineAccessOpen, setEngineAccessOpen] = React.useState(false)
   const [engineAccessProject, setEngineAccessProject] = React.useState<{ id: string; name: string } | null>(null)
   const [selectedEngineForRequest, setSelectedEngineForRequest] = React.useState<string | null>(null)
+  const [gitSettingsProjectId, setGitSettingsProjectId] = React.useState<string | null>(null)
 
   const didHandleOpenCreateProject = React.useRef(false)
   React.useEffect(() => {
@@ -377,12 +379,10 @@ export default function ProjectOverview() {
             setEngineAccessOpen(true)
           }}
           onConnectGit={(project) => {
-            setOnlineProjectContext({ id: project.id, name: project.name })
-            createOnlineModal.openModal()
+            setGitSettingsProjectId(project.id)
           }}
           onEditGit={(project) => {
-            setOnlineProjectContext({ id: project.id, name: project.name })
-            createOnlineModal.openModal()
+            setGitSettingsProjectId(project.id)
           }}
           onDisconnectGit={(project) => setDisconnectProject(project)}
           onDeleteProject={(project) => setDeleteProject(project)}
@@ -430,6 +430,15 @@ export default function ProjectOverview() {
         setSelectedEngineForRequest={setSelectedEngineForRequest}
         requestEngineAccessM={requestEngineAccessM}
       />
+
+      {/* Project Git Settings modal (new project-level connection) */}
+      {gitSettingsProjectId && (
+        <ProjectGitSettings
+          projectId={gitSettingsProjectId}
+          open={!!gitSettingsProjectId}
+          onClose={() => setGitSettingsProjectId(null)}
+        />
+      )}
 
       </div>
     </div>

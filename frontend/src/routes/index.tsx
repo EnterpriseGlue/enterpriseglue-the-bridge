@@ -66,8 +66,7 @@ import Dashboard from '../pages/Dashboard'
 // Git OAuth
 import OAuthCallback from '../features/git/pages/OAuthCallback'
 
-// Settings
-import GitConnections from '../pages/settings/GitConnections'
+// Settings (GitConnections page removed — Git connections now live at project level)
 
 import { useAuth } from '../shared/hooks/useAuth'
 import { useFeatureFlag } from '../shared/hooks/useFeatureFlag'
@@ -437,7 +436,7 @@ export function createProtectedChildRoutes(isRootLevel: boolean): RouteObject[] 
 
     // Settings
     { path: `${pathPrefix}profile`, element: <Navigate to={fallbackPath} replace /> },
-    { path: `${pathPrefix}settings/git-connections`, element: <GitConnections /> },
+    { path: `${pathPrefix}settings/git-connections`, element: <Navigate to={isRootLevel ? '/starbase' : '../starbase'} replace /> },
 
     // Legacy redirects
     { path: `${pathPrefix}tower/*`, element: <Navigate to={isRootLevel ? '/mission-control/processes' : '../mission-control/processes'} replace /> },

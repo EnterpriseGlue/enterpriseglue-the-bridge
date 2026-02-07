@@ -18,6 +18,7 @@ import { ProjectMember } from '@shared/db/entities/ProjectMember.js';
 import { logger } from '@shared/utils/logger.js';
 import { generateId } from '@shared/utils/id.js';
 import { credentialService } from '@shared/services/git/CredentialService.js';
+import { GitService } from '@shared/services/git/GitService.js';
 import { remoteGitService } from '@shared/services/git/RemoteGitService.js';
 import { vcsService } from '@shared/services/versioning/index.js';
 import { projectMemberService } from '@shared/services/platform-admin/ProjectMemberService.js';
@@ -117,16 +118,8 @@ router.post('/git-api/sync', apiLimiter, requireAuth, validateBody(syncBodySchem
   }
   const providerId = repo.providerId;
 
-  // Get access token
-  const platformSettings = await platformSettingsService.get();
-  let accessToken = await credentialService.getAccessToken(userId, providerId);
-
-  if (!accessToken && platformSettings.gitProjectTokenSharingEnabled && repo.connectedByUserId) {
-    const connectedByUserId = String(repo.connectedByUserId);
-    if (connectedByUserId && connectedByUserId !== userId) {
-      accessToken = await credentialService.getAccessToken(connectedByUserId, providerId);
-    }
-  }
+  // Get access token (project-level first, legacy fallback)
+  const accessToken = await GitService.getProjectAccessToken(repo, userId);
 
   if (!accessToken) {
     return res.status(401).json({ 
@@ -141,6 +134,7 @@ router.post('/git-api/sync', apiLimiter, requireAuth, validateBody(syncBodySchem
     filesChanged: number;
     commitSha?: string;
     error?: string;
+    isFirstSync?: boolean;
   } = {
     pushed: false,
     pulled: false,
@@ -191,6 +185,9 @@ router.post('/git-api/sync', apiLimiter, requireAuth, validateBody(syncBodySchem
       await preflightClient.testWriteAccess(repoFullName);
       logger.info('Sync push preflight passed', { projectId, ms: Date.now() - preflightStart });
 
+      // Update lastValidatedAt — token is confirmed working
+      await gitRepoRepo.update({ id: repo.id }, { lastValidatedAt: Date.now() });
+
       // Sync main DB files to VCS and create a commit
       // This ensures VCS snapshots match what we push to GitHub
       // Also ensures draft branch is updated so UI shows files as synced
@@ -204,7 +201,7 @@ router.post('/git-api/sync', apiLimiter, requireAuth, validateBody(syncBodySchem
           await vcsService.syncFromMainDb(projectId, userId, draftBranch.id);
           
           // Commit on draft so the draft headCommitId matches current files
-          await vcsService.commit(draftBranch.id, userId, commitMessage, { source: 'sync-push' });
+          await vcsService.commit(draftBranch.id, userId, `Pushed to Git: ${commitMessage}`, { source: 'sync-push' });
           
           // Check if main needs updating
           const hasChangesVsMain = await vcsService.hasUncommittedChanges(projectId);
@@ -218,7 +215,7 @@ router.post('/git-api/sync', apiLimiter, requireAuth, validateBody(syncBodySchem
         } else {
           // No user branch - create a direct commit on main to capture current state
           logger.info('No user branch, creating direct VCS commit', { projectId });
-          await vcsService.commitCurrentState(projectId, userId, commitMessage, 'sync-push');
+          await vcsService.commitCurrentState(projectId, userId, `Pushed to Git: ${commitMessage}`, 'sync-push');
         }
 
         logger.info('Auto-publish timing', { projectId, ms: Date.now() - publishStart });
@@ -246,6 +243,7 @@ router.post('/git-api/sync', apiLimiter, requireAuth, validateBody(syncBodySchem
 
       results.pushed = didPush;
       results.commitSha = commitSha;
+      results.isFirstSync = pushResult.isFirstSync;
       results.filesChanged += pushResult.pushedFilesCount + pushResult.deletionsCount;
       
       // Update last sync info
