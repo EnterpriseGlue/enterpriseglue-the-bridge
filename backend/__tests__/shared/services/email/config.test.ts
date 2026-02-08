@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getResendClient } from '../../../../src/shared/services/email/config.js';
+import { getEmailConfigForTenant } from '../../../../src/shared/services/email/config.js';
 
-vi.mock('resend', () => ({
-  Resend: vi.fn().mockImplementation(() => ({})),
+vi.mock('@shared/db/data-source.js', () => ({
+  getDataSource: vi.fn().mockResolvedValue({
+    getRepository: () => ({
+      findOneBy: vi.fn().mockResolvedValue(null),
+    }),
+  }),
 }));
 
-vi.mock('@shared/config/index.js', () => ({
-  config: {
-    resendApiKey: null,
-  },
+vi.mock('@shared/utils/crypto.js', () => ({
+  decrypt: vi.fn((v: string) => v),
 }));
 
 describe('email config', () => {
@@ -16,8 +18,8 @@ describe('email config', () => {
     vi.clearAllMocks();
   });
 
-  it('returns null when RESEND_API_KEY not configured', () => {
-    const client = getResendClient();
-    expect(client).toBeNull();
+  it('returns null when no email config exists in database', async () => {
+    const config = await getEmailConfigForTenant();
+    expect(config).toBeNull();
   });
 });

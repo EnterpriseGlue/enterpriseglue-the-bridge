@@ -72,8 +72,6 @@ const schemaName = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/);
   adminPassword: z.string().min(8),
   adminEmailVerificationExempt: z.boolean().default(false),
   
-  // Email configuration (Resend)
-  resendApiKey: z.string().optional(),
   frontendUrl: z.string().url().default('http://localhost:5173'),
   
   // Camunda configuration (optional - can use persisted engines instead)
@@ -155,7 +153,6 @@ function loadConfig(): Config {
     adminEmail: process.env.ADMIN_EMAIL,
     adminPassword: process.env.ADMIN_PASSWORD || generatedAdminPassword,
     adminEmailVerificationExempt: process.env.ADMIN_EMAIL_VERIFICATION_EXEMPT === 'true',
-    resendApiKey: process.env.RESEND_API_KEY,
     frontendUrl: process.env.FRONTEND_URL,
     camundaBaseUrl: process.env.CAMUNDA_BASE_URL,
     camundaUsername: process.env.CAMUNDA_USERNAME,

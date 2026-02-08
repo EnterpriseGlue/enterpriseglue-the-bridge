@@ -1,5 +1,5 @@
 import { logger } from '@shared/utils/logger.js';
-import { getResendClient } from './config.js';
+import { sendEmailWithConfig } from './config.js';
 import {
   getWelcomeEmailHtml,
   getWelcomeEmailText,
@@ -12,86 +12,58 @@ export interface WelcomeEmailParams {
   firstName?: string;
   temporaryPassword: string;
   loginUrl?: string;
+  tenantId?: string;
 }
 
 /**
  * Send welcome email to new user with temporary password
  */
 export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<{ success: boolean; error?: string }> {
-  const client = getResendClient();
+  const { to, firstName, temporaryPassword, loginUrl = 'http://localhost:5173/login', tenantId } = params;
 
-  if (!client) {
-    logger.warn(`⚠️  Would send welcome email to ${params.to} (email disabled)`);
-    return { success: false, error: 'Email service not configured' };
+  const result = await sendEmailWithConfig(
+    tenantId,
+    to,
+    'Welcome to EnterpriseGlue - Your Account Details',
+    getWelcomeEmailHtml({ to, firstName, temporaryPassword, loginUrl }),
+    getWelcomeEmailText({ to, firstName, temporaryPassword, loginUrl }),
+  );
+
+  if (result.success) {
+    logger.info(`✅ Welcome email sent to ${to}`);
+  } else {
+    logger.error(`❌ Failed to send welcome email to ${to}: ${result.error}`);
   }
 
-  try {
-    const { to, firstName, temporaryPassword, loginUrl = 'http://localhost:5173/login' } = params;
-
-    const result = await client.emails.send({
-      from: 'Voyager <onboarding@resend.dev>',
-      to: [to],
-      subject: 'Welcome to Voyager - Your Account Details',
-      html: getWelcomeEmailHtml({ to, firstName, temporaryPassword, loginUrl }),
-      text: getWelcomeEmailText({ to, firstName, temporaryPassword, loginUrl }),
-    });
-
-    if (result.error) {
-      logger.error('❌ Failed to send email:', result.error);
-      return { success: false, error: result.error.message };
-    }
-
-    logger.info(`✅ Welcome email sent to ${to} (ID: ${result.data?.id})`);
-    return { success: true };
-  } catch (error) {
-    logger.error('❌ Error sending email:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
+  return result;
 }
 
 export interface VerificationEmailParams {
   to: string;
   firstName?: string;
   verificationUrl: string;
+  tenantId?: string;
 }
 
 /**
  * Send email verification link to user
  */
 export async function sendVerificationEmail(params: VerificationEmailParams): Promise<{ success: boolean; error?: string }> {
-  const client = getResendClient();
+  const { to, firstName, verificationUrl, tenantId } = params;
 
-  if (!client) {
-    logger.warn(`⚠️  Would send verification email to ${params.to} (email disabled)`);
-    return { success: false, error: 'Email service not configured' };
+  const result = await sendEmailWithConfig(
+    tenantId,
+    to,
+    'Verify Your Email - EnterpriseGlue',
+    getVerificationEmailHtml({ firstName, verificationUrl }),
+    getVerificationEmailText({ firstName, verificationUrl }),
+  );
+
+  if (result.success) {
+    logger.info(`✅ Verification email sent to ${to}`);
+  } else {
+    logger.error(`❌ Failed to send verification email to ${to}: ${result.error}`);
   }
 
-  try {
-    const { to, firstName, verificationUrl } = params;
-
-    const result = await client.emails.send({
-      from: 'Voyager <onboarding@resend.dev>',
-      to: [to],
-      subject: 'Verify Your Email - Voyager',
-      html: getVerificationEmailHtml({ firstName, verificationUrl }),
-      text: getVerificationEmailText({ firstName, verificationUrl }),
-    });
-
-    if (result.error) {
-      logger.error('❌ Failed to send verification email:', result.error);
-      return { success: false, error: result.error.message };
-    }
-
-    logger.info(`✅ Verification email sent to ${to} (ID: ${result.data?.id})`);
-    return { success: true };
-  } catch (error) {
-    logger.error('❌ Error sending verification email:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
+  return result;
 }

@@ -1,7 +1,7 @@
 import { logger } from '@shared/utils/logger.js';
 import { getDataSource } from '@shared/db/data-source.js';
 import { PlatformSettings } from '@shared/db/entities/PlatformSettings.js';
-import { getResendClient } from './config.js';
+import { sendEmailWithConfig } from './config.js';
 import { getActiveTemplateByType, renderBracesTemplate, escapeHtml } from './utils.js';
 
 export interface InvitationEmailParams {
@@ -10,18 +10,12 @@ export interface InvitationEmailParams {
   inviteUrl: string;
   resourceType: 'tenant' | 'project' | 'engine';
   invitedByName: string;
+  tenantId?: string;
 }
 
 export async function sendInvitationEmail(params: InvitationEmailParams): Promise<{ success: boolean; error?: string }> {
-  const client = getResendClient();
-
-  if (!client) {
-    logger.warn(`⚠️  Would send invitation email to ${params.to} (email disabled)`);
-    return { success: false, error: 'Email service not configured' };
-  }
-
   try {
-    const { to, tenantName, inviteUrl, resourceType, invitedByName } = params;
+    const { to, tenantName, inviteUrl, resourceType, invitedByName, tenantId } = params;
     const resourceLabel = resourceType === 'tenant' ? 'workspace' : resourceType;
 
     const dataSource = await getDataSource();
@@ -111,21 +105,15 @@ This invitation will expire in 7 days.`;
       ? renderBracesTemplate(template.textTemplate, vars)
       : defaultText;
 
-    const result = await client.emails.send({
-      from: 'EnterpriseGlue <noreply@enterpriseglue.ai>',
-      to: [to],
-      subject,
-      html,
-      text,
-    });
+    const result = await sendEmailWithConfig(tenantId, to, subject, html, text);
 
-    if (result.error) {
-      logger.error('❌ Failed to send invitation email:', result.error);
-      return { success: false, error: result.error.message };
+    if (result.success) {
+      logger.info(`✅ Invitation email sent to ${to}`);
+    } else {
+      logger.error(`❌ Failed to send invitation email to ${to}: ${result.error}`);
     }
 
-    logger.info(`✅ Invitation email sent to ${to} (ID: ${result.data?.id})`);
-    return { success: true };
+    return result;
   } catch (error) {
     logger.error('❌ Error sending invitation email:', error);
     return { 

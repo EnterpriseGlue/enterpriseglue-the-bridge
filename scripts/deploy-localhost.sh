@@ -137,10 +137,6 @@ check_env() {
   fi
   
   # Warn about optional features
-  if [[ -z "${RESEND_API_KEY:-}" ]]; then
-    warn "Email not configured (env) - configure via Admin UI or set RESEND_API_KEY"
-  fi
-  
   if [[ -z "${MICROSOFT_CLIENT_ID:-}" ]]; then
     warn "Microsoft Entra ID not configured - SSO will not be available"
   else
@@ -375,11 +371,7 @@ print_summary() {
     log "⚠️  Microsoft Entra ID: Not configured"
   fi
   
-  if [[ -n "${RESEND_API_KEY:-}" ]]; then
-    log "✅ Email Service: Enabled (env: Resend)"
-  else
-    log "⚠️  Email Service: Not configured via env (configure in Admin UI → Platform Settings → Email)"
-  fi
+  log "ℹ️  Email Service: Configure in Admin UI → Platform Settings → Email"
   
   log ""
   log "Logs:"
