@@ -9,6 +9,16 @@ vi.mock('react-router-dom', () => ({
   useLocation: () => ({ state: null }),
 }));
 
+vi.mock('@src/shared/hooks/useTenantNavigate', () => ({
+  useTenantNavigate: () => ({
+    tenantNavigate: vi.fn(),
+    toTenantPath: (p: string) => p,
+    tenantSlug: 'default',
+    effectivePathname: '/',
+    navigate: vi.fn(),
+  }),
+}));
+
 vi.mock('@src/features/mission-control/shared/stores/decisionsFilterStore', () => ({
   useDecisionsFilterStore: () => ({
     selectedDefinition: null,

@@ -11,6 +11,16 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+vi.mock('@src/shared/hooks/useTenantNavigate', () => ({
+  useTenantNavigate: () => ({
+    tenantNavigate: vi.fn(),
+    toTenantPath: (p: string) => p,
+    tenantSlug: 'default',
+    effectivePathname: '/',
+    navigate: vi.fn(),
+  }),
+}));
+
 describe('InstanceHeader', () => {
   it('renders instance metadata and incident banner', () => {
     Object.assign(navigator, { clipboard: { writeText: vi.fn() } });

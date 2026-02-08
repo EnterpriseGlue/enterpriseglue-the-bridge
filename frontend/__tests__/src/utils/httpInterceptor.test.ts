@@ -130,17 +130,19 @@ describe('httpInterceptor', () => {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
+        const csrfSuccess = new Response(null, { status: 200, headers: { 'X-CSRF-Token': 'csrf-after-refresh' } });
         const retrySuccess = new Response(JSON.stringify({ data: 'success' }), { status: 200 });
 
         const fetchMock = vi.spyOn(globalThis, 'fetch')
           .mockResolvedValueOnce(first401)
           .mockResolvedValueOnce(refreshSuccess)
+          .mockResolvedValueOnce(csrfSuccess)
           .mockResolvedValueOnce(retrySuccess);
 
         const result = await interceptedFetch('/api/data');
 
         expect(result.status).toBe(200);
-        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(fetchMock).toHaveBeenCalledTimes(4);
       });
 
       it('redirects to login on failed refresh', async () => {
@@ -225,6 +227,7 @@ describe('httpInterceptor', () => {
         const first401 = new Response(null, { status: 401 });
         const second401 = new Response(null, { status: 401 });
         const refreshSuccess = new Response(JSON.stringify({ accessToken: 'new-token' }), { status: 200 });
+        const csrfSuccess = new Response(null, { status: 200, headers: { 'X-CSRF-Token': 'csrf-after-refresh' } });
         const retry1 = new Response(JSON.stringify({ data: 'req1' }), { status: 200 });
         const retry2 = new Response(JSON.stringify({ data: 'req2' }), { status: 200 });
 
@@ -232,6 +235,7 @@ describe('httpInterceptor', () => {
           .mockResolvedValueOnce(first401)
           .mockResolvedValueOnce(second401)
           .mockResolvedValueOnce(refreshSuccess)
+          .mockResolvedValueOnce(csrfSuccess)
           .mockResolvedValueOnce(retry1)
           .mockResolvedValueOnce(retry2);
 
@@ -243,7 +247,7 @@ describe('httpInterceptor', () => {
 
         expect(result1.status).toBe(200);
         expect(result2.status).toBe(200);
-        expect(fetchMock).toHaveBeenCalledTimes(5);
+        expect(fetchMock).toHaveBeenCalledTimes(6);
       });
     });
 

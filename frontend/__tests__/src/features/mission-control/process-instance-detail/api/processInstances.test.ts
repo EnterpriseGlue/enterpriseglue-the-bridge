@@ -181,7 +181,7 @@ describe('processInstances API', () => {
       const result = await getProcessInstanceExternalTasks('pi1');
 
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/mission-control-api/process-instances/pi1/external-tasks',
+        '/mission-control-api/process-instances/pi1/failed-external-tasks',
         undefined,
         { credentials: 'include' }
       );

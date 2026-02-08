@@ -7,6 +7,16 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
 }));
 
+vi.mock('@src/shared/hooks/useTenantNavigate', () => ({
+  useTenantNavigate: () => ({
+    tenantNavigate: vi.fn(),
+    tenantSlug: 'default',
+    effectivePathname: '/',
+    navigate: vi.fn(),
+    toTenantPath: (p: string) => p,
+  }),
+}));
+
 vi.mock('@tanstack/react-query', () => ({
   useQuery: () => ({ data: [], isLoading: false }),
 }));

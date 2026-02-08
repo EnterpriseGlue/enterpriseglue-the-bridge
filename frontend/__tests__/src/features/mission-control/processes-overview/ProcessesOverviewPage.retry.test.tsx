@@ -100,11 +100,12 @@ describe('ProcessesOverviewPage retry', () => {
       expect(screen.getByText('Order Process')).toBeInTheDocument();
     });
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    await user.click(checkboxes[1]);
+    const selectAll = document.querySelector('input#select-all') as HTMLInputElement | null;
+    expect(selectAll).toBeTruthy();
+    await user.click(selectAll as HTMLInputElement);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Retry' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: /retry failed jobs/i })).toBeEnabled();
     });
   });
 });
