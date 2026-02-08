@@ -50,7 +50,7 @@ export async function getProcessInstanceJobs(instanceId: string, engineId?: stri
 }
 
 export async function getProcessInstanceExternalTasks(instanceId: string, engineId?: string): Promise<ExternalTask[]> {
-  return apiClient.get<ExternalTask[]>(withEngineId(`/mission-control-api/process-instances/${instanceId}/external-tasks`, engineId), undefined, { credentials: 'include' })
+  return apiClient.get<ExternalTask[]>(withEngineId(`/mission-control-api/process-instances/${instanceId}/failed-external-tasks`, engineId), undefined, { credentials: 'include' })
 }
 
 // Historical data

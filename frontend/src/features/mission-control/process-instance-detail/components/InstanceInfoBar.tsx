@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button } from '@carbon/react'
-import { Pause, Play, TrashCan, Copy } from '@carbon/icons-react'
+import { Pause, Play, TrashCan, Copy, Renew } from '@carbon/icons-react'
 import styles from '../styles/InstanceDetail.module.css'
 import { WrenchIcon } from './Icons'
 
@@ -30,6 +30,8 @@ interface InstanceInfoBarProps {
   onResume: () => void
   onModify: () => void
   onTerminate: () => void
+  onRetry?: () => void
+  incidentCount?: number
 }
 
 export function InstanceInfoBar({
@@ -49,6 +51,8 @@ export function InstanceInfoBar({
   onResume,
   onModify,
   onTerminate,
+  onRetry,
+  incidentCount = 0,
 }: InstanceInfoBarProps) {
   const latestVersion = (defs || [])
     .filter((d) => d.key === defKey)
@@ -191,6 +195,16 @@ export function InstanceInfoBar({
             </>
           )}
           <div className={styles.infoBarTextWithFlex} style={{ justifyContent: 'flex-end' }}>
+            {onRetry && incidentCount > 0 && status !== 'COMPLETED' && status !== 'EXTERNALLY_TERMINATED' && status !== 'INTERNALLY_TERMINATED' && (
+              <Button
+                hasIconOnly
+                size="sm"
+                kind="ghost"
+                renderIcon={(props) => <Renew {...props} className={styles.iconButtonWhite} />}
+                iconDescription="Retry failed jobs & tasks"
+                onClick={onRetry}
+              />
+            )}
             {status === 'ACTIVE' && (
               <Button
                 hasIconOnly

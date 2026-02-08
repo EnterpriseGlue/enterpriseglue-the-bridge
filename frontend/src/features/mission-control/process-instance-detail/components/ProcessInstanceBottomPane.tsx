@@ -25,6 +25,7 @@ interface ProcessInstanceBottomPaneProps {
   showIncidentBanner: boolean
   incidentCount: number
   onViewIncident: () => void
+  onRetry?: () => void
   isModMode: boolean
   moveSourceActivityId: string | null
   selectedActivityId: string | null
@@ -94,6 +95,7 @@ export function ProcessInstanceBottomPane({
   showIncidentBanner,
   incidentCount,
   onViewIncident,
+  onRetry,
   isModMode,
   moveSourceActivityId,
   selectedActivityId,
@@ -121,6 +123,8 @@ export function ProcessInstanceBottomPane({
         onResume={onResume}
         onModify={onModify}
         onTerminate={onTerminate}
+        onRetry={onRetry}
+        incidentCount={incidentCount}
       />
       {showIncidentBanner && (
         <div className={styles.incidentBanner}>

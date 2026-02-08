@@ -456,7 +456,7 @@ export default function ProcessesOverviewPage() {
     setRetryingMap((prev) => ({ ...prev, [id]: true }))
     try {
       const retryBody = { ...(body || {}), engineId: selectedEngineId }
-      await apiClient.put(`/mission-control-api/process-instances/${id}/retry`, retryBody, { credentials: 'include' })
+      await apiClient.post(`/mission-control-api/process-instances/${id}/retry`, retryBody, { credentials: 'include' })
       // Poll incidents a few times to see if the failure clears
       const engineQs = selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''
       for (let attempt = 0; attempt < 5; attempt++) {

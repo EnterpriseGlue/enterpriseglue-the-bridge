@@ -702,12 +702,13 @@ export default function ProcessInstanceDetailPage() {
           fmt={fmt}
           onNavigate={tenantNavigate}
           onCopy={(value) => navigator.clipboard.writeText(value)}
-          onSuspend={() => callAction('PUT', `/mission-control-api/process-instances/${instanceId}/suspend`).then(() => runtimeQ.refetch())}
-          onResume={() => callAction('PUT', `/mission-control-api/process-instances/${instanceId}/activate`).then(() => runtimeQ.refetch())}
+          onSuspend={() => callAction('PUT', `/mission-control-api/process-instances/${instanceId}/suspend${selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''}`).then(() => runtimeQ.refetch())}
+          onResume={() => callAction('PUT', `/mission-control-api/process-instances/${instanceId}/activate${selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''}`).then(() => runtimeQ.refetch())}
           onModify={() => openModificationIntro()}
           onTerminate={() => setTerminateConfirmOpen(true)}
           showIncidentBanner={showIncidentBanner}
           incidentCount={incidentCount}
+          onRetry={() => setRetryModalOpen(true)}
           onViewIncident={() => {
             const first = (incidentsQ.data || [])[0] || null
             if (first) setIncidentDetails(first)
@@ -811,7 +812,7 @@ export default function ProcessInstanceDetailPage() {
         onTerminate={async (id) => {
           await callAction(
             'DELETE',
-            `/mission-control-api/process-instances/${id}?deleteReason=${encodeURIComponent('Canceled via Mission Control')}&skipCustomListeners=true&skipIoMappings=true`
+            `/mission-control-api/process-instances/${id}?deleteReason=${encodeURIComponent('Canceled via Mission Control')}&skipCustomListeners=true&skipIoMappings=true${selectedEngineId ? `&engineId=${encodeURIComponent(selectedEngineId)}` : ''}`
           )
         }}
         retryModalOpen={retryModalOpen}

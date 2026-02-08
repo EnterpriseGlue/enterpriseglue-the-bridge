@@ -88,7 +88,7 @@ export function RetryModal({
       }
 
       if (engineId) payload.engineId = engineId
-      await apiClient.put(`/mission-control-api/process-instances/${instanceId}/retry`, payload, { credentials: 'include' })
+      await apiClient.post(`/mission-control-api/process-instances/${instanceId}/retry`, payload, { credentials: 'include' })
 
       // Refresh data
       await Promise.allSettled([retryJobsQRefetch(), retryExtTasksQRefetch(), instQRefetch()])

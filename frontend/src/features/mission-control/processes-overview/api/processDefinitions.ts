@@ -100,5 +100,5 @@ export async function listInstanceJobs(instanceId: string, engineId?: string): P
 
 export async function listInstanceExternalTasks(instanceId: string, engineId?: string): Promise<unknown[]> {
   const params = engineId ? `?engineId=${encodeURIComponent(engineId)}` : ''
-  return apiClient.get<unknown[]>(`/mission-control-api/process-instances/${instanceId}/external-tasks${params}`, undefined, { credentials: 'include' })
+  return apiClient.get<unknown[]>(`/mission-control-api/process-instances/${instanceId}/failed-external-tasks${params}`, undefined, { credentials: 'include' })
 }
