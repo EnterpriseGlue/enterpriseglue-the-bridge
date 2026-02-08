@@ -325,6 +325,20 @@ export function ProcessesDataTable({
               height: "100%",
             }}
           >
+            {/* Fixed-width slot for Retry */}
+            <div style={{ width: "20px", display: "flex", justifyContent: "center" }}>
+              {!isFinished && inst.hasIncident && (
+                <Button
+                  hasIconOnly
+                  size="sm"
+                  kind="ghost"
+                  renderIcon={Renew}
+                  iconDescription="Retry"
+                  onClick={() => onRetry(inst.id)}
+                  style={{ minHeight: "18px", height: "18px", width: "18px", padding: "0" }}
+                />
+              )}
+            </div>
             {/* Fixed-width slot for Pause/Play */}
             <div style={{ width: "20px", display: "flex", justifyContent: "center" }}>
               {!isFinished &&

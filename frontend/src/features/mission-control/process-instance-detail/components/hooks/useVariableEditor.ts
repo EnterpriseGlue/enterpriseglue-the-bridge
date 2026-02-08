@@ -5,9 +5,10 @@ import { getUiErrorMessage } from '../../../../../shared/api/apiErrorUtils'
 interface UseVariableEditorProps {
   instanceId: string
   varsQ: any
+  engineId?: string
 }
 
-export function useVariableEditor({ instanceId, varsQ }: UseVariableEditorProps) {
+export function useVariableEditor({ instanceId, varsQ, engineId }: UseVariableEditorProps) {
   const [editingVarKey, setEditingVarKey] = useState<string | null>(null)
   const [editingVarType, setEditingVarType] = useState<string>('String')
   const [editingVarValue, setEditingVarValue] = useState<string>('')
@@ -62,7 +63,7 @@ export function useVariableEditor({ instanceId, varsQ }: UseVariableEditorProps)
           parsed = JSON.parse(editingVarValue || '{}')
         }
       }
-      const body = { modifications: { [editingVarKey]: { value: parsed, type: editingVarType } } }
+      const body = { modifications: { [editingVarKey]: { value: parsed, type: editingVarType } }, engineId }
       await apiClient.post(`/mission-control-api/process-instances/${instanceId}/variables`, body, { credentials: 'include' })
       await varsQ.refetch()
       closeVariableEditor()

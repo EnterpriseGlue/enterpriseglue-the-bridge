@@ -24,6 +24,7 @@ import {
 } from './hooks'
 import { EngineAccessError, isEngineAccessError } from '../shared/components/EngineAccessError'
 import { apiClient } from '../../../shared/api/client'
+import { useSelectedEngine } from '../../../components/EngineSelector'
 
 const SPLIT_PANE_STORAGE_KEY = 'processes-split-pane-size-v2'
 const DEFAULT_SPLIT_SIZE = '75%'
@@ -34,6 +35,7 @@ export default function ProcessesOverviewPage() {
   const location = useLocation() as any
   const [searchParams, setSearchParams] = useSearchParams()
   const { alertState, showAlert, closeAlert } = useAlert()
+  const selectedEngineId = useSelectedEngine()
   const { clearViewports } = useDiagramViewStore()
 
   // Split pane state with localStorage persistence
@@ -122,6 +124,7 @@ export default function ProcessesOverviewPage() {
     detailsModalInstanceId: detailsModal.data || null,
     detailsModalOpen: detailsModal.isOpen,
     retryModalInstanceId,
+    engineId: selectedEngineId,
   })
 
   const bulkOps = useBulkOperations({
@@ -129,6 +132,7 @@ export default function ProcessesOverviewPage() {
     setSelectedMap,
     instQRefetch: () => processesData.instQ.refetch(),
     showAlert: (msg: string, kind: 'error' | 'warning' | 'info' | 'success') => showAlert(msg, kind as any),
+    engineId: selectedEngineId ?? null,
   })
 
   const retryModalState = useRetryModal({
@@ -451,12 +455,14 @@ export default function ProcessesOverviewPage() {
   async function retryInstance(id: string, body?: any) {
     setRetryingMap((prev) => ({ ...prev, [id]: true }))
     try {
-      await apiClient.put(`/mission-control-api/process-instances/${id}/retry`, body || {}, { credentials: 'include' })
+      const retryBody = { ...(body || {}), engineId: selectedEngineId }
+      await apiClient.put(`/mission-control-api/process-instances/${id}/retry`, retryBody, { credentials: 'include' })
       // Poll incidents a few times to see if the failure clears
+      const engineQs = selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''
       for (let attempt = 0; attempt < 5; attempt++) {
         await sleep(1000)
         try {
-          const incidents = await apiClient.get<any[]>(`/mission-control-api/process-instances/${id}/incidents`, undefined, { credentials: 'include' })
+          const incidents = await apiClient.get<any[]>(`/mission-control-api/process-instances/${id}/incidents${engineQs}`, undefined, { credentials: 'include' })
           const stillHas = Array.isArray(incidents) && incidents.length > 0
           if (!stillHas) {
             await instQ.refetch()
@@ -794,8 +800,8 @@ export default function ProcessesOverviewPage() {
               data={instQ.data || []}
               onTerminate={(id) => terminateModal.openModal(id)}
               onRetry={(id) => setRetryModalInstanceId(id)}
-              onActivate={(id) => callAction('PUT', `/mission-control-api/process-instances/${id}/activate`).then(() => instQ.refetch())}
-              onSuspend={(id) => callAction('PUT', `/mission-control-api/process-instances/${id}/suspend`).then(() => instQ.refetch())}
+              onActivate={(id) => callAction('PUT', `/mission-control-api/process-instances/${id}/activate${selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''}`).then(() => instQ.refetch())}
+              onSuspend={(id) => callAction('PUT', `/mission-control-api/process-instances/${id}/suspend${selectedEngineId ? `?engineId=${encodeURIComponent(selectedEngineId)}` : ''}`).then(() => instQ.refetch())}
               selectedMap={selectedMap}
               setSelectedMap={setSelectedMap}
               retryingMap={retryingMap}
@@ -844,6 +850,7 @@ export default function ProcessesOverviewPage() {
         retryJobsQRefetch={() => retryJobsQ.refetch()}
         retryExtTasksQRefetch={() => retryExtTasksQ.refetch()}
         instQRefetch={() => instQ.refetch()}
+        engineId={selectedEngineId}
       />
 
       <BulkOperationModals
@@ -871,7 +878,7 @@ export default function ProcessesOverviewPage() {
           try {
             await bulkOps.callAction(
               'DELETE',
-              `/mission-control-api/process-instances/${terminateModal.data}?deleteReason=${encodeURIComponent('Canceled via Mission Control')}&skipCustomListeners=true&skipIoMappings=true`
+              `/mission-control-api/process-instances/${terminateModal.data}?deleteReason=${encodeURIComponent('Canceled via Mission Control')}&skipCustomListeners=true&skipIoMappings=true${selectedEngineId ? `&engineId=${encodeURIComponent(selectedEngineId)}` : ''}`
             )
             await instQ.refetch()
             terminateModal.closeModal()

@@ -24,6 +24,7 @@ const DMNEvaluatePanel = React.lazy(() => import('../components/DMNEvaluatePanel
 // Properties panel is provided by camunda-bpmn-js and mounted by Canvas
 import { DeployButton, GitVersionsPanel } from '../../git/components'
 import { ProjectAccessError, isProjectAccessError } from '../components/ProjectAccessError'
+import { useSelectedEngine } from '../../../components/EngineSelector'
 
 type FolderBreadcrumb = {
   id: string
@@ -418,12 +419,13 @@ export default function Editor() {
   }, [overlayOpen])
 
   // DMN evaluate mutation
+  const selectedEngineId = useSelectedEngine()
   const evaluateMutation = useMutation({
     mutationFn: async (variables: Record<string, { value: any; type: string }>) => {
       if (!decisionKey) throw new Error('No decision key')
       return apiClient.post(
         `/mission-control-api/decision-definitions/key/${decisionKey}/evaluate`,
-        { variables }
+        { variables, engineId: selectedEngineId }
       )
     }
   })

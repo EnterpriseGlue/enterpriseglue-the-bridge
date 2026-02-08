@@ -177,6 +177,7 @@ export function useProcessesData({
   // Build preview count body for advanced filters
   const previewBody = useMemo(() => {
     const body: any = {}
+    if (selectedEngineId) body.engineId = selectedEngineId
     if (defIdForVersion) body.processDefinitionId = defIdForVersion
     else if (currentKey) body.processDefinitionKey = currentKey
     if (active) body.active = true

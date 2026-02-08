@@ -107,7 +107,7 @@ export default function ProcessInstanceDetailPage() {
   const { viewerApi, setViewerApi, bpmnRef, applyOverlays } = useDiagramOverlays(actQ, incidentsQ, { isSuspended })
 
   // 3. Variable Editor Hook
-  const variableEditor = useVariableEditor({ instanceId: instanceId!, varsQ })
+  const variableEditor = useVariableEditor({ instanceId: instanceId!, varsQ, engineId: selectedEngineId })
   const {
     editingVarKey,
     editingVarType,
@@ -130,6 +130,7 @@ export default function ProcessInstanceDetailPage() {
     retryExtTasksQ,
     incidentsQ,
     actQ,
+    engineId: selectedEngineId,
   })
   const {
     retryModalOpen,
@@ -154,6 +155,7 @@ export default function ProcessInstanceDetailPage() {
     actQ,
     incidentsQ,
     runtimeQ,
+    engineId: selectedEngineId,
   })
   const {
     isModMode,
@@ -271,7 +273,7 @@ export default function ProcessInstanceDetailPage() {
     setAddVariableError(null)
     try {
       const parsed = parseTypedValue(addVariableValue, addVariableType)
-      const body = { modifications: { [key]: { value: parsed, type: addVariableType } } }
+      const body = { modifications: { [key]: { value: parsed, type: addVariableType } }, engineId: selectedEngineId }
       await apiClient.post(`/mission-control-api/process-instances/${instanceId}/variables`, body, { credentials: 'include' })
       await varsQ.refetch()
       setAddVariableOpen(false)
@@ -317,7 +319,7 @@ export default function ProcessInstanceDetailPage() {
         throw new Error('No variables found to upload')
       }
 
-      const body = { modifications }
+      const body = { modifications, engineId: selectedEngineId }
       await apiClient.post(`/mission-control-api/process-instances/${instanceId}/variables`, body, { credentials: 'include' })
       await varsQ.refetch()
       setBulkUploadOpen(false)

@@ -14,6 +14,7 @@ interface UseBulkOperationsProps {
   setSelectedMap: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
   instQRefetch: () => void
   showAlert: (message: string, kind: 'error' | 'warning' | 'success' | 'info') => void
+  engineId: string | null
 }
 
 export function useBulkOperations({
@@ -21,6 +22,7 @@ export function useBulkOperations({
   setSelectedMap,
   instQRefetch,
   showAlert,
+  engineId,
 }: UseBulkOperationsProps) {
   const { tenantNavigate } = useTenantNavigate()
   const [bulkRetryBusy, setBulkRetryBusy] = useState(false)
@@ -49,7 +51,7 @@ export function useBulkOperations({
 
     setBulkRetryBusy(true)
     try {
-      await createBulkRetryBatch(ids)
+      await createBulkRetryBatch(ids, engineId || undefined)
       tenantNavigate('/mission-control/batches')
       setSelectedMap({})
     } catch (e: any) {
@@ -68,7 +70,7 @@ export function useBulkOperations({
 
     setBulkDeleteBusy(true)
     try {
-      await createBulkDeleteBatch(ids)
+      await createBulkDeleteBatch(ids, undefined, engineId || undefined)
       tenantNavigate('/mission-control/batches')
       setSelectedMap({})
     } catch (e: any) {
@@ -87,7 +89,7 @@ export function useBulkOperations({
 
     setBulkSuspendBusy(true)
     try {
-      await createBulkSuspendBatch(ids)
+      await createBulkSuspendBatch(ids, engineId || undefined)
       tenantNavigate('/mission-control/batches')
       setSelectedMap({})
     } catch (e: any) {
@@ -106,7 +108,7 @@ export function useBulkOperations({
 
     setBulkActivateBusy(true)
     try {
-      await createBulkActivateBatch(ids)
+      await createBulkActivateBatch(ids, engineId || undefined)
       tenantNavigate('/mission-control/batches')
       setSelectedMap({})
     } catch (e: any) {

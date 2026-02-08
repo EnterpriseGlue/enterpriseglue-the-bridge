@@ -10,9 +10,10 @@ interface UseInstanceModificationProps {
   actQ: any
   incidentsQ: any
   runtimeQ: any
+  engineId?: string
 }
 
-export function useInstanceModification({ instanceId, status, actQ, incidentsQ, runtimeQ }: UseInstanceModificationProps) {
+export function useInstanceModification({ instanceId, status, actQ, incidentsQ, runtimeQ, engineId }: UseInstanceModificationProps) {
   const { showAlert } = useAlert()
   const [isModMode, setIsModMode] = useState(false)
   const [modPlan, setModPlan] = useState<ModificationOperation[]>([])
@@ -106,7 +107,7 @@ export function useInstanceModification({ instanceId, status, actQ, incidentsQ, 
         setApplyBusy(false)
         return
       }
-      await apiClient.post(`/mission-control-api/process-instances/${instanceId}/modify`, { instructions }, { credentials: 'include' })
+      await apiClient.post(`/mission-control-api/process-instances/${instanceId}/modify`, { instructions, engineId }, { credentials: 'include' })
       await Promise.allSettled([actQ.refetch(), incidentsQ.refetch(), runtimeQ.refetch()])
       setModPlan([])
       setIsModMode(false)

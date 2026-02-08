@@ -10,9 +10,10 @@ interface UseInstanceRetryProps {
   retryExtTasksQ: any
   incidentsQ: any
   actQ: any
+  engineId?: string
 }
 
-export function useInstanceRetry({ instanceId, allRetryItems, retryJobsQ, retryExtTasksQ, incidentsQ, actQ }: UseInstanceRetryProps) {
+export function useInstanceRetry({ instanceId, allRetryItems, retryJobsQ, retryExtTasksQ, incidentsQ, actQ, engineId }: UseInstanceRetryProps) {
   const { showAlert } = useAlert()
   const [retryModalOpen, setRetryModalOpen] = useState(false)
   const [retryActivityFilter, setRetryActivityFilter] = useState<string | null>(null)
@@ -65,6 +66,7 @@ export function useInstanceRetry({ instanceId, allRetryItems, retryJobsQ, retryE
         const dt = new Date(retryDueInput)
         if (!isNaN(dt.getTime())) payload.dueDate = dt.toISOString()
       }
+      if (engineId) payload.engineId = engineId
       await apiClient.put(`/mission-control-api/process-instances/${instanceId}/retry`, payload, { credentials: 'include' })
       await Promise.allSettled([retryJobsQ.refetch(), retryExtTasksQ.refetch(), incidentsQ.refetch(), actQ.refetch()])
       setRetryModalOpen(false)

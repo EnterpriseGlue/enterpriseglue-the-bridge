@@ -27,6 +27,7 @@ interface RetryModalProps {
   retryJobsQRefetch: () => void
   retryExtTasksQRefetch: () => void
   instQRefetch: () => void
+  engineId?: string
 }
 
 export function RetryModal({
@@ -53,6 +54,7 @@ export function RetryModal({
   retryJobsQRefetch,
   retryExtTasksQRefetch,
   instQRefetch,
+  engineId,
 }: RetryModalProps) {
   const handleSubmit = async () => {
     if (!instanceId || retryModalBusy) return
@@ -85,6 +87,7 @@ export function RetryModal({
         }
       }
 
+      if (engineId) payload.engineId = engineId
       await apiClient.put(`/mission-control-api/process-instances/${instanceId}/retry`, payload, { credentials: 'include' })
 
       // Refresh data
