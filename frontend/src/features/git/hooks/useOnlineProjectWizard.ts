@@ -62,6 +62,13 @@ export function useOnlineProjectWizard({
     const combined = `${tenantPrefix}${safe}`
     return safeRelativePath(combined, safe)
   }, [tenantSlug, tenantPrefix])
+  const safeNavigate = React.useCallback((path: string, options?: { state?: any; replace?: boolean }) => {
+    try {
+      const url = new URL(path, window.location.origin)
+      if (url.origin !== window.location.origin) return
+      navigate(url.pathname + url.search + url.hash, options)
+    } catch { /* invalid URL — do not navigate */ }
+  }, [navigate])
 
   // Form state
   const [projectName, setProjectName] = React.useState(existingProjectName || '')
@@ -396,7 +403,7 @@ export function useOnlineProjectWizard({
       queryClient.invalidateQueries({ queryKey: ['git', 'repositories'] })
       resetForm()
       onClose()
-      navigate(toTenantPath(`/starbase/project/${encodeURIComponent(sanitizePathParam(data.project.id))}`), { state: { name: data.project.name } })
+      safeNavigate(toTenantPath(`/starbase/project/${encodeURIComponent(sanitizePathParam(data.project.id))}`), { state: { name: data.project.name } })
     },
     onError: (error: Error) => {
       setGeneralError(error.message)
@@ -416,7 +423,7 @@ export function useOnlineProjectWizard({
       await queryClient.invalidateQueries({ queryKey: ['starbase', 'projects'] })
       resetForm()
       onClose()
-      navigate(toTenantPath(`/starbase/project/${encodeURIComponent(sanitizePathParam(data.id))}`), { state: { name: data.name } })
+      safeNavigate(toTenantPath(`/starbase/project/${encodeURIComponent(sanitizePathParam(data.id))}`), { state: { name: data.name } })
     },
     onError: (error: Error) => {
       setGeneralError(error.message)
@@ -480,7 +487,7 @@ export function useOnlineProjectWizard({
       resetForm()
       onClose()
       if (data?.projectId) {
-        navigate(toTenantPath(`/starbase/project/${encodeURIComponent(sanitizePathParam(data.projectId))}`), { state: { name: data.projectName } })
+        safeNavigate(toTenantPath(`/starbase/project/${encodeURIComponent(sanitizePathParam(data.projectId))}`), { state: { name: data.projectName } })
       }
     },
     onError: (error: Error) => {

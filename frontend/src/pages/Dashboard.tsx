@@ -62,6 +62,13 @@ export default function Dashboard() {
     const combined = `${tenantPrefix}${safe}`
     return safeRelativePath(combined, safe)
   }, [tenantSlug, tenantPrefix])
+  const safeNavigate = React.useCallback((path: string, options?: { state?: any; replace?: boolean }) => {
+    try {
+      const url = new URL(path, window.location.origin)
+      if (url.origin !== window.location.origin) return
+      navigate(url.pathname + url.search + url.hash, options)
+    } catch { /* invalid URL — do not navigate */ }
+  }, [navigate])
 
   const startedAfter = React.useMemo(() => {
     const d = new Date()
@@ -212,7 +219,7 @@ export default function Dashboard() {
                 <Button
                   kind="primary"
                   size="sm"
-                  onClick={() => navigate(toTenantPath('/starbase'), { state: { openCreateProject: true } })}
+                  onClick={() => safeNavigate(toTenantPath('/starbase'), { state: { openCreateProject: true } })}
                 >
                   Create project
                 </Button>
@@ -221,13 +228,13 @@ export default function Dashboard() {
                 <Button
                   kind="secondary"
                   size="sm"
-                  onClick={() => navigate(toTenantPath('/engines'), { state: { openNewEngine: true } })}
+                  onClick={() => safeNavigate(toTenantPath('/engines'), { state: { openNewEngine: true } })}
                 >
                   Add engine
                 </Button>
               )}
               {connectedEngines > 0 && !ctx?.canViewProcessData && (
-                <Button kind="tertiary" size="sm" onClick={() => navigate(toTenantPath('/engines'))}>
+                <Button kind="tertiary" size="sm" onClick={() => safeNavigate(toTenantPath('/engines'))}>
                   Request access
                 </Button>
               )}
@@ -239,24 +246,24 @@ export default function Dashboard() {
       {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         {ctx?.canViewActiveUsers && (
-          <ClickableTile style={tileStyle} onClick={() => navigate(toTenantPath('/admin/users'))}>
+          <ClickableTile style={tileStyle} onClick={() => safeNavigate(toTenantPath('/admin/users'))}>
             <UserAvatar size={24} style={{ color: 'var(--cds-link-primary)', marginBottom: '0.5rem' }} />
             <span style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>Active Users</span>
             <span style={{ fontSize: '1.75rem', fontWeight: 600 }}>{totalUsers}</span>
           </ClickableTile>
         )}
-        <ClickableTile style={tileStyle} onClick={() => navigate(toTenantPath('/starbase'))}>
+        <ClickableTile style={tileStyle} onClick={() => safeNavigate(toTenantPath('/starbase'))}>
           <FolderOpen size={24} style={{ color: '#8a3ffc', marginBottom: '0.5rem' }} />
           <span style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>Projects</span>
           <span style={{ fontSize: '1.75rem', fontWeight: 600 }}>{statsQuery.data?.totalProjects || 0}</span>
         </ClickableTile>
-        <ClickableTile style={tileStyle} onClick={() => navigate(toTenantPath('/engines'))}>
+        <ClickableTile style={tileStyle} onClick={() => safeNavigate(toTenantPath('/engines'))}>
           <Chip size={24} style={{ color: '#0f62fe', marginBottom: '0.5rem' }} />
           <span style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>Engines</span>
           <span style={{ fontSize: '1.75rem', fontWeight: 600 }}>{connectedEngines}</span>
         </ClickableTile>
         {ctx?.canViewProcessData && (
-          <ClickableTile style={tileStyle} onClick={() => navigate(toTenantPath('/mission-control/processes'))}>
+          <ClickableTile style={tileStyle} onClick={() => safeNavigate(toTenantPath('/mission-control/processes'))}>
             <Activity size={24} style={{ color: '#24a148', marginBottom: '0.5rem' }} />
             <span style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>Instances</span>
             <span style={{ fontSize: '1.75rem', fontWeight: 600 }}>{instances.length}</span>
