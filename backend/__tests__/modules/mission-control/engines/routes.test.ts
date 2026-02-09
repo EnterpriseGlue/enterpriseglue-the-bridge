@@ -57,6 +57,7 @@ describe('mission-control engines routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(enginesRouter);
     app.use(errorHandler);

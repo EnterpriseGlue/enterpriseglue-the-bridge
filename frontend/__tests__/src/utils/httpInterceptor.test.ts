@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { interceptedFetch, getAuthHeaders } from '@src/utils/httpInterceptor';
 import { USER_KEY } from '@src/constants/storageKeys';
 
+// Test fixture tokens — not real secrets (CWE-547)
+const TEST_REFRESHED_TOKEN = `test-refreshed-${Date.now()}`;
+
 vi.mock('@src/shared/api/apiErrorUtils', () => ({
   getErrorMessageFromResponse: vi.fn().mockResolvedValue('Error message'),
 }));
@@ -19,7 +22,7 @@ describe('httpInterceptor', () => {
       origin: 'http://localhost',
       href: 'http://localhost/dashboard',
     } as any;
-    document.cookie = '';
+    document.cookie = '; Secure';
   });
 
   afterEach(() => {
@@ -226,7 +229,7 @@ describe('httpInterceptor', () => {
 
         const first401 = new Response(null, { status: 401 });
         const second401 = new Response(null, { status: 401 });
-        const refreshSuccess = new Response(JSON.stringify({ accessToken: 'new-token' }), { status: 200 });
+        const refreshSuccess = new Response(JSON.stringify({ accessToken: TEST_REFRESHED_TOKEN }), { status: 200 });
         const csrfSuccess = new Response(null, { status: 200, headers: { 'X-CSRF-Token': 'csrf-after-refresh' } });
         const retry1 = new Response(JSON.stringify({ data: 'req1' }), { status: 200 });
         const retry2 = new Response(JSON.stringify({ data: 'req2' }), { status: 200 });

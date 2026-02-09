@@ -30,6 +30,7 @@ describe('mission-control processes routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(processesRouter);
     vi.clearAllMocks();

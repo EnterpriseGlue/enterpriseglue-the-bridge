@@ -44,6 +44,7 @@ describe('engines deployments routes', () => {
 
   beforeEach(async () => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     const { default: deploymentsRouter } = await import('../../../src/modules/engines/routes/deployments.js');
     app.use(deploymentsRouter);

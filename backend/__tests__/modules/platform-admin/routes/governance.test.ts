@@ -26,6 +26,7 @@ describe('platform-admin governance routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(governanceRouter);
     vi.clearAllMocks();

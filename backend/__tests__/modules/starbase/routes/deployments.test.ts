@@ -29,6 +29,7 @@ describe('starbase deployments routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(deploymentsRouter);
     vi.clearAllMocks();

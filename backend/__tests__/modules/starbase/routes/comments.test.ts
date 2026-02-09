@@ -27,6 +27,7 @@ describe('starbase comments routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(commentsRouter);
     vi.clearAllMocks();

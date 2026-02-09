@@ -30,6 +30,7 @@ describe('git locks routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(locksRouter);
     vi.clearAllMocks();

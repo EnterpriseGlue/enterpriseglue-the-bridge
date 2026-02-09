@@ -27,6 +27,7 @@ describe('auth google routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(googleRouter);
     vi.clearAllMocks();

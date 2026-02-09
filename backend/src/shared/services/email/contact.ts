@@ -1,6 +1,7 @@
 import { logger } from '@shared/utils/logger.js';
 import { sendEmailWithConfig } from './config.js';
 import { config } from '@shared/config/index.js';
+import escapeHtml from 'escape-html';
 
 export interface ContactAdminParams {
   userEmail: string;
@@ -15,6 +16,10 @@ export interface ContactAdminParams {
 export async function sendContactAdminEmail(params: ContactAdminParams): Promise<{ success: boolean; error?: string }> {
   const { userEmail, subject, message, tenantId } = params;
   const adminEmail = config.adminEmail || 'admin@enterpriseglue.ai';
+
+  const safeUserEmail = escapeHtml(userEmail);
+  const safeSubject = escapeHtml(subject);
+  const safeMessage = escapeHtml(message || '(No message provided)');
 
   const html = `
     <!DOCTYPE html>
@@ -31,15 +36,15 @@ export async function sendContactAdminEmail(params: ContactAdminParams): Promise
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
           <div style="background: white; border-left: 4px solid #1c1b1d; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
             <p style="margin: 0; font-size: 14px; color: #666;">From:</p>
-            <p style="margin: 5px 0 15px 0; font-size: 16px; font-weight: 600;">${userEmail}</p>
+            <p style="margin: 5px 0 15px 0; font-size: 16px; font-weight: 600;">${safeUserEmail}</p>
             
             <p style="margin: 0; font-size: 14px; color: #666;">Subject:</p>
-            <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600;">${subject}</p>
+            <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600;">${safeSubject}</p>
           </div>
           
           <div style="background: white; padding: 20px; border-radius: 4px; border: 1px solid #e0e0e0;">
             <p style="margin: 0 0 10px 0; font-size: 14px; color: #666; font-weight: 600;">Message:</p>
-            <p style="margin: 0; font-size: 15px; white-space: pre-wrap;">${message || '(No message provided)'}</p>
+            <p style="margin: 0; font-size: 15px; white-space: pre-wrap;">${safeMessage}</p>
           </div>
           
           <p style="font-size: 12px; color: #999; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">

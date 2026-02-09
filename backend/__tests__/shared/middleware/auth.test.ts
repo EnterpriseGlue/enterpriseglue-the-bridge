@@ -14,6 +14,10 @@ vi.mock('@shared/db/data-source.js', () => ({
   getDataSource: vi.fn(),
 }));
 
+// Test fixture tokens — not real secrets (CWE-547)
+const TEST_BEARER_TOKEN = `test-bearer-${Date.now()}`;
+const TEST_COOKIE_TOKEN = `test-cookie-${Date.now()}`;
+
 describe('auth middleware', () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -28,7 +32,7 @@ describe('auth middleware', () => {
 
   describe('requireAuth', () => {
     it('accepts valid bearer token', async () => {
-      req.headers = { authorization: 'Bearer valid-token' };
+      req.headers = { authorization: `Bearer ${TEST_BEARER_TOKEN}` };
       (jwt.verifyToken as any).mockReturnValue({ userId: 'user-1', type: 'access', platformRole: 'user', email: 'user@example.com' });
       (getDataSource as any).mockResolvedValue({
         getRepository: (entity: unknown) => {
@@ -44,7 +48,7 @@ describe('auth middleware', () => {
     });
 
     it('accepts token from cookies', async () => {
-      req.cookies = { accessToken: 'cookie-token' };
+      req.cookies = { accessToken: TEST_COOKIE_TOKEN };
       (jwt.verifyToken as any).mockReturnValue({ userId: 'user-1', type: 'access', platformRole: 'user', email: 'user@example.com' });
       (getDataSource as any).mockResolvedValue({
         getRepository: (entity: unknown) => {
@@ -69,7 +73,7 @@ describe('auth middleware', () => {
     });
 
     it('reports invalid token type', async () => {
-      req.headers = { authorization: 'Bearer refresh-token' };
+      req.headers = { authorization: `Bearer ${TEST_BEARER_TOKEN}` };
       (jwt.verifyToken as any).mockReturnValue({ userId: 'user-1', type: 'refresh', email: 'user@example.com' });
 
       await requireAuth(req as Request, res as Response, next);
@@ -81,7 +85,7 @@ describe('auth middleware', () => {
     });
 
     it('blocks unverified users from protected paths', async () => {
-      req = { ...req, path: '/api/users', headers: { authorization: 'Bearer valid-token' } };
+      req = { ...req, path: '/api/users', headers: { authorization: `Bearer ${TEST_BEARER_TOKEN}` } };
       (jwt.verifyToken as any).mockReturnValue({ userId: 'user-1', type: 'access', platformRole: 'user', email: 'user@example.com' });
       (getDataSource as any).mockResolvedValue({
         getRepository: (entity: unknown) => {
@@ -133,7 +137,7 @@ describe('auth middleware', () => {
 
   describe('optionalAuth', () => {
     it('adds user when token present', () => {
-      req.headers = { authorization: 'Bearer valid-token' };
+      req.headers = { authorization: `Bearer ${TEST_BEARER_TOKEN}` };
       (jwt.verifyToken as any).mockReturnValue({ userId: 'user-1', type: 'access', platformRole: 'user', email: 'user@example.com' });
 
       optionalAuth(req as Request, res as Response, next);

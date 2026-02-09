@@ -35,6 +35,7 @@ describe('GET /api/audit/logs', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(auditRouter);
     vi.clearAllMocks();

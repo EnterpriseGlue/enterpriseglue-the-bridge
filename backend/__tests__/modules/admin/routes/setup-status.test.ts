@@ -22,6 +22,7 @@ describe('GET /api/admin/setup-status', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(setupStatusRouter);
     vi.clearAllMocks();
@@ -73,6 +74,7 @@ describe('POST /api/admin/mark-setup-complete', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(setupStatusRouter);
     vi.clearAllMocks();

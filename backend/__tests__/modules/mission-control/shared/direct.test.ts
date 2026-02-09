@@ -29,6 +29,7 @@ describe('mission-control direct routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(directRouter);
     vi.clearAllMocks();

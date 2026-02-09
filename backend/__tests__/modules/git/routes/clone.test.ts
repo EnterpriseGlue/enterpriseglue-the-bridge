@@ -29,6 +29,7 @@ describe('git clone routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(cloneRouter);
     vi.clearAllMocks();

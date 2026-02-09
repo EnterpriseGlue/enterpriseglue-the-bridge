@@ -35,6 +35,7 @@ describe('GET /api/admin/email-configs', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(emailConfigsRouter);
     vi.clearAllMocks();

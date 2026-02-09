@@ -50,6 +50,7 @@ describe('starbase folders routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(foldersRouter);
     vi.clearAllMocks();

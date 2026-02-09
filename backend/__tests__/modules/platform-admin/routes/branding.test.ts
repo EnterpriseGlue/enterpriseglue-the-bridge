@@ -22,6 +22,7 @@ describe('platform-admin branding routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.locals.enterprisePluginLoaded = false;
     app.use(express.json());
     app.use(brandingRouter);

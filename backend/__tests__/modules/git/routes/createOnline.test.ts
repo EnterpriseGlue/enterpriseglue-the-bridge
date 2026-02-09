@@ -25,6 +25,7 @@ describe('git createOnline routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(createOnlineRouter);
     vi.clearAllMocks();

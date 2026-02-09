@@ -12,6 +12,7 @@ describe('POST /api/contact-admin', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use('/api/contact-admin', contactAdminRouter);
     vi.clearAllMocks();

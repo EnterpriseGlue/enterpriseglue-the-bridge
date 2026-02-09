@@ -38,6 +38,7 @@ describe('GET /git-api/providers', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(providersRouter);
     vi.clearAllMocks();

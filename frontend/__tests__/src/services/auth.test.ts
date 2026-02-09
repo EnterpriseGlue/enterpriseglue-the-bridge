@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authService } from '@src/services/auth';
 import { apiClient } from '@src/shared/api/client';
 
+// Test fixture tokens — not real secrets (CWE-547)
+const TEST_ACCESS_TOKEN = `test-access-${Date.now()}`;
+const TEST_REFRESH_TOKEN = `test-refresh-${Date.now()}`;
+const TEST_NEW_TOKEN = `test-new-${Date.now()}`;
+
 vi.mock('@src/shared/api/client', () => ({
   apiClient: {
     get: vi.fn(),
@@ -18,21 +23,21 @@ describe('authService', () => {
 
   it('logs in user', async () => {
     (apiClient.post as any).mockResolvedValue({
-      accessToken: 'token-1',
-      refreshToken: 'refresh-1',
+      accessToken: TEST_ACCESS_TOKEN,
+      refreshToken: TEST_REFRESH_TOKEN,
       user: { id: 'user-1', email: 'test@example.com' },
     });
 
     const result = await authService.login({ email: 'test@example.com', password: 'Pass123!' });
-    expect(result.accessToken).toBe('token-1');
+    expect(result.accessToken).toBe(TEST_ACCESS_TOKEN);
     expect(apiClient.post).toHaveBeenCalledWith('/api/auth/login', expect.any(Object), expect.any(Object));
   });
 
   it('refreshes token', async () => {
-    (apiClient.post as any).mockResolvedValue({ accessToken: 'new-token' });
+    (apiClient.post as any).mockResolvedValue({ accessToken: TEST_NEW_TOKEN });
 
-    const result = await authService.refreshToken({ refreshToken: 'refresh-1' });
-    expect(result.accessToken).toBe('new-token');
+    const result = await authService.refreshToken({ refreshToken: TEST_REFRESH_TOKEN });
+    expect(result.accessToken).toBe(TEST_NEW_TOKEN);
   });
 
   it('gets current user', async () => {

@@ -27,6 +27,7 @@ describe('mission-control metrics routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(metricsRouter);
     vi.clearAllMocks();

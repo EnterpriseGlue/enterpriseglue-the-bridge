@@ -68,6 +68,7 @@ describe('engines management routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(managementRouter);
     app.use(errorHandler);

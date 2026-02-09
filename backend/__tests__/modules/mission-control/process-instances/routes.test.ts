@@ -35,6 +35,7 @@ describe('mission-control process-instances routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(processInstancesRouter);
     vi.clearAllMocks();

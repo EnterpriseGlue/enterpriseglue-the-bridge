@@ -70,6 +70,7 @@ describe('starbase members routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(membersRouter);
     app.use(errorHandler);

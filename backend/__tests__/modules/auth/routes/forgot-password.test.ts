@@ -43,6 +43,7 @@ describe('POST /api/auth/forgot-password', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(forgotPasswordRouter);
     app.use(errorHandler);
@@ -102,6 +103,7 @@ describe('POST /api/auth/reset-password-with-token', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(forgotPasswordRouter);
     app.use(errorHandler);
@@ -161,6 +163,7 @@ describe('GET /api/auth/verify-reset-token', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(forgotPasswordRouter);
     app.use(errorHandler);

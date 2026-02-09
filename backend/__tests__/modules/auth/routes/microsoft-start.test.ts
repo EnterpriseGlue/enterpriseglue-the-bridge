@@ -13,6 +13,7 @@ describe('GET /api/auth/microsoft/start', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(microsoftStartRouter);
     vi.clearAllMocks();

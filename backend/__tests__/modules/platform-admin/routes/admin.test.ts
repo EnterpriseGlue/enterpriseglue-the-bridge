@@ -33,6 +33,7 @@ vi.mock('../../../../src/modules/platform-admin/routes/governance.js', () => ({
 describe('platform-admin admin routes', () => {
   it('mounts sub-routers', () => {
     const app = express();
+    app.disable('x-powered-by');
     app.use(adminRouter);
     expect(app).toBeDefined();
   });

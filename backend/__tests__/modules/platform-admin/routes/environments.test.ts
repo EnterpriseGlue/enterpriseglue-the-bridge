@@ -27,6 +27,7 @@ describe('platform-admin environments routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(environmentsRouter);
     vi.clearAllMocks();

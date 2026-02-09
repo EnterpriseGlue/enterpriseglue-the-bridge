@@ -26,6 +26,7 @@ describe('GET /api/auth/verify-email', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(verifyEmailRouter);
     vi.clearAllMocks();
@@ -102,6 +103,7 @@ describe('POST /api/auth/resend-verification', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(verifyEmailRouter);
     vi.clearAllMocks();

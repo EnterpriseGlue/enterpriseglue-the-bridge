@@ -39,6 +39,7 @@ describe('GET /api/auth/me', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(meRouter);
     vi.clearAllMocks();

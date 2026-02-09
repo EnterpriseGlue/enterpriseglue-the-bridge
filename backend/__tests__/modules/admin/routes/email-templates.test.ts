@@ -30,6 +30,7 @@ describe('GET /api/admin/email-platform-name', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(emailTemplatesRouter);
     vi.clearAllMocks();

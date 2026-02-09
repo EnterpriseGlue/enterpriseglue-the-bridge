@@ -29,6 +29,7 @@ describe('git sync routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(syncRouter);
     vi.clearAllMocks();

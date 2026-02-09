@@ -53,6 +53,7 @@ describe('POST /api/auth/change-password', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(passwordRouter);
     app.use(errorHandler);

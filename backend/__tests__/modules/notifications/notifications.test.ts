@@ -25,6 +25,7 @@ describe('notifications module', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(notificationsRouter);
     vi.clearAllMocks();

@@ -44,6 +44,7 @@ describe('mission-control batches routes', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(batchesRouter);
     vi.clearAllMocks();

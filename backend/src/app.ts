@@ -112,7 +112,16 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     },
   });
 
-  // Apply CSRF protection directly so CodeQL can verify coverage (js/missing-token-validation).
+  // Endpoint for the frontend to obtain a CSRF token.
+  // This will also set the CSRF secret cookie defined above.
+  app.get('/api/csrf-token', (req, res) => {
+    const csrfToken = generateCsrfToken(req, res);
+    res.setHeader('X-CSRF-Token', csrfToken);
+    res.json({ csrfToken });
+  });
+
+  // Global CSRF protection for cookie-authenticated routes.
+  // skipCsrfProtection above will bypass this for safe/Bearer-only endpoints.
   app.use(doubleCsrfProtection);
 
   // CSRF error handler — doubleCsrfProtection calls next(err) on invalid tokens.

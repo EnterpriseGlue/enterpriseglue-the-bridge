@@ -10,6 +10,11 @@ import { errorHandler } from '../../../../src/shared/middleware/errorHandler.js'
 import * as jwt from '../../../../src/shared/utils/jwt.js';
 import bcrypt from 'bcryptjs';
 
+// Test fixture tokens — not real secrets (CWE-547)
+const TEST_REFRESH_TOKEN = `test-refresh-${Date.now()}`;
+const TEST_ACCESS_TOKEN = `test-access-${Date.now()}`;
+const TEST_NEW_ACCESS_TOKEN = `test-new-access-${Date.now()}`;
+
 vi.mock('@shared/db/data-source.js', () => ({
   getDataSource: vi.fn(),
 }));
@@ -33,6 +38,7 @@ describe('POST /api/auth/refresh', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(require('cookie-parser')());
     // CSRF protection — mirrors production config with skipCsrfProtection for this endpoint.
@@ -40,7 +46,14 @@ describe('POST /api/auth/refresh', () => {
       getSecret: () => 'test-secret',
       getSessionIdentifier: () => 'test',
       cookieName: 'csrf_secret',
-      skipCsrfProtection: () => true, // refresh endpoint is exempt in production
+      // In tests, we still exempt this endpoint from CSRF enforcement.
+      skipCsrfProtection: () => true,
+      // Provide a token extractor so CSRF middleware is fully configured.
+      getCsrfTokenFromRequest: (req: any) =>
+        (req.headers['x-csrf-token'] as string) ||
+        (req.body && (req.body._csrf as string)) ||
+        (req.query && (req.query._csrf as string)) ||
+        '',
     });
     app.use(doubleCsrfProtection);
     app.use(refreshRouter);
@@ -56,7 +69,7 @@ describe('POST /api/auth/refresh', () => {
       isActive: true,
     };
 
-    const tokenHash = await bcrypt.hash('refresh-token', 10);
+    const tokenHash = await bcrypt.hash(TEST_REFRESH_TOKEN, 10);
 
     const userRepo = { findOneBy: vi.fn().mockResolvedValue(mockUser) };
     const refreshTokenRepo = {
@@ -72,11 +85,11 @@ describe('POST /api/auth/refresh', () => {
     });
 
     (jwt.verifyToken as any).mockReturnValue({ userId: 'user-1', type: 'refresh' });
-    (jwt.generateAccessToken as any).mockReturnValue('new-access-token');
+    (jwt.generateAccessToken as any).mockReturnValue(TEST_NEW_ACCESS_TOKEN);
 
     const response = await request(app)
       .post('/api/auth/refresh')
-      .send({ refreshToken: 'refresh-token' });
+      .send({ refreshToken: TEST_REFRESH_TOKEN });
 
     expect(response.status).toBe(200);
     expect(response.body.expiresIn).toBe(3600);
@@ -87,7 +100,7 @@ describe('POST /api/auth/refresh', () => {
 
     const response = await request(app)
       .post('/api/auth/refresh')
-      .send({ refreshToken: 'access-token' });
+      .send({ refreshToken: TEST_ACCESS_TOKEN });
 
     expect(response.status).toBe(401);
   });

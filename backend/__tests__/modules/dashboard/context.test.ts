@@ -28,6 +28,7 @@ describe('GET /api/dashboard/context', () => {
 
   beforeEach(() => {
     app = express();
+    app.disable('x-powered-by');
     app.use(express.json());
     app.use(contextRouter);
     vi.clearAllMocks();
