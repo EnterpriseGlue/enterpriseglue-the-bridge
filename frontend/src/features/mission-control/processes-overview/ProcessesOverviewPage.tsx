@@ -1,6 +1,7 @@
 import React from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { useTenantNavigate } from '../../../shared/hooks/useTenantNavigate'
+import { sanitizePathParam } from '../../../shared/utils/sanitize'
 import { Pause, Play, TrashCan, Renew, Migrate, Close } from '@carbon/icons-react'
 import { BreadcrumbItem } from '@carbon/react'
 import { BreadcrumbBar } from '../../shared/components/BreadcrumbBar'
@@ -526,13 +527,13 @@ export default function ProcessesOverviewPage() {
         {fromInstanceId && (
           <BreadcrumbItem>
             <a
-              href={toTenantPath(`/mission-control/processes/instances/${fromInstanceId}`)}
+              href={toTenantPath(`/mission-control/processes/instances/${sanitizePathParam(fromInstanceId)}`)}
               onClick={(e) => {
                 e.preventDefault()
-                tenantNavigate(`/mission-control/processes/instances/${fromInstanceId}`)
+                tenantNavigate(`/mission-control/processes/instances/${sanitizePathParam(fromInstanceId)}`)
               }}
             >
-              Instance {fromInstanceId.substring(0, 8)}...
+              Instance {sanitizePathParam(fromInstanceId).substring(0, 8)}...
             </a>
           </BreadcrumbItem>
         )}

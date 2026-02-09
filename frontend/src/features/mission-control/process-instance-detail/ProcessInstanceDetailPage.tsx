@@ -1,6 +1,7 @@
 import React from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { useTenantNavigate } from '../../../shared/hooks/useTenantNavigate'
+import { sanitizePathParam } from '../../../shared/utils/sanitize'
 import { useQuery } from '@tanstack/react-query'
 import styles from './styles/InstanceDetail.module.css'
 import { Modal, Select, BreadcrumbItem, SelectItem, TextInput, TextArea, InlineNotification } from '@carbon/react'
@@ -715,13 +716,13 @@ export default function ProcessInstanceDetailPage() {
           return (
             <BreadcrumbItem>
               <a
-                href={toTenantPath(`/mission-control/processes/instances/${fromInstance}`)}
+                href={toTenantPath(`/mission-control/processes/instances/${sanitizePathParam(fromInstance)}`)}
                 onClick={(e) => {
                   e.preventDefault()
-                  tenantNavigate(`/mission-control/processes/instances/${fromInstance}`)
+                  tenantNavigate(`/mission-control/processes/instances/${sanitizePathParam(fromInstance)}`)
                 }}
               >
-                Instance {fromInstance.substring(0, 8)}...
+                Instance {sanitizePathParam(fromInstance).substring(0, 8)}...
               </a>
             </BreadcrumbItem>
           )

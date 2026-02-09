@@ -1,5 +1,6 @@
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { safeRelativePath } from '../../../shared/utils/sanitize'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -157,7 +158,7 @@ export default function Engines() {
     if (!location?.state?.openNewEngine) return
     didHandleOpenNewEngine.current = true
     openNew()
-    navigate(`${location.pathname || ''}${location.search || ''}`, { replace: true, state: {} })
+    navigate(safeRelativePath(`${location.pathname || ''}${location.search || ''}`), { replace: true, state: {} })
   }, [location, navigate, openNew])
   function openEdit(row: any) {
     setEditing(row)

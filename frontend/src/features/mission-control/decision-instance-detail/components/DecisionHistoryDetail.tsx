@@ -1,6 +1,7 @@
 import React from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { useTenantNavigate } from '../../../../shared/hooks/useTenantNavigate'
+import { sanitizePathParam } from '../../../../shared/utils/sanitize'
 import { useQuery } from '@tanstack/react-query'
 import {
   Button,
@@ -231,13 +232,13 @@ export default function DecisionHistoryDetail() {
         {fromInstanceId && (
           <BreadcrumbItem>
             <a
-              href={toTenantPath(`/mission-control/processes/instances/${fromInstanceId}`)}
+              href={toTenantPath(`/mission-control/processes/instances/${sanitizePathParam(fromInstanceId)}`)}
               onClick={(e) => {
                 e.preventDefault()
-                tenantNavigate(`/mission-control/processes/instances/${fromInstanceId}`)
+                tenantNavigate(`/mission-control/processes/instances/${sanitizePathParam(fromInstanceId)}`)
               }}
             >
-              Instance {fromInstanceId.substring(0, 8)}...
+              Instance {sanitizePathParam(fromInstanceId).substring(0, 8)}...
             </a>
           </BreadcrumbItem>
         )}

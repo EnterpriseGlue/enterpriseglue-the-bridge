@@ -9,6 +9,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, type NavigateOptions } from 'react-router-dom';
+import { safeRelativePath } from '../utils/sanitize';
 
 export function useTenantNavigate() {
   const { pathname } = useLocation();
@@ -20,13 +21,16 @@ export function useTenantNavigate() {
   const effectivePathname = tenantSlug ? (pathname.replace(/^\/t\/[^/]+/, '') || '/') : pathname;
 
   const toTenantPath = useCallback(
-    (p: string) => (tenantSlug ? `${tenantPrefix}${p}` : p),
+    (p: string) => {
+      const safe = safeRelativePath(p);
+      return tenantSlug ? `${tenantPrefix}${safe}` : safe;
+    },
     [tenantSlug, tenantPrefix],
   );
 
   const tenantNavigate = useCallback(
     (path: string, options?: NavigateOptions) => {
-      navigate(toTenantPath(path), options);
+      navigate(toTenantPath(safeRelativePath(path)), options);
     },
     [navigate, toTenantPath],
   );

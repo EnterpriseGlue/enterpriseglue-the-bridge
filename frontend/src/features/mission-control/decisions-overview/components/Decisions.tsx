@@ -8,6 +8,7 @@ import { BreadcrumbBar } from '../../../shared/components/BreadcrumbBar'
 import { listDecisionDefinitions, fetchDecisionDefinitionDmnXml, listDecisionHistory, type DecisionHistoryEntry } from '../api/decisions'
 import SplitPane from 'react-split-pane'
 import { useSearchParams, useLocation } from 'react-router-dom'
+import { sanitizePathParam } from '../../../../shared/utils/sanitize'
 import { useTenantNavigate } from '../../../../shared/hooks/useTenantNavigate'
 import { DecisionsDataTable } from './DecisionsDataTable'
 import { PageLoader } from '../../../../shared/components/PageLoader'
@@ -284,13 +285,13 @@ export default function Decisions() {
         {fromInstanceId && (
           <BreadcrumbItem>
             <a
-              href={toTenantPath(`/mission-control/processes/instances/${fromInstanceId}`)}
+              href={toTenantPath(`/mission-control/processes/instances/${sanitizePathParam(fromInstanceId)}`)}
               onClick={(e) => {
                 e.preventDefault()
-                tenantNavigate(`/mission-control/processes/instances/${fromInstanceId}`)
+                tenantNavigate(`/mission-control/processes/instances/${sanitizePathParam(fromInstanceId)}`)
               }}
             >
-              Instance {fromInstanceId.substring(0, 8)}...
+              Instance {sanitizePathParam(fromInstanceId).substring(0, 8)}...
             </a>
           </BreadcrumbItem>
         )}
