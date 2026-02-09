@@ -1,5 +1,6 @@
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { safeRelativePath } from '../shared/utils/sanitize'
 import { useQuery } from '@tanstack/react-query'
 import { Button, ClickableTile, Tile, Dropdown, SkeletonPlaceholder } from '@carbon/react'
 import { UserAvatar, FolderOpen, Chip, Activity, Checkmark, Time, WarningAlt } from '@carbon/icons-react'
@@ -55,7 +56,10 @@ export default function Dashboard() {
   const tenantSlugMatch = location.pathname.match(/^\/t\/([^/]+)(?:\/|$)/)
   const tenantSlug = tenantSlugMatch?.[1] ? decodeURIComponent(tenantSlugMatch[1]) : null
   const tenantPrefix = tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}` : ''
-  const toTenantPath = React.useCallback((p: string) => (tenantSlug ? `${tenantPrefix}${p}` : p), [tenantSlug, tenantPrefix])
+  const toTenantPath = React.useCallback((p: string) => {
+    const safe = safeRelativePath(p);
+    return tenantSlug ? `${tenantPrefix}${safe}` : safe;
+  }, [tenantSlug, tenantPrefix])
 
   const startedAfter = React.useMemo(() => {
     const d = new Date()
