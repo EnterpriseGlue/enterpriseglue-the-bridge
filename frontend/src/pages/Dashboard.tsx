@@ -54,9 +54,7 @@ export default function Dashboard() {
   const selectedEngineId = useSelectedEngine()
 
   const tenantSlugMatch = location.pathname.match(/^\/t\/([^/]+)(?:\/|$)/)
-  const rawTenantSlug = tenantSlugMatch?.[1] ? decodeURIComponent(tenantSlugMatch[1]) : null
-  const sanitizedTenantSlug = rawTenantSlug ? sanitizePathParam(rawTenantSlug) : null
-  const tenantSlug = rawTenantSlug && sanitizedTenantSlug && rawTenantSlug === sanitizedTenantSlug ? sanitizedTenantSlug : null
+  const tenantSlug = tenantSlugMatch?.[1] ? sanitizePathParam(decodeURIComponent(tenantSlugMatch[1])) : null
   const tenantPrefix = tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}` : ''
   const toTenantPath = React.useCallback((p: string) => {
     const safe = safeRelativePath(p)
