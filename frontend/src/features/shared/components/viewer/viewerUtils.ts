@@ -22,7 +22,11 @@ export function applyZoomWithPadding(canvas: any, paddingFactor: number = PADDIN
   try {
     canvas.zoom('fit-viewport', 'auto')
     const vb = canvas.viewbox()
-    canvas.zoom(vb.scale * paddingFactor)
+    const center = {
+      x: vb.x + vb.width / 2,
+      y: vb.y + vb.height / 2,
+    }
+    canvas.zoom(vb.scale * paddingFactor, center)
   } catch {}
 }
 

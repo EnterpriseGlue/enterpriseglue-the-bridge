@@ -278,8 +278,8 @@ async function sendWithSMTP(params: SMTPEmailParams): Promise<SendEmailResult> {
     },
   });
 
-  // Strip <script> tags from HTML as defense-in-depth (user values are already escaped upstream).
-  const safeHtml = String(html || '').replace(/<script[\s\S]*?<\/script>/gi, '');
+  // Escape HTML to prevent injection when sending via SMTP.
+  const safeHtml = escapeHtml(String(html || ''));
 
   try {
     const info = await transporter.sendMail({

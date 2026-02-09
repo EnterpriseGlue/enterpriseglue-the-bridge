@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { sanitizePathParam } from '../shared/utils/sanitize';
 import { Button, TextInput, InlineLoading } from '@carbon/react';
 import { authService } from '../services/auth';
 import { parseApiError } from '../shared/api/apiErrorUtils';
@@ -13,7 +12,8 @@ export default function PasswordResetWithToken() {
   const { notify } = useToast();
 
   const tenantSlugMatch = location.pathname.match(/^\/t\/([^/]+)(?:\/|$)/);
-  const tenantSlug = tenantSlugMatch?.[1] ? sanitizePathParam(decodeURIComponent(tenantSlugMatch[1])) : null;
+  const rawTenantSlug = tenantSlugMatch?.[1] ? decodeURIComponent(tenantSlugMatch[1]) : null;
+  const tenantSlug = rawTenantSlug && /^[a-zA-Z0-9_-]+$/.test(rawTenantSlug) ? rawTenantSlug : null;
   const tenantPrefix = tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}` : '';
   const loginPath = tenantSlug ? `${tenantPrefix}/login` : '/login';
   const forgotPath = tenantSlug ? `${tenantPrefix}/forgot-password` : '/forgot-password';

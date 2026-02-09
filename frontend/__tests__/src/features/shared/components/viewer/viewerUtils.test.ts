@@ -5,13 +5,13 @@ import { BADGE_POSITIONS_RECTANGLE, PADDING_FACTOR } from '@src/features/shared/
 describe('viewerUtils', () => {
   it('applies zoom with padding', () => {
     const zoom = vi.fn();
-    const viewbox = vi.fn().mockReturnValue({ scale: 2, width: 100, height: 80 });
+    const viewbox = vi.fn().mockReturnValue({ scale: 2, x: 0, y: 0, width: 100, height: 80 });
     const canvas = { zoom, viewbox };
 
     applyZoomWithPadding(canvas);
 
     expect(zoom).toHaveBeenCalledWith('fit-viewport', 'auto');
-    expect(zoom).toHaveBeenCalledWith(2 * PADDING_FACTOR);
+    expect(zoom).toHaveBeenCalledWith(2 * PADDING_FACTOR, { x: 50, y: 40 });
   });
 
   it('creates a count badge with display text', () => {

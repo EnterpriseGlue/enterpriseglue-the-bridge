@@ -56,11 +56,7 @@ export default function Viewer({ xml, onReady, initialViewport, onViewportChange
         injectHighlightStyles(containerRef.current, HIGHLIGHT_STYLES)
       }
 
-      // Keep centered on resize with padding
-      const handleResize = () => {
-        applyZoomWithPadding(canvas, PADDING_FACTOR)
-      }
-      eventBus && eventBus.on('canvas.resized', handleResize)
+      // No automatic re-fit on resize — user controls zoom via the fit-to-screen button
 
       // Handle element click events
       eventBus && eventBus.on('element.click', (e: any) => {

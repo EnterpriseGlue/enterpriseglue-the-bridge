@@ -86,23 +86,20 @@ export function useViewerApi(
         fitViewport: () => {
           try {
             const v = viewerRef.current
-            if (!v || !xmlRef.current) return
+            if (!v) return
 
-            // Re-import XML to reset diagram to initial centered state
-            v.importXML(xmlRef.current).then(({ warnings }: any) => {
-              try {
-                applyZoomWithPadding(canvas, PADDING_FACTOR)
-                notifyViewportChange(canvas, onViewportChange)
-                
-                // Notify parent that diagram was reset so overlays can be re-applied
-                // Use requestAnimationFrame to ensure rendering is complete
-                if (onDiagramResetRef.current) {
-                  requestAnimationFrame(() => {
-                    onDiagramResetRef.current?.()
-                  })
-                }
-              } catch {}
-            }).catch(() => {})
+            // Force canvas to re-read container dimensions after window/pane resize
+            canvas.resized()
+            applyZoomWithPadding(canvas, PADDING_FACTOR)
+            notifyViewportChange(canvas, onViewportChange)
+
+            // Notify parent that diagram was reset so overlays can be re-applied
+            // Use requestAnimationFrame to ensure rendering is complete
+            if (onDiagramResetRef.current) {
+              requestAnimationFrame(() => {
+                onDiagramResetRef.current?.()
+              })
+            }
           } catch {}
         },
 

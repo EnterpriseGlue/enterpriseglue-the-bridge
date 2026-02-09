@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { sanitizePathParam } from '../shared/utils/sanitize';
 import {
   Modal,
   TextInput,
@@ -40,7 +39,8 @@ export default function InviteMemberModal({
   const [success, setSuccess] = useState('');
 
   const tenantSlugMatch = pathname.match(/^\/t\/([^/]+)(?:\/|$)/);
-  const tenantSlug = tenantSlugMatch?.[1] ? sanitizePathParam(decodeURIComponent(tenantSlugMatch[1])) : 'default';
+  const rawTenantSlug = tenantSlugMatch?.[1] ? decodeURIComponent(tenantSlugMatch[1]) : null;
+  const tenantSlug = rawTenantSlug && /^[a-zA-Z0-9_-]+$/.test(rawTenantSlug) ? rawTenantSlug : 'default';
 
   const handleSubmit = async () => {
     if (!email.trim() || !email.includes('@')) {

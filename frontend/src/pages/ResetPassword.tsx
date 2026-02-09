@@ -1,6 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { sanitizePathParam } from '../shared/utils/sanitize';
 import { Button, TextInput, Tile, Loading } from '@carbon/react';
 import { useAuth } from '../shared/hooks/useAuth';
 import { parseApiError } from '../shared/api/apiErrorUtils';
@@ -17,7 +16,8 @@ export default function ResetPassword() {
   const { notify } = useToast();
 
   const tenantSlugMatch = location.pathname.match(/^\/t\/([^/]+)(?:\/|$)/);
-  const tenantSlug = tenantSlugMatch?.[1] ? sanitizePathParam(decodeURIComponent(tenantSlugMatch[1])) : null;
+  const rawTenantSlug = tenantSlugMatch?.[1] ? decodeURIComponent(tenantSlugMatch[1]) : null;
+  const tenantSlug = rawTenantSlug && /^[a-zA-Z0-9_-]+$/.test(rawTenantSlug) ? rawTenantSlug : null;
   const homePath = tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}/` : '/';
 
   const [currentPassword, setCurrentPassword] = useState('');

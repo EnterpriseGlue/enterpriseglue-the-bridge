@@ -98,8 +98,8 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     },
     getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
     skipCsrfProtection: (req) => {
-      // Skip CSRF for login/refresh (these endpoints validate credentials directly)
-      if (req.path === '/api/auth/login' || req.path === '/api/auth/refresh') return true;
+      // Skip CSRF for login/refresh and CSRF token fetch (these endpoints validate credentials directly)
+      if (req.path === '/api/auth/login' || req.path === '/api/auth/refresh' || req.path === '/api/csrf-token') return true;
 
       const authHeader = typeof req.headers.authorization === 'string' ? req.headers.authorization : '';
       const hasBearer = authHeader.startsWith('Bearer ');
@@ -112,6 +112,10 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     },
   });
 
+  // Global CSRF protection for cookie-authenticated routes.
+  // skipCsrfProtection above will bypass this for safe/Bearer-only endpoints.
+  app.use(doubleCsrfProtection);
+
   // Endpoint for the frontend to obtain a CSRF token.
   // This will also set the CSRF secret cookie defined above.
   app.get('/api/csrf-token', (req, res) => {
@@ -119,10 +123,6 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     res.setHeader('X-CSRF-Token', csrfToken);
     res.json({ csrfToken });
   });
-
-  // Global CSRF protection for cookie-authenticated routes.
-  // skipCsrfProtection above will bypass this for safe/Bearer-only endpoints.
-  app.use(doubleCsrfProtection);
 
   // CSRF error handler — doubleCsrfProtection calls next(err) on invalid tokens.
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
