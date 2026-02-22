@@ -168,6 +168,17 @@ export default function SsoSettingsTab() {
   const samlMetadataUrl = appOrigin
     ? `${appOrigin}/api/auth/saml/metadata`
     : '/api/auth/saml/metadata';
+
+  const samlAcsOriginMismatch = (() => {
+    if (!appOrigin) return false;
+    if (!samlAcsUrl.startsWith('http://') && !samlAcsUrl.startsWith('https://')) return false;
+
+    try {
+      return new URL(samlAcsUrl).origin !== appOrigin;
+    } catch {
+      return false;
+    }
+  })();
   
   // Mutations
   const createProvider = useMutation({
@@ -333,7 +344,13 @@ export default function SsoSettingsTab() {
     setSamlStatusNotice(null);
 
     try {
-      const status = await apiClient.get<{ enabled: boolean; message?: string }>('/api/auth/saml/status');
+      const status = await apiClient.get<{
+        enabled: boolean;
+        message?: string;
+        missingFields?: string[];
+        providerConfigured?: boolean;
+        providerEnabled?: boolean;
+      }>('/api/auth/saml/status');
 
       if (status.enabled) {
         setSamlStatusNotice({
@@ -342,10 +359,15 @@ export default function SsoSettingsTab() {
           subtitle: status.message || 'SAML authentication endpoint is configured and available.',
         });
       } else {
+        const missingSummary = Array.isArray(status.missingFields) && status.missingFields.length > 0
+          ? ` Missing fields: ${status.missingFields.join(', ')}.`
+          : '';
         setSamlStatusNotice({
           kind: 'warning',
           title: 'SAML is not enabled yet',
-          subtitle: status.message || 'Complete provider fields and enable the provider before testing login.',
+          subtitle:
+            (status.message || 'Complete provider fields and enable the provider before testing login.') +
+            missingSummary,
         });
       }
     } catch (error: unknown) {
@@ -840,6 +862,14 @@ export default function SsoSettingsTab() {
                 title="Operational checks"
                 subtitle="Ensure Entra Identifier exactly matches Entity ID, and ACS URL is /api/auth/saml/callback on your app domain."
               />
+
+              {samlAcsOriginMismatch && (
+                <InlineNotification
+                  kind="warning"
+                  title="Callback URL origin differs from current app origin"
+                  subtitle={`Current app origin: ${appOrigin}. Configured ACS URL: ${samlAcsUrl}. Ensure Entra Reply URL matches the ACS URL exactly.`}
+                />
+              )}
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
                 <Button

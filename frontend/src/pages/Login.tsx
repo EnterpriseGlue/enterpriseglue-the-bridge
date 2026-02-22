@@ -10,6 +10,7 @@ import { parseApiError } from '../shared/api/apiErrorUtils';
 import { useToast } from '../shared/notifications/ToastProvider';
 import logoPng from '../assets/logo.png';
 import { toSafeInternalPath } from '../utils/safeNavigation';
+import { redirectTo } from '../utils/redirect';
 import { isMultiTenantEnabled } from '../enterprise/extensionRegistry';
 
 // SSO Provider type from backend
@@ -280,7 +281,7 @@ export default function Login() {
     hasTriggeredAutoSsoRedirect.current = true;
     const provider = ssoProviders[0];
     const tenantQuery = tenantSlug ? `?tenantSlug=${encodeURIComponent(tenantSlug)}` : '';
-    window.location.href = `/api/auth/${provider.type}${tenantQuery}`;
+    redirectTo(`/api/auth/${provider.type}${tenantQuery}`);
   }, [
     ssoLoading,
     brandingFetchDone,
@@ -323,7 +324,7 @@ export default function Login() {
   const handleSsoLogin = (provider: SsoProviderButton) => {
     // Redirect to backend OAuth endpoint for the provider
     const tenantQuery = tenantSlug ? `?tenantSlug=${encodeURIComponent(tenantSlug)}` : '';
-    window.location.href = `/api/auth/${provider.type}${tenantQuery}`;
+    redirectTo(`/api/auth/${provider.type}${tenantQuery}`);
   };
 
   // Get provider icon SVG
