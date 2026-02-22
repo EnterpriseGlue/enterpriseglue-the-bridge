@@ -31,9 +31,11 @@ interface PublicBranding {
   logoScale: number;
   titleFontWeight: string;
   faviconUrl: string | null;
+  ssoAutoRedirectSingleProvider: boolean;
 }
 
 const BRANDING_CACHE_KEY = 'eg.platformBranding.v1';
+const SSO_AUTO_REDIRECT_BLOCK_UNTIL_KEY = 'eg.sso.autoRedirect.blockUntil';
 
 function normalizeBranding(raw: any): PublicBranding {
   const r = raw && typeof raw === 'object' ? raw : {};
@@ -46,6 +48,7 @@ function normalizeBranding(raw: any): PublicBranding {
     logoScale: typeof r.logoScale === 'number' ? r.logoScale : 100,
     titleFontWeight: typeof r.titleFontWeight === 'string' ? r.titleFontWeight : '600',
     faviconUrl: typeof r.faviconUrl === 'string' ? r.faviconUrl : null,
+    ssoAutoRedirectSingleProvider: Boolean(r.ssoAutoRedirectSingleProvider),
   };
 }
 
@@ -148,6 +151,7 @@ export default function Login() {
     return makeLogoObjectUrl(raw);
   });
   const logoObjectUrlRef = useRef<string | null>(logoObjectUrl);
+  const hasTriggeredAutoSsoRedirect = useRef(false);
   
   // Fetch enabled SSO providers
   useEffect(() => {
@@ -234,6 +238,12 @@ export default function Login() {
     const errorMessage = params.get('message');
 
     if (error) {
+      try {
+        window.sessionStorage.setItem(SSO_AUTO_REDIRECT_BLOCK_UNTIL_KEY, String(Date.now() + 60_000));
+      } catch {
+        // ignore
+      }
+
       notify({
         kind: 'error',
         title: 'Login failed',
@@ -243,6 +253,42 @@ export default function Login() {
       navigate(toSafeInternalPath(location.pathname, '/login'), { replace: true });
     }
   }, [location, navigate, notify]);
+
+  useEffect(() => {
+    if (hasTriggeredAutoSsoRedirect.current) return;
+    if (ssoLoading || !brandingFetchDone) return;
+    if (!branding?.ssoAutoRedirectSingleProvider) return;
+    if (ssoProviders.length !== 1) return;
+
+    const params = new URLSearchParams(location.search);
+    const bypassLocal = params.get('local') === '1' || params.get('no_sso_redirect') === '1';
+    if (bypassLocal) return;
+
+    try {
+      const raw = window.sessionStorage.getItem(SSO_AUTO_REDIRECT_BLOCK_UNTIL_KEY);
+      if (raw) {
+        const blockUntil = Number(raw);
+        if (Number.isFinite(blockUntil) && Date.now() < blockUntil) {
+          return;
+        }
+        window.sessionStorage.removeItem(SSO_AUTO_REDIRECT_BLOCK_UNTIL_KEY);
+      }
+    } catch {
+      // ignore
+    }
+
+    hasTriggeredAutoSsoRedirect.current = true;
+    const provider = ssoProviders[0];
+    const tenantQuery = tenantSlug ? `?tenantSlug=${encodeURIComponent(tenantSlug)}` : '';
+    window.location.href = `/api/auth/${provider.type}${tenantQuery}`;
+  }, [
+    ssoLoading,
+    brandingFetchDone,
+    branding?.ssoAutoRedirectSingleProvider,
+    ssoProviders,
+    location.search,
+    tenantSlug,
+  ]);
 
   const submitLogin = async () => {
     if (isLoading) return;
