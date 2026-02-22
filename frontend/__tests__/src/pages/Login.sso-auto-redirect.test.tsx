@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '../../../src/shared/notifications/ToastProvider';
@@ -103,5 +103,21 @@ describe('Login SSO auto-redirect behavior', () => {
     });
 
     expect(redirectTo).not.toHaveBeenCalled();
+  });
+
+  it('hides local login form when SSO providers are enabled', async () => {
+    setupApiResponses({
+      providers: [{ id: 'p1', name: 'Entra SAML', type: 'saml' }],
+      autoRedirect: false,
+    });
+
+    renderLogin('/login');
+
+    await waitFor(() => {
+      expect((apiClient.get as any).mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+
+    expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Local sign-in disabled/i)).toBeInTheDocument();
   });
 });

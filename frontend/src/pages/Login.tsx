@@ -1,6 +1,6 @@
 import { useState, FormEvent, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { TextInput, Button, TextArea, Loading } from '@carbon/react';
+import { TextInput, Button, TextArea, Loading, InlineNotification } from '@carbon/react';
 import { Login as LoginIcon } from '@carbon/icons-react';
 import FormModal from '../components/FormModal';
 import { useModal } from '../shared/hooks/useModal';
@@ -153,6 +153,7 @@ export default function Login() {
   });
   const logoObjectUrlRef = useRef<string | null>(logoObjectUrl);
   const hasTriggeredAutoSsoRedirect = useRef(false);
+  const localLoginDisabledByPolicy = !ssoLoading && ssoProviders.length > 0;
   
   // Fetch enabled SSO providers
   useEffect(() => {
@@ -292,6 +293,15 @@ export default function Login() {
   ]);
 
   const submitLogin = async () => {
+    if (localLoginDisabledByPolicy) {
+      notify({
+        kind: 'warning',
+        title: 'Local sign-in disabled',
+        subtitle: 'Use your configured SSO provider to sign in.',
+      });
+      return;
+    }
+
     if (isLoading) return;
     setIsLoading(true);
 
@@ -422,65 +432,73 @@ export default function Login() {
         </div>
 
         {/* Login form */}
-        <form
-          onSubmit={handleSubmit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              submitLogin();
-            }
-          }}
-        >
-          <div style={{ marginBottom: 'var(--spacing-5)' }}>
-            <TextInput
-              id="email"
-              labelText="Email"
-              placeholder="Enter your email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-
-          <div style={{ marginBottom: 'var(--spacing-6)' }}>
-            <TextInput
-              id="password"
-              labelText="Password"
-              placeholder="Enter your password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-
-          <Button
-            type="submit"
-            kind="primary"
-            disabled={isLoading || !email || !password}
-            style={{ 
-              width: '100%',
-              backgroundColor: 'var(--eg-color-dark-gray)',
-              borderColor: 'var(--eg-color-dark-gray)',
-              fontWeight: 'var(--font-weight-semibold)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              paddingInline: '1rem'
+        {localLoginDisabledByPolicy ? (
+          <InlineNotification
+            kind="info"
+            title="Local sign-in disabled"
+            subtitle="Your organization requires SSO. Use one of the SSO options below."
+          />
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !isLoading && email && password) {
+                e.preventDefault();
+                submitLogin();
+              }
             }}
           >
-            {isLoading ? 'Signing in...' : 'Sign in'}
-          </Button>
-          <div style={{ textAlign: 'right', marginTop: 'var(--spacing-3)' }}>
-            <Link to={forgotPasswordPath} style={{ color: 'var(--cds-link-01)', fontSize: 'var(--text-14)' }}>
-              Forgot your password?
-            </Link>
-          </div>
-        </form>
+            <div style={{ marginBottom: 'var(--spacing-5)' }}>
+              <TextInput
+                id="email"
+                labelText="Email"
+                placeholder="Enter your email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <TextInput
+                id="password"
+                labelText="Password"
+                placeholder="Enter your password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              kind="primary"
+              disabled={isLoading || ssoLoading || localLoginDisabledByPolicy || !email || !password}
+              style={{ 
+                width: '100%',
+                backgroundColor: 'var(--eg-color-dark-gray)',
+                borderColor: 'var(--eg-color-dark-gray)',
+                fontWeight: 'var(--font-weight-semibold)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                paddingInline: '1rem'
+              }}
+            >
+              {isLoading ? 'Signing in...' : 'Sign in'}
+            </Button>
+            <div style={{ textAlign: 'right', marginTop: 'var(--spacing-3)' }}>
+              <Link to={forgotPasswordPath} style={{ color: 'var(--cds-link-01)', fontSize: 'var(--text-14)' }}>
+                Forgot your password?
+              </Link>
+            </div>
+          </form>
+        )}
 
         {/* SSO Providers */}
         {ssoLoading ? (
