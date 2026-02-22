@@ -53,6 +53,13 @@ export class SqlServerAdapter implements DatabaseAdapter {
     const indexedColumns = new Set<string>();
     const uniqueConstraintColumns = new Set<string>();
 
+    for (const table of metadata.tables) {
+      const tableSchema = table.schema?.toLowerCase();
+      if (!tableSchema || tableSchema === 'main') {
+        table.schema = this.schema;
+      }
+    }
+
     for (const unique of metadata.uniques) {
       if (!Array.isArray(unique.columns)) continue;
       const targetName = this.getTargetName(unique.target);

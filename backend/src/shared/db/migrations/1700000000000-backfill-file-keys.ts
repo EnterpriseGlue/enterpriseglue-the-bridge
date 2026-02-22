@@ -1,6 +1,6 @@
 import { TableColumn } from 'typeorm';
 import type { MigrationInterface, QueryRunner } from 'typeorm';
-import { File } from '../entities/File.js';
+import { File } from '../entities/index.js';
 
 function extractBpmnProcessId(xml: string): string | null {
   const match = String(xml || '').match(/<\s*(?:[a-zA-Z0-9_-]+:)?process\b[^>]*\bid\s*=\s*["']([^"']+)["'][^>]*>/i)
