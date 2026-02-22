@@ -68,6 +68,7 @@ describe('Google OAuth flow e2e harness', () => {
     app = express();
     app.disable('x-powered-by');
     app.use(express.json());
+    // lgtm[js/csrf] -- test-only harness validates OAuth redirects/cookies, not production middleware wiring
     app.use(cookieParser());
     app.use(googleRouter);
     app.use(googleStartRouter);

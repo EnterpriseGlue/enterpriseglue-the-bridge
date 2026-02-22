@@ -53,6 +53,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cp .env.docker.postgres.example .env.docker
           docker compose --env-file .env.docker.postgres.example -f docker-compose.yml config >/dev/null
           docker compose --env-file .env.docker.mysql.example -f docker-compose.yml -f docker-compose.mysql.yml config >/dev/null
           docker compose --env-file .env.docker.mssql.example -f docker-compose.yml -f docker-compose.mssql.yml config >/dev/null
@@ -147,7 +148,7 @@ jobs:
       MSSQL_USER: ${{ matrix.database == 'mssql' && 'sa' || '' }}
       MSSQL_PASSWORD: ${{ matrix.database == 'mssql' && 'Str0ngPassword!_123' || '' }}
       MSSQL_DATABASE: ${{ matrix.database == 'mssql' && 'master' || '' }}
-      MSSQL_SCHEMA: ${{ matrix.database == 'mssql' && 'dbo' || '' }}
+      MSSQL_SCHEMA: dbo
       MSSQL_ENCRYPT: false
       MSSQL_TRUST_SERVER_CERTIFICATE: true
       ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

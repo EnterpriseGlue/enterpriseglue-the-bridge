@@ -58,6 +58,7 @@ describe('POST /api/auth/logout', () => {
     app = express();
     app.disable('x-powered-by');
     app.use(express.json());
+    // lgtm[js/csrf] -- CSRF middleware is registered via registerCsrfMiddleware below in this test harness
     app.use(cookieParser());
     registerCsrfMiddleware(app);
     app.use(logoutRouter);

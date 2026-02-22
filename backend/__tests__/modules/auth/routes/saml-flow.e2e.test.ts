@@ -71,6 +71,7 @@ describe('SAML auth flow e2e harness', () => {
     app.disable('x-powered-by');
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
+    // lgtm[js/csrf] -- test-only harness validates SAML callback flow, not production middleware wiring
     app.use(cookieParser());
     app.use(samlRouter);
     app.use(samlStartRouter);
