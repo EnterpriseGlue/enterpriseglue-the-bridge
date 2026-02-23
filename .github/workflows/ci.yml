@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        database: [postgres, mysql, mssql]
+        database: [postgres, oracle]
     permissions:
       contents: write
     services:
@@ -106,33 +106,18 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-      mysql:
-        image: mysql:8.4
+      oracle:
+        image: gvenzl/oracle-free:21-slim
         env:
-          MYSQL_DATABASE: enterpriseglue
-          MYSQL_USER: enterpriseglue
-          MYSQL_PASSWORD: enterpriseglue
-          MYSQL_ROOT_PASSWORD: root
+          ORACLE_PASSWORD: oracle123
         ports:
-          - 3306:3306
+          - 1521:1521
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-      mssql:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        env:
-          ACCEPT_EULA: "Y"
-          MSSQL_SA_PASSWORD: Str0ngPassword!_123
-          MSSQL_PID: Developer
-        ports:
-          - 1433:1433
-        options: >-
-          --health-cmd="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -C >/dev/null || exit 1"
-          --health-interval=15s
+          --health-cmd="healthcheck.sh"
+          --health-interval=20s
           --health-timeout=10s
           --health-retries=20
+          --health-start-period=40s
     env:
       NODE_ENV: test
       DATABASE_TYPE: ${{ matrix.database }}
@@ -145,19 +130,12 @@ jobs:
       POSTGRES_DATABASE: ${{ matrix.database == 'postgres' && 'postgres' || '' }}
       POSTGRES_SCHEMA: main
       POSTGRES_SSL_REJECT_UNAUTHORIZED: false
-      MYSQL_HOST: ${{ matrix.database == 'mysql' && 'localhost' || '' }}
-      MYSQL_PORT: 3306
-      MYSQL_USER: ${{ matrix.database == 'mysql' && 'enterpriseglue' || '' }}
-      MYSQL_PASSWORD: ${{ matrix.database == 'mysql' && 'enterpriseglue' || '' }}
-      MYSQL_DATABASE: ${{ matrix.database == 'mysql' && 'enterpriseglue' || '' }}
-      MSSQL_HOST: ${{ matrix.database == 'mssql' && 'localhost' || '' }}
-      MSSQL_PORT: 1433
-      MSSQL_USER: ${{ matrix.database == 'mssql' && 'sa' || '' }}
-      MSSQL_PASSWORD: ${{ matrix.database == 'mssql' && 'Str0ngPassword!_123' || '' }}
-      MSSQL_DATABASE: ${{ matrix.database == 'mssql' && 'master' || '' }}
-      MSSQL_SCHEMA: dbo
-      MSSQL_ENCRYPT: false
-      MSSQL_TRUST_SERVER_CERTIFICATE: true
+      ORACLE_HOST: ${{ matrix.database == 'oracle' && 'localhost' || '' }}
+      ORACLE_PORT: 1521
+      ORACLE_USER: ${{ matrix.database == 'oracle' && 'main' || '' }}
+      ORACLE_PASSWORD: ${{ matrix.database == 'oracle' && 'oracle123' || '' }}
+      ORACLE_SERVICE_NAME: ${{ matrix.database == 'oracle' && 'FREEPDB1' || '' }}
+      ORACLE_SCHEMA: ${{ matrix.database == 'oracle' && 'MAIN' || '' }}
       ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     steps:
       - name: Checkout
@@ -175,13 +153,8 @@ jobs:
         run: npm --prefix backend ci
 
       - name: Install DB driver for matrix database
-        if: matrix.database == 'mysql' || matrix.database == 'mssql'
-        run: |
-          if [ "${{ matrix.database }}" = "mysql" ]; then
-            npm --prefix backend install --no-save mysql2
-          elif [ "${{ matrix.database }}" = "mssql" ]; then
-            npm --prefix backend install --no-save mssql
-          fi
+        if: matrix.database == 'oracle'
+        run: npm --prefix backend install --no-save oracledb
 
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
@@ -190,6 +163,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
+        if: matrix.database == 'postgres'
         run: npx playwright install --with-deps
 
       - name: Build backend
@@ -199,6 +173,24 @@ jobs:
         if: matrix.database == 'postgres'
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "CREATE SCHEMA IF NOT EXISTS main;"
+
+      - name: Create Oracle schema user
+        if: matrix.database == 'oracle'
+        run: |
+          docker exec $(docker ps -q --filter ancestor=gvenzl/oracle-free:21-slim) sqlplus -s system/oracle123@//localhost:1521/FREEPDB1 <<'EOF'
+          ALTER SESSION SET "_ORACLE_SCRIPT"=true;
+          DECLARE
+            v_count NUMBER;
+          BEGIN
+            SELECT COUNT(*) INTO v_count FROM dba_users WHERE username = 'MAIN';
+            IF v_count = 0 THEN
+              EXECUTE IMMEDIATE 'CREATE USER main IDENTIFIED BY oracle123 DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS';
+              EXECUTE IMMEDIATE 'GRANT DBA TO main';
+            END IF;
+          END;
+          /
+          EXIT;
+          EOF
 
       - name: Sync database schema
         run: npm --prefix backend run db:schema:sync
@@ -211,20 +203,8 @@ jobs:
         if: matrix.database == 'postgres'
         run: npm run test:integration
 
-      - name: Run MySQL backend smoke
-        if: matrix.database == 'mysql'
-        run: |
-          npm --prefix backend run start &
-          for i in {1..30}; do
-            if curl -sf http://localhost:8787/health >/dev/null; then
-              break
-            fi
-            sleep 2
-          done
-          curl -sf http://localhost:8787/health >/dev/null
-
-      - name: Run MSSQL backend smoke
-        if: matrix.database == 'mssql'
+      - name: Run Oracle backend smoke
+        if: matrix.database == 'oracle'
         run: |
           npm --prefix backend run start &
           for i in {1..45}; do
