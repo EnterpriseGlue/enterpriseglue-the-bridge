@@ -168,11 +168,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: detect
-    if: |
-      needs.detect.outputs.run_tests == 'true' && (
-        (matrix.database == 'postgres' && needs.detect.outputs.run_postgres == 'true') ||
-        (matrix.database == 'oracle' && needs.detect.outputs.run_oracle == 'true')
-      )
+    if: needs.detect.outputs.run_tests == 'true'
     strategy:
       fail-fast: false
       matrix:
