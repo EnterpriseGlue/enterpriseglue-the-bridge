@@ -63,6 +63,7 @@ jobs:
           INPUT_BACKEND_IMAGE: ${{ vars.BACKEND_IMAGE }}
           INPUT_FRONTEND_IMAGE: ${{ vars.FRONTEND_IMAGE }}
           INPUT_IMAGE_PLATFORMS: ${{ vars.IMAGE_PLATFORMS }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
           EVENT_NAME: ${{ github.event_name }}
@@ -77,8 +78,9 @@ jobs:
           backend_image="${INPUT_BACKEND_IMAGE:-$backend_default}"
           frontend_image="${INPUT_FRONTEND_IMAGE:-$frontend_default}"
 
-          dockerhub_backend="docker.io/${owner_lc}/enterpriseglue-the-bridge-oss-backend"
-          dockerhub_frontend="docker.io/${owner_lc}/enterpriseglue-the-bridge-oss-frontend"
+          dockerhub_user="${DOCKERHUB_USERNAME:-}"
+          dockerhub_backend="docker.io/${dockerhub_user:-${owner_lc}}/enterpriseglue-the-bridge-oss-backend"
+          dockerhub_frontend="docker.io/${dockerhub_user:-${owner_lc}}/enterpriseglue-the-bridge-oss-frontend"
 
           echo "dockerhub_backend=${dockerhub_backend}" >> "$GITHUB_OUTPUT"
           echo "dockerhub_frontend=${dockerhub_frontend}" >> "$GITHUB_OUTPUT"
