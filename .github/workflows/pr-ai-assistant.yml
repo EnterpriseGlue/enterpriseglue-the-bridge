@@ -7,6 +7,7 @@ on:
       - reopened
       - edited
       - ready_for_review
+      - labeled
 
 permissions:
   contents: read
@@ -19,7 +20,7 @@ concurrency:
 
 jobs:
   suggest-and-apply:
-    if: ${{ github.event.pull_request.state == 'open' }}
+    if: ${{ github.event.pull_request.state == 'open' && (github.event.action != 'labeled' || github.event.label.name == 'ai:apply') }}
     runs-on: ubuntu-latest
     steps:
       - name: Generate AI suggestions (title + release label + impact)
