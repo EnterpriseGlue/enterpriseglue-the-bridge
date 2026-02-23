@@ -343,7 +343,7 @@ jobs:
           git commit -m "chore: update nightly CI marker"
           git push origin HEAD:main
 
-  smoke-postgres-image-deploy-work:
+  smoke-postgres-image-deploy:
     runs-on: ubuntu-latest
     needs: detect
     if: needs.detect.outputs.run_tests == 'true' && needs.detect.outputs.run_smoke == 'true'
@@ -441,7 +441,7 @@ jobs:
           COMPOSE_DIR="infra/docker/compose"
           docker compose --project-directory . --env-file .env.images.ci -f "$COMPOSE_DIR/docker-compose.prod.yml" -f "$COMPOSE_DIR/docker-compose.images.yml" down -v
 
-  smoke-postgres-image-deploy-exposed-work:
+  smoke-postgres-image-deploy-exposed:
     runs-on: ubuntu-latest
     needs: detect
     if: needs.detect.outputs.run_tests == 'true' && needs.detect.outputs.run_smoke == 'true'
@@ -538,72 +538,34 @@ jobs:
           docker compose --project-directory . --env-file .env.images.exposed.ci -f "$COMPOSE_DIR/docker-compose.prod.yml" -f "$COMPOSE_DIR/docker-compose.images.yml" -f "$COMPOSE_DIR/docker-compose.backend-expose.yml" down -v
 
   # ---------------------------------------------------------------------------
-  # Gate jobs: lightweight pass-through jobs that act as required check targets.
-  # They always run (even when path-aware gating skips the real work jobs) so
-  # that required status checks are never left as "Expected".
+  # Single aggregate gate: required check target for branch protection.
+  # Always runs. Succeeds if all work jobs succeeded or were skipped.
+  # Fails if any work job failed or was cancelled.
   # ---------------------------------------------------------------------------
 
-  compose-render-gate:
+  ci-complete:
     runs-on: ubuntu-latest
-    needs: [detect, compose-render]
+    needs: [detect, compose-render, test, smoke-postgres-image-deploy, smoke-postgres-image-deploy-exposed]
     if: always()
     steps:
-      - name: Evaluate gate
+      - name: Evaluate CI result
         run: |
-          if [[ "${{ needs.compose-render.result }}" == "failure" || "${{ needs.compose-render.result }}" == "cancelled" ]]; then
-            echo "compose-render failed or was cancelled"
-            exit 1
-          fi
-          echo "compose-render gate passed (result: ${{ needs.compose-render.result }})"
+          echo "detect: ${{ needs.detect.result }}"
+          echo "compose-render: ${{ needs.compose-render.result }}"
+          echo "test: ${{ needs.test.result }}"
+          echo "smoke-postgres-image-deploy: ${{ needs.smoke-postgres-image-deploy.result }}"
+          echo "smoke-postgres-image-deploy-exposed: ${{ needs.smoke-postgres-image-deploy-exposed.result }}"
 
-  test-postgres-gate:
-    runs-on: ubuntu-latest
-    needs: [detect, test]
-    if: always()
-    steps:
-      - name: Evaluate gate
-        run: |
-          if [[ "${{ needs.test.result }}" == "failure" || "${{ needs.test.result }}" == "cancelled" ]]; then
-            echo "test job failed or was cancelled"
-            exit 1
-          fi
-          echo "test-postgres gate passed (result: ${{ needs.test.result }})"
+          for result in \
+            "${{ needs.detect.result }}" \
+            "${{ needs.compose-render.result }}" \
+            "${{ needs.test.result }}" \
+            "${{ needs.smoke-postgres-image-deploy.result }}" \
+            "${{ needs.smoke-postgres-image-deploy-exposed.result }}"; do
+            if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
+              echo "CI failed: at least one job reported $result"
+              exit 1
+            fi
+          done
 
-  test-oracle-gate:
-    runs-on: ubuntu-latest
-    needs: [detect, test]
-    if: always()
-    steps:
-      - name: Evaluate gate
-        run: |
-          if [[ "${{ needs.test.result }}" == "failure" || "${{ needs.test.result }}" == "cancelled" ]]; then
-            echo "test job failed or was cancelled"
-            exit 1
-          fi
-          echo "test-oracle gate passed (result: ${{ needs.test.result }})"
-
-  smoke-postgres-image-deploy:
-    runs-on: ubuntu-latest
-    needs: [detect, smoke-postgres-image-deploy-work]
-    if: always()
-    steps:
-      - name: Evaluate gate
-        run: |
-          if [[ "${{ needs.smoke-postgres-image-deploy-work.result }}" == "failure" || "${{ needs.smoke-postgres-image-deploy-work.result }}" == "cancelled" ]]; then
-            echo "smoke-postgres-image-deploy-work failed or was cancelled"
-            exit 1
-          fi
-          echo "smoke-postgres-image-deploy gate passed (result: ${{ needs.smoke-postgres-image-deploy-work.result }})"
-
-  smoke-postgres-image-deploy-exposed:
-    runs-on: ubuntu-latest
-    needs: [detect, smoke-postgres-image-deploy-exposed-work]
-    if: always()
-    steps:
-      - name: Evaluate gate
-        run: |
-          if [[ "${{ needs.smoke-postgres-image-deploy-exposed-work.result }}" == "failure" || "${{ needs.smoke-postgres-image-deploy-exposed-work.result }}" == "cancelled" ]]; then
-            echo "smoke-postgres-image-deploy-exposed-work failed or was cancelled"
-            exit 1
-          fi
-          echo "smoke-postgres-image-deploy-exposed gate passed (result: ${{ needs.smoke-postgres-image-deploy-exposed-work.result }})"
+          echo "All CI jobs passed or were skipped."
