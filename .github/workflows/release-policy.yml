@@ -75,6 +75,39 @@ jobs:
 
             const title = String(pr.title || '');
             const body = String(pr.body || '');
+            const conventionalTitleMatch = title.match(/^([a-z]+)(\([a-z0-9._/-]+\))?(!)?:\s.+$/i);
+            if (conventionalTitleMatch) {
+              const titleType = String(conventionalTitleMatch[1] || '').toLowerCase();
+              const titleHasBreakingMarker = Boolean(conventionalTitleMatch[3]);
+              const allowedLabelsByType = {
+                feat: new Set(['release:feature', 'release:breaking', 'release:security', 'release:compat']),
+                fix: new Set(['release:fix', 'release:breaking', 'release:security', 'release:compat']),
+                docs: new Set(['release:docs', 'release:internal']),
+                perf: new Set(['release:feature', 'release:fix', 'release:internal', 'release:breaking']),
+                refactor: new Set(['release:internal', 'release:compat', 'release:deprecation', 'release:breaking']),
+                test: new Set(['release:internal']),
+                chore: new Set(['release:internal']),
+                ci: new Set(['release:internal']),
+                build: new Set(['release:internal']),
+                style: new Set(['release:internal']),
+                revert: new Set(['release:fix', 'release:internal', 'release:breaking'])
+              };
+
+              if (titleHasBreakingMarker && !labels.includes('release:breaking')) {
+                core.setFailed('PR title uses breaking marker (!) but release:breaking label is missing.');
+                return;
+              }
+
+              const allowedLabels = allowedLabelsByType[titleType];
+              if (allowedLabels && !labels.some((label) => allowedLabels.has(label))) {
+                core.setFailed(
+                  `PR title type "${titleType}" is inconsistent with release label(s): ${labels.join(', ')}. ` +
+                  `Expected one of: ${Array.from(allowedLabels).join(', ')}`
+                );
+                return;
+              }
+            }
+
             const titleIndicatesBreaking = /!\s*:/.test(title) || /\)!:/.test(title);
             const labelIndicatesBreaking = labels.includes('release:breaking');
             const bodyIndicatesBreaking = /breaking\s+change/i.test(body);
