@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.1.3](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.1.2...v0.1.3) (2026-02-23)
+
+
+### Bug Fixes
+
+* **docker:** clarify compose invocation contract ([#7](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/7)) ([55732dc](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/55732dc2b2dda3d9728bee2f69d899a1ac5fc9ad))
+
 ## [0.1.2](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.1.1...v0.1.2) (2026-02-22)
 
 
