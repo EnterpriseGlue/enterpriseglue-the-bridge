@@ -107,9 +107,11 @@ jobs:
           --health-timeout=5s
           --health-retries=5
       oracle:
-        image: gvenzl/oracle-free:21-slim
+        image: gvenzl/oracle-xe:21-slim-faststart
         env:
           ORACLE_PASSWORD: oracle123
+          APP_USER: main
+          APP_USER_PASSWORD: oracle123
         ports:
           - 1521:1521
         options: >-
@@ -117,7 +119,7 @@ jobs:
           --health-interval=20s
           --health-timeout=10s
           --health-retries=20
-          --health-start-period=40s
+          --health-start-period=60s
     env:
       NODE_ENV: test
       DATABASE_TYPE: ${{ matrix.database }}
@@ -134,7 +136,7 @@ jobs:
       ORACLE_PORT: 1521
       ORACLE_USER: ${{ matrix.database == 'oracle' && 'main' || '' }}
       ORACLE_PASSWORD: ${{ matrix.database == 'oracle' && 'oracle123' || '' }}
-      ORACLE_SERVICE_NAME: ${{ matrix.database == 'oracle' && 'FREEPDB1' || '' }}
+      ORACLE_SERVICE_NAME: ${{ matrix.database == 'oracle' && 'XEPDB1' || '' }}
       ORACLE_SCHEMA: ${{ matrix.database == 'oracle' && 'MAIN' || '' }}
       ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     steps:
@@ -173,24 +175,6 @@ jobs:
         if: matrix.database == 'postgres'
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "CREATE SCHEMA IF NOT EXISTS main;"
-
-      - name: Create Oracle schema user
-        if: matrix.database == 'oracle'
-        run: |
-          docker exec $(docker ps -q --filter ancestor=gvenzl/oracle-free:21-slim) sqlplus -s system/oracle123@//localhost:1521/FREEPDB1 <<'EOF'
-          ALTER SESSION SET "_ORACLE_SCRIPT"=true;
-          DECLARE
-            v_count NUMBER;
-          BEGIN
-            SELECT COUNT(*) INTO v_count FROM dba_users WHERE username = 'MAIN';
-            IF v_count = 0 THEN
-              EXECUTE IMMEDIATE 'CREATE USER main IDENTIFIED BY oracle123 DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS';
-              EXECUTE IMMEDIATE 'GRANT DBA TO main';
-            END IF;
-          END;
-          /
-          EXIT;
-          EOF
 
       - name: Sync database schema
         run: npm --prefix backend run db:schema:sync
