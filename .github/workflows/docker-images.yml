@@ -519,3 +519,83 @@ jobs:
         run: |
           COMPOSE_DIR="infra/docker/compose"
           docker compose --project-directory . --env-file .env.images.oracle.ci -f "$COMPOSE_DIR/docker-compose.prod.yml" -f "$COMPOSE_DIR/docker-compose.oracle.yml" -f "$COMPOSE_DIR/docker-compose.images.yml" down -v
+
+  # ---------------------------------------------------------------------------
+  # Security gate: Trivy scan on published image refs.
+  # Zero-tolerance policy — blocks on any severity.
+  # Use .trivyignore with owner + expiry for accepted exceptions.
+  # ---------------------------------------------------------------------------
+
+  security-published-scan:
+    runs-on: ubuntu-latest
+    needs: publish
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy scan backend published image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: '${{ needs.publish.outputs.backend_image }}:${{ needs.publish.outputs.image_tag }}'
+          format: 'json'
+          output: 'backend-trivy.json'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW,UNKNOWN'
+          scanners: 'vuln'
+          trivyignores: '.trivyignore'
+
+      - name: Trivy scan frontend published image
+        if: ${{ !cancelled() }}
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: '${{ needs.publish.outputs.frontend_image }}:${{ needs.publish.outputs.image_tag }}'
+          format: 'json'
+          output: 'frontend-trivy.json'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW,UNKNOWN'
+          scanners: 'vuln'
+          trivyignores: '.trivyignore'
+
+      - name: Upload scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-published-findings-${{ github.run_id }}
+          path: |
+            backend-trivy.json
+            frontend-trivy.json
+          if-no-files-found: warn
+
+      - name: Security scan summary
+        if: always()
+        run: |
+          echo "## Published Image Security Scan" >> "$GITHUB_STEP_SUMMARY"
+          for img in backend frontend; do
+            file="${img}-trivy.json"
+            if [ -f "$file" ]; then
+              total=$(jq '[.Results[]?.Vulnerabilities // [] | length] | add // 0' "$file")
+              critical=$(jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "CRITICAL")] | length' "$file")
+              high=$(jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "HIGH")] | length' "$file")
+              medium=$(jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "MEDIUM")] | length' "$file")
+              low=$(jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "LOW")] | length' "$file")
+              echo "### ${img}" >> "$GITHUB_STEP_SUMMARY"
+              echo "| Severity | Count |" >> "$GITHUB_STEP_SUMMARY"
+              echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+              echo "| Critical | ${critical} |" >> "$GITHUB_STEP_SUMMARY"
+              echo "| High | ${high} |" >> "$GITHUB_STEP_SUMMARY"
+              echo "| Medium | ${medium} |" >> "$GITHUB_STEP_SUMMARY"
+              echo "| Low | ${low} |" >> "$GITHUB_STEP_SUMMARY"
+              echo "| **Total** | **${total}** |" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done

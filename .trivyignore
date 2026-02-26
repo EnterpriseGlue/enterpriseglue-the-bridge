@@ -1,0 +1,12 @@
+# .trivyignore — Trivy vulnerability ignore file
+#
+# Zero-tolerance policy: every entry here MUST include owner, reason, and expiry.
+# Expired entries will be removed during periodic review.
+#
+# Format:
+#   # owner: <name> | reason: <justification> | expires: YYYY-MM-DD
+#   CVE-XXXX-XXXXX
+#
+# Example:
+#   # owner: security-team | reason: not reachable in our stack | expires: 2026-06-01
+#   CVE-2026-12345
