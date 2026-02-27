@@ -113,8 +113,16 @@ jobs:
             exit 0
           fi
 
-          LAST_SHA=$(gh variable get CI_NIGHTLY_LAST_SHA 2>/dev/null || echo "")
-          if [ "$CURRENT_SHA" = "$LAST_SHA" ]; then
+          # Look up the HEAD SHA of the last successful scheduled CI run (read-only).
+          # This replaces the old mutable CI_NIGHTLY_LAST_SHA variable approach,
+          # removing the need for write permissions on Actions variables.
+          LAST_SHA=$(
+            gh api "repos/{owner}/{repo}/actions/workflows/ci.yml/runs?event=schedule&status=success&per_page=1" \
+              --jq '.workflow_runs[0].head_sha // ""' 2>/dev/null || echo ""
+          )
+          echo "last_successful_nightly_sha=$LAST_SHA" >> "$GITHUB_OUTPUT"
+
+          if [ -n "$LAST_SHA" ] && [ "$CURRENT_SHA" = "$LAST_SHA" ]; then
             echo "run_tests=false" >> "$GITHUB_OUTPUT"
             echo "run_postgres=false" >> "$GITHUB_OUTPUT"
             echo "run_oracle=false" >> "$GITHUB_OUTPUT"
@@ -178,7 +186,6 @@ jobs:
         database: [postgres, oracle]
     permissions:
       contents: read
-      actions: write
     services:
       postgres:
         image: postgres:17
@@ -349,12 +356,6 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage
 
-      - name: Update nightly CI marker
-        if: github.event_name == 'schedule' && matrix.database == 'postgres'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh variable set CI_NIGHTLY_LAST_SHA --body "${{ needs.detect.outputs.current_sha }}"
 
   smoke-postgres-image-deploy:
     runs-on: ubuntu-latest
