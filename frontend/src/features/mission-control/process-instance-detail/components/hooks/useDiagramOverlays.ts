@@ -2,13 +2,13 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createCountBadge, getBadgePosition, getCompletionDotPosition } from '../../../../shared/components/viewer/viewerUtils'
 
 interface UseDiagramOverlaysOptions {
-  actQ: any
-  incidentsQ: any
-  isSuspended?: boolean  // Whether the process instance is suspended
+  isSuspended?: boolean
+  showTokenPassCounts?: boolean
 }
 
-export function useDiagramOverlays(actQ: any, incidentsQ: any, options?: { isSuspended?: boolean }) {
+export function useDiagramOverlays(actQ: any, incidentsQ: any, options?: UseDiagramOverlaysOptions) {
   const isSuspended = options?.isSuspended ?? false
+  const showTokenPassCounts = options?.showTokenPassCounts ?? false
   const [viewerApi, setViewerApi] = useState<any>(null)
   const bpmnRef = useRef<any>(null)
   const overlayKeysRef = useRef<string[]>([])
@@ -54,10 +54,13 @@ export function useDiagramOverlays(actQ: any, incidentsQ: any, options?: { isSus
     const suspendedCounts = new Map<string, number>()
     const canceledCounts = new Map<string, number>()
     const completedCounts = new Map<string, number>()
+    const tokenPassCounts = new Map<string, number>()
     
     for (const a of actQ.data || []) {
       const id = a.activityId
       if (!id) continue
+
+      tokenPassCounts.set(id, (tokenPassCounts.get(id) || 0) + 1)
       
       if (a.canceled) {
         // Canceled activity
@@ -122,6 +125,38 @@ export function useDiagramOverlays(actQ: any, incidentsQ: any, options?: { isSus
       const badge = createCountBadge(count, 'canceled')
       const position = getBadgePosition('canceled')
       safeAddOverlay(actId, position, badge)
+    }
+
+    // Historic token pass count badges - Top Center (toggleable)
+    // Top-center avoids collision with existing corner badges and bottom-center link pills.
+    if (showTokenPassCounts) {
+      for (const [actId, count] of tokenPassCounts) {
+        const el: any = elementRegistry.get(actId)
+        if (!el) continue
+
+        const badge = createCountBadge(count, {
+          backgroundColor: '#343a3f',
+          color: '#ffffff',
+          fontSize: '11px',
+          fontWeight: '600',
+          borderRadius: '9999px',
+          padding: '0 6px',
+          lineHeight: '16px',
+          height: '16px',
+          minWidth: '22px',
+          noIcon: true,
+        })
+        badge.style.transform = 'translateX(-50%)'
+        badge.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.25)'
+        badge.style.pointerEvents = 'none'
+
+        const width = Number(el.width || 0)
+        const position = {
+          top: -20,
+          left: width ? width / 2 : 0,
+        }
+        safeAddOverlay(actId, position, badge)
+      }
     }
 
     // Completed badges - Top Right (gray) for end events only
@@ -206,7 +241,7 @@ export function useDiagramOverlays(actQ: any, incidentsQ: any, options?: { isSus
         }
       } catch {}
     }, 50)
-  }, [actQ.data, incidentsQ.data, isSuspended])
+  }, [actQ.data, incidentsQ.data, isSuspended, showTokenPassCounts])
 
   // Inject styles for highlight markers
   // Only target direct shape children (rect, circle, polygon) - exclude path to avoid icons

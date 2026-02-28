@@ -137,7 +137,8 @@ export default function ProcessInstanceDetailPage() {
   // 2. Diagram Overlays Hook
   // Check if process instance is suspended (from runtime data)
   const isSuspended = !!(runtimeQ.data as any)?.suspended
-  const { viewerApi, setViewerApi, bpmnRef, applyOverlays } = useDiagramOverlays(actQ, incidentsQ, { isSuspended })
+  const [showTokenPassCounts, setShowTokenPassCounts] = React.useState(false)
+  const { viewerApi, setViewerApi, bpmnRef, applyOverlays } = useDiagramOverlays(actQ, incidentsQ, { isSuspended, showTokenPassCounts })
 
   // 3. Variable Editor Hook
   const variableEditor = useVariableEditor({ instanceId: instanceId!, varsQ, engineId: selectedEngineId })
@@ -799,6 +800,8 @@ export default function ProcessInstanceDetailPage() {
             fmt,
             isModMode,
             moveSourceActivityId,
+            showTokenPassCounts,
+            setShowTokenPassCounts,
             onActivityHover: (id) => setHoveredActivityId(id),
             onHistoryContextChange: (ctx) => setHistoryContext(ctx),
             rightTab,
