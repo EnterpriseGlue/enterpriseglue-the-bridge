@@ -48,6 +48,8 @@ interface ProcessInstanceBottomPaneProps {
     fmt: (ts?: string | null) => string
     isModMode: boolean
     moveSourceActivityId: string | null
+    showTokenPassCounts: boolean
+    setShowTokenPassCounts: (show: boolean) => void
     onActivityHover?: (activityId: string | null) => void
     onHistoryContextChange?: (ctx: any | null) => void
     rightTab: 'variables' | 'io'

@@ -1,5 +1,5 @@
 import React from 'react'
-import { InlineNotification, Tag } from '@carbon/react'
+import { InlineNotification, Tag, Toggle } from '@carbon/react'
 import { ChevronDown, ChevronRight } from '@carbon/icons-react'
 
 export interface ActivityHistoryPanelProps {
@@ -15,6 +15,8 @@ export interface ActivityHistoryPanelProps {
   isModMode: boolean
   moveSourceActivityId: string | null
   activeActivityIds: Set<string>
+  showTokenPassCounts: boolean
+  setShowTokenPassCounts: (show: boolean) => void
   modPlan?: any[]
   onActivityClick?: (activityId: string) => void
   onActivityHover?: (activityId: string | null) => void
@@ -52,6 +54,8 @@ export function ActivityHistoryPanel({
   isModMode,
   moveSourceActivityId,
   activeActivityIds,
+  showTokenPassCounts,
+  setShowTokenPassCounts,
   modPlan = [],
   onActivityClick,
   onActivityHover,
@@ -64,6 +68,7 @@ export function ActivityHistoryPanel({
   const [historyRootOpen, setHistoryRootOpen] = React.useState(true)
   const [hoveredActivityId, setHoveredActivityId] = React.useState<string | null>(null)
   const lastHistoryContextKeyRef = React.useRef<string>('')
+  const tokenPassToggleId = React.useId()
 
   React.useEffect(() => {
     if (!onHistoryContextChange) return
@@ -84,6 +89,19 @@ export function ActivityHistoryPanel({
     <section key="left-panel" style={{ background: 'var(--color-bg-primary)', padding: 'var(--spacing-2)', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-2)' }}>
         <h4 style={{ margin: 0, fontSize: 'var(--text-13)', fontWeight: 'var(--font-weight-semibold)' }}>Instance History</h4>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <span style={{ fontSize: '12px', color: 'var(--cds-text-secondary)' }}>Token passes</span>
+          <Toggle
+            id={tokenPassToggleId}
+            size="sm"
+            labelA=""
+            labelB=""
+            hideLabel
+            toggled={showTokenPassCounts}
+            onToggle={(checked: boolean) => setShowTokenPassCounts(checked)}
+            aria-label="Show token pass counts on BPMN nodes"
+          />
+        </div>
       </div>
 
       {actQ.isLoading ? <p>Loading...</p> : null}

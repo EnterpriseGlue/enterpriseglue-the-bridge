@@ -21,6 +21,8 @@ interface ActivityDetailPanelProps {
   fmt: (ts?: string | null) => string
   isModMode: boolean
   moveSourceActivityId: string | null
+  showTokenPassCounts: boolean
+  setShowTokenPassCounts: (show: boolean) => void
   onActivityClick?: (activityId: string) => void
   onActivityHover?: (activityId: string | null) => void
   onHistoryContextChange?: (ctx: any | null) => void
@@ -86,6 +88,8 @@ export function ActivityDetailPanel({
   fmt,
   isModMode,
   moveSourceActivityId,
+  showTokenPassCounts,
+  setShowTokenPassCounts,
   onActivityClick,
   onActivityHover,
   onHistoryContextChange,
@@ -157,6 +161,8 @@ export function ActivityDetailPanel({
       isModMode={isModMode}
       moveSourceActivityId={moveSourceActivityId}
       activeActivityIds={activeActivityIds}
+      showTokenPassCounts={showTokenPassCounts}
+      setShowTokenPassCounts={setShowTokenPassCounts}
       modPlan={modPlan}
       onActivityClick={onActivityClick}
       onActivityHover={onActivityHover}

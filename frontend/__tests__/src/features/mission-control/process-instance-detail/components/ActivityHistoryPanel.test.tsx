@@ -5,6 +5,8 @@ import { ActivityHistoryPanel } from '@src/features/mission-control/process-inst
 
 describe('ActivityHistoryPanel', () => {
   it('renders empty history message when no activities', () => {
+    const setShowTokenPassCounts = vi.fn();
+
     render(
       <ActivityHistoryPanel
         actQ={{ isLoading: false }}
@@ -19,6 +21,8 @@ describe('ActivityHistoryPanel', () => {
         isModMode={false}
         moveSourceActivityId={null}
         activeActivityIds={new Set()}
+        showTokenPassCounts={false}
+        setShowTokenPassCounts={setShowTokenPassCounts}
         execGroups={[]}
         resolveBpmnIconVisual={() => ({ iconClass: 'bpmn-icon-process', kind: 'marker' })}
         buildHistoryContext={vi.fn()}
@@ -26,5 +30,6 @@ describe('ActivityHistoryPanel', () => {
     );
 
     expect(screen.getByText('No activity history.')).toBeInTheDocument();
+    expect(screen.getByText('Token passes')).toBeInTheDocument();
   });
 });
