@@ -9,6 +9,9 @@ import { Project } from '@shared/db/entities/Project.js';
 import { File } from '@shared/db/entities/File.js';
 import { Version } from '@shared/db/entities/Version.js';
 import { Folder } from '@shared/db/entities/Folder.js';
+import { Commit } from '@shared/db/entities/Commit.js';
+import { FileSnapshot } from '@shared/db/entities/FileSnapshot.js';
+import { FileCommitVersion } from '@shared/db/entities/FileCommitVersion.js';
 import { IsNull } from 'typeorm';
 import { AuthorizationService } from '@shared/services/authorization.js';
 import { ResourceService } from '@shared/services/resources.js';
@@ -38,6 +41,13 @@ const updateFileBodySchema = z.object({
 const patchFileBodySchema = z.object({
   name: z.string().min(1).max(255).optional(),
   folderId: z.string().uuid().nullable().optional(),
+});
+
+const restoreFromCommitBodySchema = z.object({
+  commitId: z.string().min(1).optional(),
+  fileVersionNumber: z.number().int().positive().optional(),
+}).refine((v) => !!v.commitId || typeof v.fileVersionNumber === 'number', {
+  message: 'commitId or fileVersionNumber is required',
 });
 
 /**
@@ -481,6 +491,130 @@ r.put('/starbase-api/files/:fileId', apiLimiter, requireAuth, fileOperationsLimi
   ).catch(() => {}); // fire-and-forget, don't block response
   
   res.json({ updatedAt: now });
+}));
+
+/**
+ * Restore a single file from a deployed commit/version snapshot
+ */
+r.post('/starbase-api/files/:fileId/restore-from-commit', apiLimiter, requireAuth, fileOperationsLimiter, validateParams(fileIdParamSchema), validateBody(restoreFromCommitBodySchema), asyncHandler(async (req: Request, res: Response) => {
+  const { fileId } = req.params;
+  const userId = req.user!.userId;
+  const { commitId: rawCommitId, fileVersionNumber } = req.body as { commitId?: string; fileVersionNumber?: number };
+
+  const dataSource = await getDataSource();
+  const fileRepo = dataSource.getRepository(File);
+  const commitRepo = dataSource.getRepository(Commit);
+  const snapshotRepo = dataSource.getRepository(FileSnapshot);
+  const fileCommitVersionRepo = dataSource.getRepository(FileCommitVersion);
+
+  const fileRow = await fileRepo.findOne({
+    where: { id: fileId },
+    select: ['id', 'projectId', 'name', 'type', 'folderId']
+  });
+  if (!fileRow) throw Errors.notFound('File');
+
+  const canEditFile = await projectMemberService.hasRole(
+    String(fileRow.projectId),
+    userId,
+    ['owner', 'delegate', 'developer', 'editor'] as ProjectRole[]
+  );
+  if (!canEditFile) {
+    throw Errors.notFound('File');
+  }
+
+  let commitId = rawCommitId ? String(rawCommitId) : null;
+  if (!commitId && typeof fileVersionNumber === 'number') {
+    const versionRow = await fileCommitVersionRepo.findOne({
+      where: { fileId, versionNumber: Number(fileVersionNumber) },
+      select: ['commitId']
+    });
+    if (versionRow?.commitId) {
+      commitId = String(versionRow.commitId);
+    }
+  }
+
+  if (!commitId) {
+    throw Errors.notFound('Version commit');
+  }
+
+  const commitRow = await commitRepo.findOne({
+    where: { id: commitId, projectId: String(fileRow.projectId) },
+    select: ['id'],
+  });
+  if (!commitRow) {
+    throw Errors.notFound('Version commit');
+  }
+
+  const resolvedVersionRow = await fileCommitVersionRepo.findOne({
+    where: { fileId, commitId },
+    select: ['versionNumber'],
+  });
+  const resolvedFileVersionNumber = resolvedVersionRow && Number.isFinite(Number(resolvedVersionRow.versionNumber))
+    ? Number(resolvedVersionRow.versionNumber)
+    : (typeof fileVersionNumber === 'number' ? Number(fileVersionNumber) : null);
+
+  const qb = snapshotRepo.createQueryBuilder('fs')
+    .where('fs.commitId = :commitId', { commitId })
+    .andWhere('fs.name = :name', { name: String(fileRow.name) })
+    .andWhere('fs.type = :type', { type: String(fileRow.type) });
+
+  if (fileRow.folderId === null || typeof fileRow.folderId === 'undefined') {
+    qb.andWhere('(fs.folderId IS NULL OR fs.folderId = :empty)', { empty: '' });
+  } else {
+    qb.andWhere('fs.folderId = :folderId', { folderId: String(fileRow.folderId) });
+  }
+
+  const snapshots = await qb.getMany();
+  if (snapshots.length === 0) {
+    throw Errors.notFound('File snapshot');
+  }
+
+  const score = (s: FileSnapshot) => {
+    let v = 0;
+    if (s.content) v += 10;
+    if (s.changeType !== 'unchanged') v += 5;
+    if (s.changeType === 'deleted') v -= 20;
+    return v;
+  };
+
+  const snapshot = [...snapshots].sort((a, b) => score(b) - score(a))[0];
+  if (!snapshot.content || snapshot.changeType === 'deleted') {
+    throw Errors.conflict('Snapshot content is unavailable for restore');
+  }
+
+  const now = unixTimestamp();
+  const type = String(fileRow.type);
+  const restoredXml = type === 'dmn'
+    ? sanitizeDmnXml(String(snapshot.content || ''))
+    : (type === 'bpmn' ? sanitizeBpmnXml(String(snapshot.content || '')) : String(snapshot.content || ''));
+  const bpmnProcessId = type === 'bpmn' ? extractBpmnProcessId(restoredXml) : null;
+  const dmnDecisionId = type === 'dmn' ? extractDmnDecisionId(restoredXml) : null;
+
+  await fileRepo.update({ id: fileId }, {
+    xml: restoredXml,
+    bpmnProcessId,
+    dmnDecisionId,
+    updatedBy: userId,
+    updatedAt: now,
+  });
+
+  syncFileUpdate(
+    fileRow.projectId,
+    userId,
+    fileId,
+    fileRow.name,
+    fileRow.type,
+    restoredXml,
+    fileRow.folderId
+  ).catch(() => {});
+
+  res.json({
+    restored: true,
+    fileId,
+    commitId,
+    fileVersionNumber: resolvedFileVersionNumber,
+    updatedAt: now,
+  });
 }));
 
 /**

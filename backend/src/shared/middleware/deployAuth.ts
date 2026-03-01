@@ -85,7 +85,7 @@ export function requireDeployPermission() {
 
       // Check 2b: User has engine deploy role (platform-configured)
       const engineDeployRoles = JSON.parse(
-        settings?.defaultDeployRoles || '["owner","delegate","operator","deployer"]'
+        settings?.defaultDeployRoles || '["owner","delegate","operator"]'
       );
       const hasEngineRole = await engineService.hasEngineAccess(userId, engineId, engineDeployRoles);
       if (!hasEngineRole) {
@@ -202,7 +202,7 @@ export function checkDeployPermission() {
       }
 
       const engineDeployRoles = JSON.parse(
-        settings?.defaultDeployRoles || '["owner","delegate","operator","deployer"]'
+        settings?.defaultDeployRoles || '["owner","delegate","operator"]'
       );
       const hasEngineRole = await engineService.hasEngineAccess(userId, engineId, engineDeployRoles);
       if (!hasEngineRole) {

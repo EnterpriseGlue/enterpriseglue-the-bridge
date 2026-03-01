@@ -33,6 +33,12 @@ export class Commit extends AppBaseEntity {
   @Column({ name: 'is_remote', type: 'boolean', default: false })
   isRemote!: boolean;
 
+  @Column({ name: 'hotfix_from_commit_id', type: 'text', nullable: true })
+  hotfixFromCommitId!: string | null;
+
+  @Column({ name: 'hotfix_from_file_version', type: 'integer', nullable: true })
+  hotfixFromFileVersion!: number | null;
+
   @Column({ name: 'created_at', type: 'bigint' })
   createdAt!: number;
 }

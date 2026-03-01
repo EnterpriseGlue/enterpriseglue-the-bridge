@@ -4,7 +4,8 @@ import { useTenantNavigate } from '../../../shared/hooks/useTenantNavigate'
 import { sanitizePathParam } from '../../../shared/utils/sanitize'
 import { useQuery } from '@tanstack/react-query'
 import styles from './styles/InstanceDetail.module.css'
-import { Modal, Select, BreadcrumbItem, SelectItem, TextInput, TextArea, InlineNotification } from '@carbon/react'
+import { Modal, Select, BreadcrumbItem, SelectItem, TextInput, TextArea, InlineNotification, Button } from '@carbon/react'
+import { Launch } from '@carbon/icons-react'
 import { BreadcrumbBar } from '../../shared/components/BreadcrumbBar'
 import type { ElementLinkInfo } from '../../shared/components/viewer/viewerTypes'
 import SplitPane from 'react-split-pane'
@@ -37,6 +38,20 @@ import { ProcessInstanceBottomPane } from './components/ProcessInstanceBottomPan
 import { ProcessInstanceModals } from './components/ProcessInstanceModals'
 import { EngineAccessError, isEngineAccessError } from '../shared/components/EngineAccessError'
 import { ApplyModificationsModal } from './components/modals/ApplyModificationsModal'
+
+type ProcessEditTarget = {
+  canShowEditButton: boolean
+  canEdit: boolean
+  engineId: string
+  processKey: string
+  processVersion: number
+  projectId: string
+  fileId: string
+  engineDeploymentId?: string
+  commitId?: string | null
+  fileVersionNumber?: number | null
+  mappingSource?: string
+}
 
 export default function ProcessInstanceDetailPage() {
   const { instanceId } = useParams<{ instanceId: string }>()
@@ -90,6 +105,7 @@ export default function ProcessInstanceDetailPage() {
     incidentsQ,
     retryJobsQ,
     retryExtTasksQ,
+    defId,
     defKey,
     defName,
     sortedActs,
@@ -578,6 +594,62 @@ export default function ProcessInstanceDetailPage() {
   const incidentCount = (incidentsQ.data || []).length
   const showIncidentBanner = incidentCount > 0
 
+  const processVersion = React.useMemo(() => {
+    const fromHistory = Number((histQ.data as any)?.processDefinitionVersion)
+    if (Number.isFinite(fromHistory) && fromHistory > 0) return Math.trunc(fromHistory)
+
+    const fromRuntime = Number((runtimeQ.data as any)?.processDefinitionVersion)
+    if (Number.isFinite(fromRuntime) && fromRuntime > 0) return Math.trunc(fromRuntime)
+
+    const defIdSource = String(defId || (histQ.data as any)?.processDefinitionId || '')
+    const parsedFromId = Number(defIdSource.split(':')[1])
+    if (Number.isFinite(parsedFromId) && parsedFromId > 0) return Math.trunc(parsedFromId)
+
+    return null
+  }, [histQ.data, runtimeQ.data, defId])
+
+  const processEditTargetQ = useQuery({
+    queryKey: ['mission-control', 'process-instance-edit-target', selectedEngineId, defKey, processVersion, defId],
+    queryFn: () => apiClient.get<ProcessEditTarget>('/mission-control-api/process-definitions/edit-target', {
+      engineId: selectedEngineId,
+      key: defKey,
+      version: processVersion,
+      processDefinitionId: defId,
+    }),
+    enabled: !!selectedEngineId && !!defKey && processVersion !== null,
+    retry: false,
+    staleTime: 15_000,
+  })
+
+  const processEditTarget = processEditTargetQ.data || null
+  const showEditButton = Boolean(
+    processVersion !== null &&
+    processEditTarget?.canShowEditButton &&
+    processEditTarget?.fileId
+  )
+
+  const handleEditInStarbase = React.useCallback(() => {
+    if (!processEditTarget?.fileId || processVersion === null || !defKey) return
+
+    const params = new URLSearchParams({
+      source: 'mission-control',
+      engineId: String(selectedEngineId || processEditTarget.engineId || ''),
+      process: defKey,
+      version: String(processVersion),
+      deploymentId: String(processEditTarget.engineDeploymentId || ''),
+      mappingSource: String(processEditTarget.mappingSource || ''),
+    })
+
+    if (processEditTarget.commitId) {
+      params.set('commitId', String(processEditTarget.commitId))
+    }
+    if (typeof processEditTarget.fileVersionNumber === 'number') {
+      params.set('fileVersion', String(processEditTarget.fileVersionNumber))
+    }
+
+    tenantNavigate(`/starbase/editor/${encodeURIComponent(sanitizePathParam(processEditTarget.fileId))}?${params.toString()}`)
+  }, [processEditTarget, processVersion, defKey, selectedEngineId, tenantNavigate])
+
   // Handle navigation to linked resources
   const handleElementNavigate = React.useCallback((linkInfo: ElementLinkInfo) => {
     switch (linkInfo.linkType) {
@@ -693,7 +765,20 @@ export default function ProcessInstanceDetailPage() {
     <div className={styles.container}>
       
       {/* Breadcrumb Bar - shared component */}
-      <BreadcrumbBar>
+      <BreadcrumbBar
+        rightActions={showEditButton ? (
+          <Button
+            kind="ghost"
+            size="sm"
+            renderIcon={Launch}
+            onClick={handleEditInStarbase}
+            disabled={!processEditTarget?.canEdit || processEditTargetQ.isFetching}
+            title={processEditTarget?.canEdit ? 'Edit deployed version in Starbase' : 'You do not have edit access for this project'}
+          >
+            Edit
+          </Button>
+        ) : null}
+      >
         <BreadcrumbItem>
           <a href={toTenantPath('/mission-control')} onClick={(e) => { e.preventDefault(); tenantNavigate('/mission-control'); }}>
             Mission Control

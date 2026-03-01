@@ -515,18 +515,30 @@ r.post('/engines-api/engines/:engineId/deployments', apiLimiter, requireAuth, va
         gitCommitMessage = rawGitCommitMessage
       }
 
+      // If vcsCommitId was provided (e.g. from save-version-before-deploy),
+      // use it directly for all files. This is more reliable than
+      // getLastCommitForFile which skips unchanged snapshots.
+      const explicitVcsCommitId = typeof opts.vcsCommitId === 'string' ? opts.vcsCommitId : null
+
       const lastCommitByFileId = new Map<string, { id: string; message: string }>()
       try {
         const fileIds = files.map(f => f?.id ? String((f as any).id) : '').filter(Boolean)
-        const results = await Promise.all(
-          fileIds.map(async (fid) => {
-            const last = await vcsService.getLastCommitForFile(projectId, fid)
-            return { fid, last }
-          })
-        )
-        for (const { fid, last } of results) {
-          if (last && last.id) {
-            lastCommitByFileId.set(fid, { id: String(last.id), message: String(last.message || '') })
+        if (explicitVcsCommitId) {
+          // Use the explicit commit for every file
+          for (const fid of fileIds) {
+            lastCommitByFileId.set(fid, { id: explicitVcsCommitId, message: '' })
+          }
+        } else {
+          const results = await Promise.all(
+            fileIds.map(async (fid) => {
+              const last = await vcsService.getLastCommitForFile(projectId, fid)
+              return { fid, last }
+            })
+          )
+          for (const { fid, last } of results) {
+            if (last && last.id) {
+              lastCommitByFileId.set(fid, { id: String(last.id), message: String(last.message || '') })
+            }
           }
         }
       } catch {

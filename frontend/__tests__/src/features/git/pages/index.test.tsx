@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import * as gitPages from '../../../../src/features/git/pages/index.ts';
+import * as gitPages from '@src/features/git/pages';
 
 describe('git pages index', () => {
   it('exports OAuthCallback', () => {

@@ -5,39 +5,27 @@
 
 import React, { useState } from 'react';
 import { Button } from '@carbon/react';
-import { Rocket, CheckmarkFilled, WarningAltFilled } from '@carbon/icons-react';
-import { useHasGitRepository } from '../hooks/useGitRepository';
+import { Rocket } from '@carbon/icons-react';
 import DeployDialog from './DeployDialog';
 
 interface DeployButtonProps {
   projectId: string;
+  fileIds?: string[];
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
   kind?: 'primary' | 'secondary' | 'tertiary' | 'ghost';
+  onDeploySuccess?: () => void;
 }
 
 export default function DeployButton({ 
   projectId, 
+  fileIds,
   disabled = false,
   size = 'md',
-  kind = 'primary'
+  kind = 'primary',
+  onDeploySuccess,
 }: DeployButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const hasRepository = useHasGitRepository(projectId);
-
-  if (!hasRepository) {
-    return (
-      <Button
-        size={size}
-        kind="ghost"
-        disabled
-        renderIcon={WarningAltFilled}
-        title="No Git repository connected. Set up Git first."
-      >
-        Deploy
-      </Button>
-    );
-  }
 
   return (
     <>
@@ -55,8 +43,10 @@ export default function DeployButton({
       {isDialogOpen && (
         <DeployDialog
           projectId={projectId}
+          fileIds={fileIds}
           open={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
+          onDeploySuccess={onDeploySuccess}
         />
       )}
     </>

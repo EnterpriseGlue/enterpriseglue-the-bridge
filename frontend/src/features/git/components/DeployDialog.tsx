@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Modal,
   TextInput,
+  TextArea,
   Select,
   SelectItem,
   Checkbox,
@@ -16,9 +17,10 @@ import {
   InlineLoading,
   Tag,
 } from '@carbon/react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../shared/api/client';
 import { parseApiError } from '../../../shared/api/apiErrorUtils';
+import { useToast } from '../../../shared/notifications/ToastProvider';
 import { useDeployment } from '../hooks/useDeployment';
 import type { DeployRequest } from '../types/git';
 
@@ -39,14 +41,73 @@ interface EngineAccessData {
 
 interface DeployDialogProps {
   projectId: string;
+  fileIds?: string[];
   open: boolean;
   onClose: () => void;
+  onDeploySuccess?: () => void;
 }
 
-export default function DeployDialog({ projectId, open, onClose }: DeployDialogProps) {
-  const deployment = useDeployment(projectId);
+interface ProjectGitConnection {
+  connected?: boolean;
+  hasToken?: boolean;
+}
 
-  const [message, setMessage] = useState('Deploy: Feature implementation');
+export default function DeployDialog({ projectId, fileIds, open, onClose, onDeploySuccess }: DeployDialogProps) {
+  const deployment = useDeployment(projectId);
+  const { notify } = useToast();
+  const queryClient = useQueryClient();
+  const scopedFileIds = (fileIds || []).map(String).filter(Boolean);
+  const isFileScopedDeploy = scopedFileIds.length > 0;
+
+  const gitConnectionQuery = useQuery({
+    queryKey: ['git-connection', projectId],
+    queryFn: async () => {
+      return apiClient
+        .get<ProjectGitConnection>('/git-api/project-connection', { projectId })
+        .catch(() => ({ connected: false, hasToken: false } as ProjectGitConnection));
+    },
+    enabled: open && !!projectId,
+    staleTime: 30000,
+  });
+
+  const gitConnection = gitConnectionQuery.data as ProjectGitConnection | boolean | undefined;
+  const gitConnected = typeof gitConnection === 'boolean'
+    ? gitConnection
+    : !!gitConnection?.connected;
+  const gitHasToken = typeof gitConnection === 'boolean'
+    ? gitConnection
+    : (gitConnected ? gitConnection?.hasToken !== false : false);
+  const canGitDeploy = !isFileScopedDeploy && gitConnected && gitHasToken;
+
+  const engineDeployment = useMutation({
+    mutationFn: async (params: { engineId: string; deploymentName: string; vcsCommitId?: string }) => {
+      return apiClient.post(
+        `/engines-api/engines/${encodeURIComponent(params.engineId)}/deployments`,
+        {
+          resources: isFileScopedDeploy ? { fileIds: scopedFileIds } : { projectId },
+          options: {
+            deploymentName: params.deploymentName,
+            enableDuplicateFiltering: true,
+            deployChangedOnly: true,
+            vcsCommitId: params.vcsCommitId,
+          },
+        }
+      );
+    },
+  });
+
+  const saveVersion = useMutation({
+    mutationFn: async (versionMessage: string) => {
+      const body: { message: string; fileIds?: string[] } = { message: versionMessage }
+      if (isFileScopedDeploy) {
+        body.fileIds = scopedFileIds
+      }
+      return apiClient.post<{ commitId?: string }>(`/vcs-api/projects/${projectId}/commit`, body)
+    },
+  })
+
+  const [versionTitle, setVersionTitle] = useState('');
+  const [versionDescription, setVersionDescription] = useState('');
   const [selectedEngineId, setSelectedEngineId] = useState('');
   const [createTag, setCreateTag] = useState(false);
   const [tagName, setTagName] = useState('');
@@ -83,25 +144,66 @@ export default function DeployDialog({ projectId, open, onClose }: DeployDialogP
 
   const selectedEngine = deployableEngines.find(e => e.engineId === selectedEngineId);
 
+  const isPending = saveVersion.isPending || (canGitDeploy ? deployment.isPending : engineDeployment.isPending);
+  const isError = saveVersion.isError || (canGitDeploy ? deployment.isError : engineDeployment.isError);
+  const isSuccess = canGitDeploy ? deployment.isSuccess : engineDeployment.isSuccess;
+  const activeError = saveVersion.error || (canGitDeploy ? deployment.error : engineDeployment.error);
+  const trimmedVersionTitle = versionTitle.trim()
+  const trimmedVersionDescription = versionDescription.trim()
+  const semanticVersionMessage = trimmedVersionDescription
+    ? `${trimmedVersionTitle} — ${trimmedVersionDescription}`
+    : trimmedVersionTitle
+
   const handleDeploy = async () => {
-    if (!message.trim() || !selectedEngineId) {
+    if (!trimmedVersionTitle || !selectedEngineId) {
       return;
     }
 
-    const deployParams: Omit<DeployRequest, 'projectId'> = {
-      message: message.trim(),
-      createTag,
-      environment: selectedEngine?.environment?.name,
-    };
-
-    if (createTag && tagName) {
-      deployParams.tagName = tagName;
-    }
-
     try {
-      await deployment.mutateAsync(deployParams);
+      const versionResult = await saveVersion.mutateAsync(semanticVersionMessage)
+      const savedCommitId = versionResult?.commitId
+
+      if (canGitDeploy) {
+        const deployParams: Omit<DeployRequest, 'projectId'> = {
+          message: trimmedVersionTitle,
+          createTag,
+          environment: selectedEngine?.environment?.name,
+        };
+
+        if (createTag && tagName) {
+          deployParams.tagName = tagName;
+        }
+
+        await deployment.mutateAsync(deployParams);
+      } else {
+        await engineDeployment.mutateAsync({
+          engineId: selectedEngineId,
+          deploymentName: trimmedVersionTitle,
+          vcsCommitId: savedCommitId,
+        });
+      }
+
+      // Invalidate caches so versions panel and Mission Control button refresh immediately
+      queryClient.invalidateQueries({ queryKey: ['vcs', 'commits', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['uncommitted-files', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['engine-deployments', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['engine-deployments', projectId, 'latest'] });
+
+      onDeploySuccess?.();
+
+      notify({
+        kind: 'success',
+        title: 'Deployment successful',
+        subtitle: canGitDeploy
+          ? 'Version saved, then committed and pushed to Git repository.'
+          : isFileScopedDeploy
+            ? 'Version saved, then current file deployed to engine.'
+            : 'Version saved, then project files deployed to engine.',
+      });
+
       onClose();
-      setMessage('');
+      setVersionTitle('');
+      setVersionDescription('');
       setSelectedEngineId('');
       setCreateTag(false);
       setTagName('');
@@ -110,13 +212,18 @@ export default function DeployDialog({ projectId, open, onClose }: DeployDialogP
     }
   };
 
-  const isValid = message.trim().length > 0 && message.trim().length <= 500 && !!selectedEngineId;
+  const isValid =
+    trimmedVersionTitle.length > 0 &&
+    trimmedVersionTitle.length <= 200 &&
+    trimmedVersionDescription.length <= 500 &&
+    versionDescription.trim().length <= 500 &&
+    !!selectedEngineId;
 
   // Loading state
-  if (enginesQuery.isLoading) {
+  if (enginesQuery.isLoading || gitConnectionQuery.isLoading) {
     return (
       <Modal open={open} onRequestClose={onClose} modalHeading="Deploy" secondaryButtonText="Cancel" size="sm" passiveModal>
-        <InlineLoading description="Loading connected engines..." style={{ padding: 'var(--spacing-5)' }} />
+        <InlineLoading description="Loading deployment options..." style={{ padding: 'var(--spacing-5)' }} />
       </Modal>
     );
   }
@@ -159,26 +266,55 @@ export default function DeployDialog({ projectId, open, onClose }: DeployDialogP
       onRequestClose={onClose}
       onRequestSubmit={handleDeploy}
       modalHeading="Deploy"
-      primaryButtonText={deployment.isPending ? 'Deploying...' : 'Deploy'}
+      primaryButtonText={isPending ? 'Working...' : 'Save version & deploy'}
       secondaryButtonText="Cancel"
-      primaryButtonDisabled={!isValid || deployment.isPending}
+      primaryButtonDisabled={!isValid || isPending}
       size="sm"
     >
       <div style={{ marginBottom: 'var(--spacing-5)' }}>
         <TextInput
-          id="commit-message"
-          labelText="Commit Message"
-          placeholder="Deploy: Feature implementation"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          invalid={message.length > 500}
-          invalidText="Message must be 500 characters or less"
-          helperText="Describe what changes you're deploying"
-          maxLength={500}
+          id="semantic-version-title"
+          labelText="Version title (required)"
+          placeholder="Example: Invoice process v4"
+          value={versionTitle}
+          onChange={(e) => setVersionTitle(e.target.value)}
+          invalid={versionTitle.length > 200}
+          invalidText="Version title must be 200 characters or less"
+          helperText="This title is used for both deployment name and commit title."
+          maxLength={200}
           autoFocus
-          disabled={deployment.isPending}
+          disabled={isPending}
         />
       </div>
+
+      <div style={{ marginBottom: 'var(--spacing-5)' }}>
+        <TextArea
+          id="semantic-version-description"
+          labelText="Version details (optional)"
+          placeholder="Example: approved routing + validation updates"
+          value={versionDescription}
+          onChange={(e) => setVersionDescription(e.target.value)}
+          invalid={versionDescription.length > 500}
+          invalidText="Version description must be 500 characters or less"
+          helperText="A semantic version snapshot is always saved first before deployment."
+          rows={3}
+          maxLength={500}
+          disabled={isPending}
+        />
+      </div>
+
+      {!canGitDeploy && (
+        <InlineNotification
+          kind="info"
+          title={gitConnected ? 'Git deploy unavailable' : 'Git not connected'}
+          subtitle={isFileScopedDeploy
+            ? 'This deployment will publish only the currently opened file to the selected engine.'
+            : 'This deployment will publish project files directly from Starbase to the selected engine.'}
+          lowContrast
+          hideCloseButton
+          style={{ marginBottom: 'var(--spacing-5)' }}
+        />
+      )}
 
       <div style={{ marginBottom: 'var(--spacing-5)' }}>
         <Select
@@ -186,7 +322,7 @@ export default function DeployDialog({ projectId, open, onClose }: DeployDialogP
           labelText="Deploy to"
           value={selectedEngineId}
           onChange={(e) => setSelectedEngineId(e.target.value)}
-          disabled={deployment.isPending}
+          disabled={isPending}
         >
           <SelectItem value="" text="Select engine..." />
           {deployableEngines.map((engine) => {
@@ -220,41 +356,43 @@ export default function DeployDialog({ projectId, open, onClose }: DeployDialogP
         )}
       </div>
 
-      <div style={{ marginBottom: 'var(--spacing-5)' }}>
-        <Checkbox
-          id="create-tag"
-          labelText="Create deployment tag"
-          checked={createTag}
-          onChange={(_, { checked }) => setCreateTag(checked)}
-          disabled={deployment.isPending}
-        />
-        <div style={{ marginTop: 'var(--spacing-2)', marginLeft: 'var(--spacing-7)', fontSize: 'var(--text-12)', color: 'var(--color-text-tertiary)' }}>
-          Creates a Git tag on the deployed commit for easy reference.
-        </div>
-        {createTag && (
-          <div style={{ marginTop: 'var(--spacing-3)', marginLeft: 'var(--spacing-7)' }}>
-            <TextInput
-              id="tag-name"
-              labelText="Tag name"
-              value={tagName}
-              onChange={(e) => setTagName(e.target.value)}
-              placeholder="deploy-1732195200"
-              size="sm"
-              disabled={deployment.isPending}
-            />
+      {canGitDeploy && (
+        <div style={{ marginBottom: 'var(--spacing-5)' }}>
+          <Checkbox
+            id="create-tag"
+            labelText="Create deployment tag"
+            checked={createTag}
+            onChange={(_, { checked }) => setCreateTag(checked)}
+            disabled={isPending}
+          />
+          <div style={{ marginTop: 'var(--spacing-2)', marginLeft: 'var(--spacing-7)', fontSize: 'var(--text-12)', color: 'var(--color-text-tertiary)' }}>
+            Creates a Git tag on the deployed commit for easy reference.
           </div>
-        )}
-      </div>
+          {createTag && (
+            <div style={{ marginTop: 'var(--spacing-3)', marginLeft: 'var(--spacing-7)' }}>
+              <TextInput
+                id="tag-name"
+                labelText="Tag name"
+                value={tagName}
+                onChange={(e) => setTagName(e.target.value)}
+                placeholder="deploy-1732195200"
+                size="sm"
+                disabled={isPending}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
-      {deployment.isPending && (
+      {isPending && (
         <InlineLoading
-          description="Deploying to engine..."
+          description={saveVersion.isPending ? 'Saving version snapshot...' : 'Deploying saved version...'}
           style={{ marginTop: 'var(--spacing-5)' }}
         />
       )}
 
-      {deployment.isError && (() => {
-        const parsed = parseApiError(deployment.error, 'Deployment failed');
+      {isError && (() => {
+        const parsed = parseApiError(activeError, 'Deployment failed');
         return (
           <InlineNotification
             kind="error"
@@ -267,11 +405,15 @@ export default function DeployDialog({ projectId, open, onClose }: DeployDialogP
         );
       })()}
 
-      {deployment.isSuccess && (
+      {isSuccess && (
         <InlineNotification
           kind="success"
           title="Deployed successfully"
-          subtitle={`Committed and pushed to Git repository`}
+          subtitle={canGitDeploy
+            ? 'Version saved, committed, and pushed to Git repository'
+            : isFileScopedDeploy
+              ? 'Saved version published to the selected engine'
+              : 'Saved version of project files published to the selected engine'}
           lowContrast
           hideCloseButton
           style={{ marginTop: 'var(--spacing-5)' }}

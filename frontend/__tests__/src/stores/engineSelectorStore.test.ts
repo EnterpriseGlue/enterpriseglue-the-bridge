@@ -4,17 +4,17 @@ import { useEngineSelectorStore } from '@src/stores/engineSelectorStore';
 describe('engineSelectorStore', () => {
   beforeEach(() => {
     localStorage.clear();
-    useEngineSelectorStore.setState({ selectedEngineId: null });
+    useEngineSelectorStore.setState({ selectedEngineId: undefined });
   });
 
   it('defaults to all engines', () => {
-    expect(useEngineSelectorStore.getState().selectedEngineId).toBeNull();
+    expect(useEngineSelectorStore.getState().selectedEngineId).toBeUndefined();
   });
 
   it('updates selected engine', () => {
     useEngineSelectorStore.getState().setSelectedEngineId('engine-1');
     expect(useEngineSelectorStore.getState().selectedEngineId).toBe('engine-1');
-    useEngineSelectorStore.getState().setSelectedEngineId(null);
-    expect(useEngineSelectorStore.getState().selectedEngineId).toBeNull();
+    useEngineSelectorStore.setState({ selectedEngineId: undefined });
+    expect(useEngineSelectorStore.getState().selectedEngineId).toBeUndefined();
   });
 });

@@ -20,7 +20,7 @@ export class PlatformSettings {
   @Column({ name: 'git_project_token_sharing_enabled', type: 'boolean', default: false })
   gitProjectTokenSharingEnabled!: boolean;
 
-  @Column({ name: 'default_deploy_roles', type: 'text', default: '["owner","delegate","operator","deployer"]' })
+  @Column({ name: 'default_deploy_roles', type: 'text', default: '["owner","delegate","operator"]' })
   defaultDeployRoles!: string;
 
   @Column({ name: 'invite_allow_all_domains', type: 'boolean', default: true })

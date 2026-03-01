@@ -102,7 +102,7 @@ export class VcsService {
   }
 
   // Commit operations - delegate to VcsCommitService
-  async commit(branchId: string, userId: string, message: string, options?: { isRemote?: boolean; source?: string }): Promise<CommitInfo> {
+  async commit(branchId: string, userId: string, message: string, options?: { isRemote?: boolean; source?: string; hotfixFromCommitId?: string; hotfixFromFileVersion?: number }): Promise<CommitInfo> {
     return vcsCommitService.commit(branchId, userId, message, options);
   }
 

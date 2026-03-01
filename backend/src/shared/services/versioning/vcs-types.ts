@@ -24,6 +24,8 @@ export interface CommitInfo {
   versionNumber: number | null;
   source: string;
   isRemote: boolean;
+  hotfixFromCommitId: string | null;
+  hotfixFromFileVersion: number | null;
   createdAt: number;
 }
 
@@ -65,6 +67,8 @@ export function mapCommit(row: any): CommitInfo {
     versionNumber: row.versionNumber ?? null,
     source: row.source ?? 'manual',
     isRemote: row.isRemote ?? false,
+    hotfixFromCommitId: row.hotfixFromCommitId ?? null,
+    hotfixFromFileVersion: typeof row.hotfixFromFileVersion === 'number' ? row.hotfixFromFileVersion : null,
     createdAt: Number(row.createdAt),
   };
 }

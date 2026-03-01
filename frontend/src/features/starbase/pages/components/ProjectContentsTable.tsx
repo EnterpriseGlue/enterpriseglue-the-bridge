@@ -41,6 +41,7 @@ interface ProjectContentsTableProps {
   resolveUpdatedByLabel: (file: FileItem) => string
   uncommittedFileIdsSet: Set<string>
   uncommittedFolderIdsSet: Set<string>
+  hasGitConnection: boolean
   showSyncButton: boolean
   canDeployByRole: boolean
   onOpenSync: (cancelSelection: () => void) => void
@@ -86,6 +87,7 @@ export const ProjectContentsTable = ({
   resolveUpdatedByLabel,
   uncommittedFileIdsSet,
   uncommittedFolderIdsSet,
+  hasGitConnection,
   showSyncButton,
   canDeployByRole,
   onOpenSync,
@@ -297,6 +299,7 @@ export const ProjectContentsTable = ({
                                 {file.name.replace(/\.(bpmn|dmn)$/i, '')}
                               </div>
                               {(() => {
+                                if (!hasGitConnection) return null
                                 const isDirty = file.type === 'folder'
                                   ? uncommittedFolderIdsSet.has(file.id)
                                   : uncommittedFileIdsSet.has(file.id)

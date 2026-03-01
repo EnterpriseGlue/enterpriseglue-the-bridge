@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import {
   InlineNotification,
   BreadcrumbItem,
+  Button,
 } from '@carbon/react'
+import { Launch } from '@carbon/icons-react'
 import { BreadcrumbBar } from '../../../shared/components/BreadcrumbBar'
 import { listDecisionDefinitions, fetchDecisionDefinitionDmnXml, listDecisionHistory, type DecisionHistoryEntry } from '../api/decisions'
 import SplitPane from 'react-split-pane'
@@ -15,12 +17,28 @@ import { PageLoader } from '../../../../shared/components/PageLoader'
 import { useDecisionsFilterStore } from '../../shared/stores/decisionsFilterStore'
 import { EngineAccessError, isEngineAccessError } from '../../shared/components/EngineAccessError'
 import { useSelectedEngine } from '../../../../components/EngineSelector'
+import { useEngineSelectorStore } from '../../../../stores/engineSelectorStore'
+import { apiClient } from '../../../../shared/api/client'
 import styles from './Decisions.module.css'
 
 const DMNDrdMini = React.lazy(() => import('../../../starbase/components/DMNDrdMini'))
 
 const SPLIT_PANE_STORAGE_KEY = 'decisions-split-pane-size-v2'
 const DEFAULT_SPLIT_SIZE = '60%'
+
+type DecisionEditTarget = {
+  canShowEditButton: boolean
+  canEdit: boolean
+  engineId: string
+  decisionKey: string
+  decisionVersion: number
+  projectId: string
+  fileId: string
+  engineDeploymentId?: string
+  commitId?: string | null
+  fileVersionNumber?: number | null
+  mappingSource?: string
+}
 
 type DecisionDef = {
   id: string
@@ -85,6 +103,19 @@ export default function Decisions() {
   
   const [maxResults] = React.useState(50)
   const selectedEngineId = useSelectedEngine()
+  const setSelectedEngineId = useEngineSelectorStore((s) => s.setSelectedEngineId)
+
+  React.useEffect(() => {
+    const engineIdParam = String(searchParams.get('engineId') || '')
+    if (!engineIdParam) return
+    if (!selectedEngineId || selectedEngineId !== engineIdParam) {
+      setSelectedEngineId(engineIdParam)
+      return
+    }
+
+    searchParams.delete('engineId')
+    setSearchParams(searchParams, { replace: true })
+  }, [searchParams, selectedEngineId, setSelectedEngineId, setSearchParams])
 
   const defsQ = useQuery({
     queryKey: ['mission-control', 'decision-defs', selectedEngineId],
@@ -142,6 +173,27 @@ export default function Decisions() {
   }, [defsQ.data, currentKey])
 
   React.useEffect(() => {
+    const rawVersion = searchParams.get('version')
+    if (!rawVersion) return
+
+    const parsedVersion = Number(rawVersion)
+    if (!Number.isFinite(parsedVersion)) {
+      searchParams.delete('version')
+      setSearchParams(searchParams, { replace: true })
+      return
+    }
+
+    if (versions.length === 0) return
+
+    if (versions.includes(parsedVersion) && selectedVersion !== parsedVersion) {
+      setSelectedVersion(parsedVersion)
+    }
+
+    searchParams.delete('version')
+    setSearchParams(searchParams, { replace: true })
+  }, [searchParams, versions, selectedVersion, setSelectedVersion, setSearchParams])
+
+  React.useEffect(() => {
     if (versions.length > 0 && (selectedVersion === null || !versions.includes(selectedVersion))) {
       setSelectedVersion(versions[0])
     }
@@ -194,6 +246,51 @@ export default function Decisions() {
     const d = new Date(ts)
     return isNaN(d.getTime()) ? '--' : d.toISOString().replace('T', ' ').slice(0, 19)
   }
+
+  // Edit-target query for "Edit in Starbase" button
+  const defIdForVersion = currentDef?.id || null
+  const decisionEditTargetQ = useQuery({
+    queryKey: ['mission-control', 'decision-edit-target', selectedEngineId, currentKey, selectedVersion, defIdForVersion],
+    queryFn: () => apiClient.get<DecisionEditTarget>('/mission-control-api/decision-definitions/edit-target', {
+      engineId: selectedEngineId,
+      key: currentKey,
+      version: selectedVersion,
+      decisionDefinitionId: defIdForVersion,
+    }),
+    enabled: !!selectedEngineId && !!currentKey && selectedVersion !== null,
+    retry: false,
+    staleTime: 15_000,
+  })
+
+  const decisionEditTarget = decisionEditTargetQ.data || null
+  const showEditButton = Boolean(
+    currentKey &&
+    selectedVersion !== null &&
+    decisionEditTarget?.canShowEditButton &&
+    decisionEditTarget?.fileId
+  )
+
+  const handleEditInStarbase = React.useCallback(() => {
+    if (!decisionEditTarget?.fileId || selectedVersion === null || !currentKey) return
+
+    const params = new URLSearchParams({
+      source: 'mission-control',
+      engineId: String(selectedEngineId || decisionEditTarget.engineId || ''),
+      decision: currentKey,
+      version: String(selectedVersion),
+      deploymentId: String(decisionEditTarget.engineDeploymentId || ''),
+      mappingSource: String(decisionEditTarget.mappingSource || ''),
+    })
+
+    if (decisionEditTarget.commitId) {
+      params.set('commitId', String(decisionEditTarget.commitId))
+    }
+    if (typeof decisionEditTarget.fileVersionNumber === 'number') {
+      params.set('fileVersion', String(decisionEditTarget.fileVersionNumber))
+    }
+
+    tenantNavigate(`/starbase/editor/${encodeURIComponent(sanitizePathParam(decisionEditTarget.fileId))}?${params.toString()}`)
+  }, [decisionEditTarget, selectedVersion, currentKey, selectedEngineId, tenantNavigate])
 
   const rows = React.useMemo(() => {
     const list = historyQ.data || []
@@ -276,7 +373,20 @@ export default function Decisions() {
       </style>
 
       {/* Breadcrumb Bar - shared component */}
-      <BreadcrumbBar>
+      <BreadcrumbBar
+        rightActions={showEditButton ? (
+          <Button
+            kind="ghost"
+            size="sm"
+            renderIcon={Launch}
+            onClick={handleEditInStarbase}
+            disabled={!decisionEditTarget?.canEdit || decisionEditTargetQ.isFetching}
+            title={decisionEditTarget?.canEdit ? 'Edit deployed version in Starbase' : 'You do not have edit access for this project'}
+          >
+            Edit
+          </Button>
+        ) : null}
+      >
         <BreadcrumbItem>
           <a href={toTenantPath('/mission-control')} onClick={(e) => { e.preventDefault(); tenantNavigate('/mission-control'); }}>
             Mission Control

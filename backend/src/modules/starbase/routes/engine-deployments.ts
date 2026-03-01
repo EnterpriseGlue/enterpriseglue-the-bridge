@@ -6,6 +6,7 @@ import { getDataSource } from '@shared/db/data-source.js';
 import { EngineDeployment } from '@shared/db/entities/EngineDeployment.js';
 import { EngineDeploymentArtifact } from '@shared/db/entities/EngineDeploymentArtifact.js';
 import { File } from '@shared/db/entities/File.js';
+import { FileCommitVersion } from '@shared/db/entities/FileCommitVersion.js';
 import { Folder } from '@shared/db/entities/Folder.js';
 import { In } from 'typeorm';
 import { projectMemberService } from '@shared/services/platform-admin/ProjectMemberService.js';
@@ -58,6 +59,298 @@ r.get('/starbase-api/projects/:projectId/engine-deployments', apiLimiter, requir
     ...r0,
     environmentTag: String(r0.engineId || '') === '__env__' ? null : (r0.environmentTag ?? null),
   })));
+}));
+
+r.get('/starbase-api/projects/:projectId/files/:fileId/deployments', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { projectId, fileId } = req.params;
+  const userId = req.user!.userId;
+  const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit || '50'), 10) || 50));
+  const scanLimit = Math.min(5000, Math.max(1, parseInt(String(req.query.scanLimit || '1000'), 10) || 1000));
+
+  const canRead = await projectMemberService.hasAccess(projectId, userId);
+  if (!canRead) {
+    throw Errors.projectNotFound();
+  }
+
+  const userEngines = await engineService.getUserEngines(userId);
+  const visibleEngineIds = userEngines.map((e) => String(e.engine.id));
+  if (visibleEngineIds.length === 0) {
+    return res.json([]);
+  }
+
+  const dataSource = await getDataSource();
+  const fileRepo = dataSource.getRepository(File);
+  const artifactRepo = dataSource.getRepository(EngineDeploymentArtifact);
+  const deploymentRepo = dataSource.getRepository(EngineDeployment);
+  const fileCommitVersionRepo = dataSource.getRepository(FileCommitVersion);
+
+  const fileRow = await fileRepo.findOne({
+    where: { id: fileId, projectId },
+    select: ['id', 'name', 'type'],
+  });
+  if (!fileRow) {
+    throw Errors.notFound('File');
+  }
+
+  const artifactRows = await artifactRepo.find({
+    where: {
+      engineId: In(visibleEngineIds),
+      projectId,
+      fileId,
+    },
+    order: { createdAt: 'DESC' },
+    take: scanLimit,
+  });
+
+  const latestByEngine = new Map<string, {
+    engineId: string;
+    engineDeploymentId: string;
+    fileId: string;
+    fileType: string | null;
+    fileName: string | null;
+    fileGitCommitId: string | null;
+    artifacts: Array<{ kind: string; key: string; version: number; id: string }>;
+  }>();
+
+  const deploymentIds = new Set<string>();
+
+  for (const row of artifactRows) {
+    const engineId = String(row.engineId || '');
+    if (!engineId) continue;
+    const engineDeploymentId = String(row.engineDeploymentId || '');
+    if (!engineDeploymentId) continue;
+
+    const existing = latestByEngine.get(engineId);
+    if (!existing) {
+      deploymentIds.add(engineDeploymentId);
+      latestByEngine.set(engineId, {
+        engineId,
+        engineDeploymentId,
+        fileId: String(row.fileId || fileRow.id),
+        fileType: row.fileType ?? fileRow.type ?? null,
+        fileName: row.fileName ?? fileRow.name ?? null,
+        fileGitCommitId: row.fileGitCommitId ?? null,
+        artifacts: [],
+      });
+    }
+
+    const entry = latestByEngine.get(engineId)!;
+    if (entry.engineDeploymentId !== engineDeploymentId) {
+      continue;
+    }
+
+    const kind = String(row.artifactKind || '');
+    const akey = String(row.artifactKey || '');
+    const version = Number(row.artifactVersion);
+    if (!Number.isFinite(version)) continue;
+
+    entry.artifacts.push({
+      kind,
+      key: akey,
+      version,
+      id: String(row.artifactId || ''),
+    });
+  }
+
+  const deploymentIdList = Array.from(deploymentIds);
+  const deploymentsById = new Map<string, EngineDeployment>();
+  if (deploymentIdList.length > 0) {
+    const depRows = await deploymentRepo.find({
+      where: { id: In(deploymentIdList) },
+    });
+
+    for (const d of depRows) {
+      deploymentsById.set(String(d.id), d);
+    }
+  }
+
+  const commitIds = Array.from(new Set(
+    Array.from(latestByEngine.values())
+      .map((row) => row.fileGitCommitId)
+      .filter((commitId): commitId is string => Boolean(commitId))
+  ));
+  const commitVersionById = new Map<string, number>();
+  if (commitIds.length > 0) {
+    const commitRows = await fileCommitVersionRepo.find({
+      where: {
+        fileId: String(fileRow.id),
+        commitId: In(commitIds),
+      },
+      select: ['commitId', 'versionNumber'],
+    });
+    for (const row of commitRows) {
+      commitVersionById.set(String(row.commitId), Number(row.versionNumber));
+    }
+  }
+
+  const out = Array.from(latestByEngine.values())
+    .map((entry) => {
+      const dep = deploymentsById.get(entry.engineDeploymentId) || null;
+      const commitId = entry.fileGitCommitId ? String(entry.fileGitCommitId) : null;
+      const fileVersionNumber = commitId && commitVersionById.has(commitId)
+        ? commitVersionById.get(commitId) ?? null
+        : null;
+      return {
+        engineId: entry.engineId,
+        engineDeploymentId: entry.engineDeploymentId,
+        fileId: entry.fileId,
+        fileType: entry.fileType,
+        fileName: entry.fileName,
+        fileGitCommitId: commitId,
+        fileVersionNumber,
+        artifacts: entry.artifacts,
+        deployedAt: dep ? Number(dep.deployedAt) : null,
+        engineName: dep ? (dep.engineName ?? null) : null,
+        environmentTag: dep ? (String(dep.engineId || '') === '__env__' ? null : (dep.environmentTag ?? null)) : null,
+      };
+    })
+    .sort((a, b) => Number(b.deployedAt || 0) - Number(a.deployedAt || 0))
+    .slice(0, limit);
+
+  res.json(out);
+}));
+
+r.get('/starbase-api/projects/:projectId/files/:fileId/deployments/history', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { projectId, fileId } = req.params;
+  const userId = req.user!.userId;
+  const limit = Math.min(1000, Math.max(1, parseInt(String(req.query.limit || '200'), 10) || 200));
+  const scanLimit = Math.min(20000, Math.max(1, parseInt(String(req.query.scanLimit || '5000'), 10) || 5000));
+
+  const canRead = await projectMemberService.hasAccess(projectId, userId);
+  if (!canRead) {
+    throw Errors.projectNotFound();
+  }
+
+  const userEngines = await engineService.getUserEngines(userId);
+  const visibleEngineIds = userEngines.map((e) => String(e.engine.id));
+  if (visibleEngineIds.length === 0) {
+    return res.json([]);
+  }
+
+  const dataSource = await getDataSource();
+  const fileRepo = dataSource.getRepository(File);
+  const artifactRepo = dataSource.getRepository(EngineDeploymentArtifact);
+  const deploymentRepo = dataSource.getRepository(EngineDeployment);
+  const fileCommitVersionRepo = dataSource.getRepository(FileCommitVersion);
+
+  const fileRow = await fileRepo.findOne({
+    where: { id: fileId, projectId },
+    select: ['id', 'name', 'type'],
+  });
+  if (!fileRow) {
+    throw Errors.notFound('File');
+  }
+
+  const artifactRows = await artifactRepo.find({
+    where: {
+      engineId: In(visibleEngineIds),
+      projectId,
+      fileId,
+    },
+    order: { createdAt: 'DESC' },
+    take: scanLimit,
+  });
+
+  const deploymentsById = new Map<string, {
+    engineId: string;
+    engineDeploymentId: string;
+    fileId: string;
+    fileType: string | null;
+    fileName: string | null;
+    fileGitCommitId: string | null;
+    artifacts: Array<{ kind: string; key: string; version: number; id: string }>;
+  }>();
+
+  const deploymentIds = new Set<string>();
+
+  for (const row of artifactRows) {
+    const engineDeploymentId = String(row.engineDeploymentId || '');
+    if (!engineDeploymentId) continue;
+    const engineId = String(row.engineId || '');
+    if (!engineId) continue;
+
+    if (!deploymentsById.has(engineDeploymentId)) {
+      deploymentsById.set(engineDeploymentId, {
+        engineId,
+        engineDeploymentId,
+        fileId: String(row.fileId || fileRow.id),
+        fileType: row.fileType ?? fileRow.type ?? null,
+        fileName: row.fileName ?? fileRow.name ?? null,
+        fileGitCommitId: row.fileGitCommitId ?? null,
+        artifacts: [],
+      });
+      deploymentIds.add(engineDeploymentId);
+    }
+
+    const entry = deploymentsById.get(engineDeploymentId)!;
+    const kind = String(row.artifactKind || '');
+    const akey = String(row.artifactKey || '');
+    const version = Number(row.artifactVersion);
+    if (!Number.isFinite(version)) continue;
+
+    entry.artifacts.push({
+      kind,
+      key: akey,
+      version,
+      id: String(row.artifactId || ''),
+    });
+  }
+
+  const deploymentIdList = Array.from(deploymentIds);
+  const deploymentMetaById = new Map<string, EngineDeployment>();
+  if (deploymentIdList.length > 0) {
+    const depRows = await deploymentRepo.find({
+      where: { id: In(deploymentIdList) },
+    });
+    for (const d of depRows) {
+      deploymentMetaById.set(String(d.id), d);
+    }
+  }
+
+  const commitIds = Array.from(new Set(
+    Array.from(deploymentsById.values())
+      .map((row) => row.fileGitCommitId)
+      .filter((commitId): commitId is string => Boolean(commitId))
+  ));
+  const commitVersionById = new Map<string, number>();
+  if (commitIds.length > 0) {
+    const commitRows = await fileCommitVersionRepo.find({
+      where: {
+        fileId: String(fileRow.id),
+        commitId: In(commitIds),
+      },
+      select: ['commitId', 'versionNumber'],
+    });
+    for (const row of commitRows) {
+      commitVersionById.set(String(row.commitId), Number(row.versionNumber));
+    }
+  }
+
+  const out = Array.from(deploymentsById.values())
+    .map((entry) => {
+      const dep = deploymentMetaById.get(entry.engineDeploymentId) || null;
+      const commitId = entry.fileGitCommitId ? String(entry.fileGitCommitId) : null;
+      const fileVersionNumber = commitId && commitVersionById.has(commitId)
+        ? commitVersionById.get(commitId) ?? null
+        : null;
+      return {
+        engineId: entry.engineId,
+        engineDeploymentId: entry.engineDeploymentId,
+        fileId: entry.fileId,
+        fileType: entry.fileType,
+        fileName: entry.fileName,
+        fileGitCommitId: commitId,
+        fileVersionNumber,
+        artifacts: entry.artifacts,
+        deployedAt: dep ? Number(dep.deployedAt) : null,
+        engineName: dep ? (dep.engineName ?? null) : null,
+        environmentTag: dep ? (String(dep.engineId || '') === '__env__' ? null : (dep.environmentTag ?? null)) : null,
+      };
+    })
+    .sort((a, b) => Number(b.deployedAt || 0) - Number(a.deployedAt || 0))
+    .slice(0, limit);
+
+  res.json(out);
 }));
 
 r.get('/starbase-api/projects/:projectId/engine-deployments/latest', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
