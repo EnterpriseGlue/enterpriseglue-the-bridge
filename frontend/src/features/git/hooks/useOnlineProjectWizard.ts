@@ -1,6 +1,6 @@
 import React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, type NavigateOptions } from 'react-router-dom'
 import { gitApi } from '../api/gitApi'
 import { apiClient } from '../../../shared/api/client'
 import { parseApiError } from '../../../shared/api/apiErrorUtils'
@@ -32,6 +32,15 @@ type CreateOnlineResponse = {
 
 type CreateLocalResponse = { id: string; name: string }
 
+type EngineForImport = {
+  id: string
+  name?: string | null
+  baseUrl?: string | null
+  myRole?: string | null
+}
+
+const IMPORT_FROM_ENGINE_ROLES = new Set(['owner', 'delegate', 'operator', 'deployer'])
+
 interface UseOnlineProjectWizardProps {
   open: boolean
   onClose: () => void
@@ -62,7 +71,7 @@ export function useOnlineProjectWizard({
     const combined = `${tenantPrefix}${safe}`
     return safeRelativePath(combined, safe)
   }, [tenantSlug, tenantPrefix])
-  const safeNavigate = React.useCallback((path: string, options?: { state?: any; replace?: boolean }) => {
+  const safeNavigate = React.useCallback((path: string, options?: NavigateOptions) => {
     try {
       const url = new URL(path, window.location.origin)
       if (url.origin !== window.location.origin) return
@@ -72,6 +81,8 @@ export function useOnlineProjectWizard({
 
   // Form state
   const [projectName, setProjectName] = React.useState(existingProjectName || '')
+  const [importFromEngine, setImportFromEngine] = React.useState(false)
+  const [selectedImportEngineId, setSelectedImportEngineId] = React.useState('')
   const [connectToGit, setConnectToGit] = React.useState<boolean>(!!existingProjectId)
   const [repoMode, setRepoMode] = React.useState<'new' | 'existing' | null>(null)
   const [providerId, setProviderId] = React.useState('')
@@ -172,7 +183,7 @@ export function useOnlineProjectWizard({
       try {
         const repos = await gitApi.listProviderRepos(providerId)
         setExistingRepos(repos)
-      } catch (e: any) {
+      } catch (e: unknown) {
         const parsed = parseApiError(e, 'Failed to load repositories')
         const errorMsg = parsed.message
         if (errorMsg.includes('Bad credentials')) {
@@ -210,7 +221,7 @@ export function useOnlineProjectWizard({
 
     try {
       const allCredentials = await apiClient.get<ProviderCredential[]>('/git-api/credentials')
-      const providerCreds = allCredentials.filter(c => c.providerId === providerId)
+      const providerCreds = allCredentials.filter((c: ProviderCredential) => c.providerId === providerId)
       setExistingCredentials(providerCreds)
 
       if (providerCreds.length > 0) {
@@ -245,7 +256,7 @@ export function useOnlineProjectWizard({
           )
           setNamespaces(data)
           if (data.length > 0 && !namespace) {
-            const userNs = data.find(ns => ns.type === 'user')
+            const userNs = data.find((ns: Namespace) => ns.type === 'user')
             setNamespace(userNs?.name || data[0].name)
           }
         } catch (error) {
@@ -265,9 +276,46 @@ export function useOnlineProjectWizard({
   })
 
   const selectedProvider = React.useMemo(
-    () => providersQuery.data?.find(p => p.id === providerId),
+    () => providersQuery.data?.find((p: { id: string }) => p.id === providerId),
     [providersQuery.data, providerId]
   )
+
+  const importableEnginesQuery = useQuery({
+    queryKey: ['engines', 'importable-on-project-create'],
+    queryFn: () => apiClient.get<EngineForImport[]>('/engines-api/engines').catch(() => []),
+    enabled: open && !isExistingProject,
+  })
+
+  const importableEngines = React.useMemo(() => {
+    const rows = importableEnginesQuery.data || []
+    return rows
+      .filter((engine: EngineForImport) => IMPORT_FROM_ENGINE_ROLES.has(String(engine?.myRole || '').toLowerCase()))
+      .map((engine: EngineForImport) => ({
+        id: String(engine.id),
+        name: String(engine.name || engine.baseUrl || 'Unnamed engine'),
+        role: String(engine.myRole || '').toLowerCase(),
+      }))
+      .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
+  }, [importableEnginesQuery.data])
+
+  const canImportFromEngine = !isExistingProject && !(connectToGit && repoMode === 'existing')
+
+  React.useEffect(() => {
+    if (canImportFromEngine) return
+    setImportFromEngine(false)
+    setSelectedImportEngineId('')
+  }, [canImportFromEngine])
+
+  const importFromEnginePayload = React.useMemo(() => {
+    if (!canImportFromEngine || !importFromEngine || !selectedImportEngineId) {
+      return undefined
+    }
+
+    return {
+      enabled: true,
+      engineId: selectedImportEngineId,
+    }
+  }, [canImportFromEngine, importFromEngine, selectedImportEngineId])
 
   const handleSelectCredential = React.useCallback((credentialId: string) => {
     if (credentialId === 'new') {
@@ -278,7 +326,7 @@ export function useOnlineProjectWizard({
       setNamespaces([])
       setNamespace('')
     } else {
-      const cred = existingCredentials.find(c => c.id === credentialId)
+      const cred = existingCredentials.find((c: ProviderCredential) => c.id === credentialId)
       if (cred) {
         setSelectedCredentialId(credentialId)
         setConnectionStatus('connected')
@@ -303,8 +351,8 @@ export function useOnlineProjectWizard({
       setConnectionStatus('connected')
       setConnectedUser(credential.name || credential.providerUsername || credential.id)
       setSelectedCredentialId(credential.id)
-      setExistingCredentials(prev => {
-        const exists = prev.some(c => c.id === credential.id)
+      setExistingCredentials((prev: ProviderCredential[]) => {
+        const exists = prev.some((c: ProviderCredential) => c.id === credential.id)
         if (exists) return prev
         return [...prev, credential]
       })
@@ -312,7 +360,7 @@ export function useOnlineProjectWizard({
       setToken('')
       setConnectionName('')
       queryClient.invalidateQueries({ queryKey: ['git', 'credentials'] })
-    } catch (error: any) {
+    } catch (error: unknown) {
       setConnectionStatus('error')
       const parsed = parseApiError(error, 'Failed to connect')
       setConnectionError(parsed.message)
@@ -371,7 +419,7 @@ export function useOnlineProjectWizard({
           }
         }
       }, 500)
-    } catch (error: any) {
+    } catch (error: unknown) {
       setConnectionStatus('error')
       const parsed = parseApiError(error, 'Failed to start OAuth')
       setConnectionError(parsed.message)
@@ -389,6 +437,7 @@ export function useOnlineProjectWizard({
           isPrivate,
           description: description.trim() || undefined,
           token: authMethod === 'pat' && token ? token : undefined,
+          importFromEngine: importFromEnginePayload,
         })
       } catch (error) {
         const parsed = parseApiError(error, 'Failed to create project')
@@ -398,7 +447,7 @@ export function useOnlineProjectWizard({
         throw new Error(parsed.message || 'Failed to create project')
       }
     },
-    onSuccess: (data) => {
+    onSuccess: (data: CreateOnlineResponse) => {
       queryClient.invalidateQueries({ queryKey: ['starbase', 'projects'] })
       queryClient.invalidateQueries({ queryKey: ['git', 'repositories'] })
       resetForm()
@@ -413,13 +462,16 @@ export function useOnlineProjectWizard({
   const createLocalMutation = useMutation({
     mutationFn: async () => {
       try {
-        return await apiClient.post<CreateLocalResponse>('/starbase-api/projects', { name: projectName.trim() })
+        return await apiClient.post<CreateLocalResponse>('/starbase-api/projects', {
+          name: projectName.trim(),
+          importFromEngine: importFromEnginePayload,
+        })
       } catch (error) {
         const parsed = parseApiError(error, 'Failed to create project')
         throw new Error(parsed.message || 'Failed to create project')
       }
     },
-    onSuccess: async (data) => {
+    onSuccess: async (data: CreateLocalResponse) => {
       await queryClient.invalidateQueries({ queryKey: ['starbase', 'projects'] })
       resetForm()
       onClose()
@@ -481,7 +533,7 @@ export function useOnlineProjectWizard({
         conflictStrategy,
       })
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { projectId: string; projectName: string }) => {
       queryClient.invalidateQueries({ queryKey: ['starbase', 'projects'] })
       queryClient.invalidateQueries({ queryKey: ['git', 'repositories'] })
       resetForm()
@@ -497,6 +549,8 @@ export function useOnlineProjectWizard({
 
   const resetForm = React.useCallback(() => {
     setProjectName(existingProjectName || '')
+    setImportFromEngine(false)
+    setSelectedImportEngineId('')
     setConnectToGit(!!existingProjectId)
     setRepoMode(null)
     setProviderId('')
@@ -543,6 +597,11 @@ export function useOnlineProjectWizard({
       return
     }
 
+    if (importFromEngine && canImportFromEngine && !selectedImportEngineId) {
+      setFieldErrors((prev: Record<string, string>) => ({ ...prev, importEngineId: 'Select an engine to import from' }))
+      return
+    }
+
     const remoteUrl = repoMode === 'existing'
       ? (selectedExistingRepoUrl || customRepoUrl.trim())
       : generateRemoteUrl()
@@ -552,7 +611,7 @@ export function useOnlineProjectWizard({
         onClose()
       } else {
         if (!projectName.trim()) {
-          setFieldErrors(prev => ({ ...prev, projectName: 'Project name is required' }))
+          setFieldErrors((prev: Record<string, string>) => ({ ...prev, projectName: 'Project name is required' }))
           return
         }
         createLocalMutation.mutate()
@@ -561,7 +620,7 @@ export function useOnlineProjectWizard({
     }
 
     if (repoMode === 'existing' && !remoteUrl) {
-      setFieldErrors(prev => ({ ...prev, repositoryName: 'Select or enter a repository to connect' }))
+      setFieldErrors((prev: Record<string, string>) => ({ ...prev, repositoryName: 'Select or enter a repository to connect' }))
       return
     }
 
@@ -576,17 +635,19 @@ export function useOnlineProjectWizard({
         cloneExistingMutation.mutate(remoteUrl!)
       } else {
         if (!projectName.trim()) {
-          setFieldErrors(prev => ({ ...prev, projectName: 'Project name is required' }))
+          setFieldErrors((prev: Record<string, string>) => ({ ...prev, projectName: 'Project name is required' }))
           return
         }
         cloneNewProjectMutation.mutate(remoteUrl!)
       }
     }
-  }, [connectToGit, createLocalMutation, createMutation, customRepoUrl, generateRemoteUrl, initExistingMutation, isEditConnectedProject, isExistingProject, onClose, projectName, repoMode, selectedExistingRepoUrl, cloneExistingMutation, cloneNewProjectMutation])
+  }, [canImportFromEngine, connectToGit, createLocalMutation, createMutation, customRepoUrl, generateRemoteUrl, importFromEngine, initExistingMutation, isEditConnectedProject, isExistingProject, onClose, projectName, repoMode, selectedExistingRepoUrl, selectedImportEngineId, cloneExistingMutation, cloneNewProjectMutation])
 
   const isConnected = connectionStatus === 'connected'
   const isValid = React.useMemo(() => {
     if (isEditConnectedProject) return true
+    const importValid = !importFromEngine || !canImportFromEngine || !!selectedImportEngineId
+    if (!importValid) return false
     if (!connectToGit) {
       return isExistingProject ? true : !!projectName.trim()
     }
@@ -597,7 +658,7 @@ export function useOnlineProjectWizard({
     }
     const remoteUrl = generateRemoteUrl()
     return !!remoteUrl && (isExistingProject ? true : !!projectName.trim())
-  }, [connectToGit, generateRemoteUrl, isConnected, isEditConnectedProject, isExistingProject, projectName, providerId, repoMode, repositoryName])
+  }, [canImportFromEngine, connectToGit, generateRemoteUrl, importFromEngine, isConnected, isEditConnectedProject, isExistingProject, projectName, providerId, repoMode, repositoryName, selectedImportEngineId])
 
   const isLoading =
     createMutation.isPending ||
@@ -615,6 +676,13 @@ export function useOnlineProjectWizard({
     existingRepo,
     projectName,
     setProjectName,
+    importFromEngine,
+    setImportFromEngine,
+    selectedImportEngineId,
+    setSelectedImportEngineId,
+    importableEngines,
+    importableEnginesQuery,
+    canImportFromEngine,
     connectToGit,
     setConnectToGit,
     repoMode,

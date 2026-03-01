@@ -18,7 +18,7 @@ export class VcsCommitService {
   /**
    * Create a commit from current working files
    */
-  async commit(branchId: string, userId: string, message: string, options?: { isRemote?: boolean; source?: string }): Promise<CommitInfo> {
+  async commit(branchId: string, userId: string, message: string, options?: { isRemote?: boolean; source?: string; hotfixFromCommitId?: string; hotfixFromFileVersion?: number }): Promise<CommitInfo> {
     const dataSource = await getDataSource();
     const branchRepo = dataSource.getRepository(Branch);
     const commitRepo = dataSource.getRepository(Commit);
@@ -84,6 +84,8 @@ export class VcsCommitService {
       versionNumber: nextVersionNumber,
       source: options?.source ?? 'manual',
       isRemote: options?.isRemote ?? false,
+      hotfixFromCommitId: options?.hotfixFromCommitId ?? null,
+      hotfixFromFileVersion: options?.hotfixFromFileVersion ?? null,
       createdAt: now,
     };
     
@@ -456,8 +458,14 @@ export class VcsCommitService {
       const mainFileRepo = dataSource.getRepository(MainFile);
       const versionRepo = dataSource.getRepository(FileCommitVersion);
 
+      // Include ALL committed files (even unchanged) so every explicit save
+      // gets a FileCommitVersion row. This is critical for deployments: the
+      // artifact row links to the commit, and edit-target resolves file version
+      // via FileCommitVersion. If we only tracked changed files, deploying
+      // after a "save version" with no content change would resolve to the
+      // previous version instead of the newly saved one.
       const affectedSnapshots = await snapshotRepo.find({
-        where: { commitId, changeType: Not('unchanged') },
+        where: { commitId },
         select: ['name', 'type', 'folderId', 'changeType']
       });
 

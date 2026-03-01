@@ -125,7 +125,7 @@ router.get('/vcs-api/projects/uncommitted-status', apiLimiter, requireAuth, asyn
 router.post('/vcs-api/projects/:projectId/commit', apiLimiter, requireAuth, validateParams(projectIdParamSchema), validateBody(commitBodySchema), requireProjectRole(EDIT_ROLES), asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
   const userId = req.user!.userId;
-  const { message, fileIds } = req.body;
+  const { message, fileIds, hotfixFromCommitId, hotfixFromFileVersion } = req.body;
 
   if (!(await vcsService.ensureInitialized())) {
     throw Errors.serviceUnavailable('VCS');
@@ -171,10 +171,14 @@ router.post('/vcs-api/projects/:projectId/commit', apiLimiter, requireAuth, vali
     }
 
     // Create the commit
+    const commitOptions: { hotfixFromCommitId?: string; hotfixFromFileVersion?: number } = {};
+    if (hotfixFromCommitId) commitOptions.hotfixFromCommitId = hotfixFromCommitId;
+    if (typeof hotfixFromFileVersion === 'number') commitOptions.hotfixFromFileVersion = hotfixFromFileVersion;
     const commit = await vcsService.commit(
       branch.id,
       userId,
-      message.trim()
+      message.trim(),
+      Object.keys(commitOptions).length > 0 ? commitOptions : undefined
     );
 
     logger.info('Files committed to VCS', { 
@@ -455,6 +459,8 @@ router.get('/vcs-api/projects/:projectId/commits', apiLimiter, requireAuth, requ
             isRemote: commit.isRemote,
             createdAt: commit.createdAt,
             fileVersionNumber,
+            hotfixFromCommitId: commit.hotfixFromCommitId ?? null,
+            hotfixFromFileVersion: commit.hotfixFromFileVersion ?? null,
           };
         });
 

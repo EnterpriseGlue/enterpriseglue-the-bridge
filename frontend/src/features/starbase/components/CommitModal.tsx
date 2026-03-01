@@ -11,20 +11,32 @@ interface CommitModalProps {
   fileId?: string // If provided, only commit this file
   onSuccess?: () => void
   beforeSubmit?: () => void | Promise<void>
+  defaultMessage?: string
+  hotfixFromCommitId?: string
+  hotfixFromFileVersion?: number
 }
 
-export default function CommitModal({ open, onClose, projectId, fileId, onSuccess, beforeSubmit }: CommitModalProps) {
+export default function CommitModal({ open, onClose, projectId, fileId, onSuccess, beforeSubmit, defaultMessage, hotfixFromCommitId, hotfixFromFileVersion }: CommitModalProps) {
   const [message, setMessage] = React.useState('')
+
+  // Pre-fill message from defaultMessage when modal opens
+  React.useEffect(() => {
+    if (open && defaultMessage && !message) {
+      setMessage(defaultMessage)
+    }
+  }, [open, defaultMessage])
   const [preparing, setPreparing] = React.useState(false)
   const [preSubmitError, setPreSubmitError] = React.useState<string | null>(null)
   const queryClient = useQueryClient()
   
   const commitMutation = useMutation({
     mutationFn: async (commitMessage: string) => {
-      const body: { message: string; fileIds?: string[] } = { message: commitMessage }
+      const body: { message: string; fileIds?: string[]; hotfixFromCommitId?: string; hotfixFromFileVersion?: number } = { message: commitMessage }
       if (fileId) {
         body.fileIds = [fileId]
       }
+      if (hotfixFromCommitId) body.hotfixFromCommitId = hotfixFromCommitId
+      if (typeof hotfixFromFileVersion === 'number') body.hotfixFromFileVersion = hotfixFromFileVersion
       
       try {
         return await apiClient.post<{ commitId?: string }>(`/vcs-api/projects/${projectId}/commit`, body)

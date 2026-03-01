@@ -3,8 +3,8 @@ import { useParams, useLocation } from 'react-router-dom'
 import { useTenantNavigate } from '../../../shared/hooks/useTenantNavigate'
 import { sanitizePathParam } from '../../../shared/utils/sanitize'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tabs, TabList, Tab, TabPanels, TabPanel, Button, BreadcrumbItem, InlineNotification, ComboBox, ComposedModal, ModalHeader, ModalBody, ModalFooter } from '@carbon/react'
-import { Flag, Undo, Redo, Branch } from '@carbon/icons-react'
+import { Tabs, TabList, Tab, TabPanels, TabPanel, Button, BreadcrumbItem, InlineNotification, ComboBox, ComposedModal, ModalHeader, ModalBody, ModalFooter, Toggletip, ToggletipButton, ToggletipContent } from '@carbon/react'
+import { Flag, Undo, Redo, Branch, Launch, Information } from '@carbon/icons-react'
 import { BreadcrumbBar } from '../../shared/components/BreadcrumbBar'
 import { useModal } from '../../../shared/hooks/useModal'
 import Canvas from '../components/Canvas'
@@ -26,6 +26,8 @@ const DMNEvaluatePanel = React.lazy(() => import('../components/DMNEvaluatePanel
 import { DeployButton, GitVersionsPanel } from '../../git/components'
 import { ProjectAccessError, isProjectAccessError } from '../components/ProjectAccessError'
 import { useSelectedEngine } from '../../../components/EngineSelector'
+import { useEngineSelectorStore } from '../../../stores/engineSelectorStore'
+import { useToast } from '../../../shared/notifications/ToastProvider'
 
 type FolderBreadcrumb = {
   id: string
@@ -45,11 +47,93 @@ type FileDetail = {
   updatedAt: number
 }
 
+type DeploymentArtifact = {
+  kind?: string
+  key?: string
+  version?: number
+}
+
+type LatestDeploymentByFile = {
+  engineId?: string
+  engineName?: string | null
+  environmentTag?: string | null
+  deployedAt?: number | null
+  fileId?: string
+  artifacts?: DeploymentArtifact[]
+}
+
+type FileCommitRef = {
+  id: string
+  fileVersionNumber?: number | null
+}
+
+type MissionControlTarget = {
+  engineId: string
+  path: '/mission-control/processes' | '/mission-control/decisions'
+  keyParam: 'process' | 'decision'
+  key: string
+  version: number
+}
+
+type RestoreFromCommitResponse = {
+  restored: boolean
+  fileId: string
+  commitId: string
+  fileVersionNumber?: number | null
+  updatedAt: number
+}
+
 export default function Editor() {
   const { fileId } = useParams()
   const { tenantNavigate, toTenantPath } = useTenantNavigate()
-  const location = useLocation() as { state?: any }
+  const location = useLocation() as { state?: any; search: string }
+  const { notify } = useToast()
   const queryClient = useQueryClient()
+  const phase2Params = React.useMemo(() => new URLSearchParams(location.search || ''), [location.search])
+  const phase2Source = String(phase2Params.get('source') || '')
+  const phase2IsMissionControl = phase2Source === 'mission-control'
+  const phase2ProcessKey = String(phase2Params.get('process') || '')
+  const phase2DecisionKey = String(phase2Params.get('decision') || '')
+  const phase2CommitId = String(phase2Params.get('commitId') || '') || null
+  const phase2ProcessVersion = React.useMemo(() => {
+    const v = Number(phase2Params.get('version'))
+    return Number.isFinite(v) && v > 0 ? Math.trunc(v) : null
+  }, [phase2Params])
+  const phase2FileVersion = React.useMemo(() => {
+    const v = Number(phase2Params.get('fileVersion'))
+    return Number.isFinite(v) && v > 0 ? Math.trunc(v) : null
+  }, [phase2Params])
+  const phase2EngineId = String(phase2Params.get('engineId') || '')
+  const phase2CanRestore = Boolean(phase2CommitId || typeof phase2FileVersion === 'number')
+  const [phase2Dismissed, setPhase2Dismissed] = React.useState(false)
+  const phase2AutoDismissedRef = React.useRef(false)
+
+  // View / Hotfix mode state
+  const [editorMode, setEditorMode] = React.useState<'normal' | 'view' | 'hotfix'>(() => {
+    if (!fileId) return 'normal'
+    try {
+      const stored = sessionStorage.getItem(`hotfix-context-${fileId}`)
+      if (stored) return 'hotfix'
+    } catch {}
+    return 'normal'
+  })
+  const [hotfixContext, setHotfixContext] = React.useState<{ fromCommitId: string | null; fromFileVersion: number | null } | null>(() => {
+    if (!fileId) return null
+    try {
+      const stored = sessionStorage.getItem(`hotfix-context-${fileId}`)
+      if (stored) return JSON.parse(stored)
+    } catch {}
+    return null
+  })
+  const [showSaveFirstPrompt, setShowSaveFirstPrompt] = React.useState(false)
+  const editorModeRef = React.useRef(editorMode)
+  React.useEffect(() => { editorModeRef.current = editorMode }, [editorMode])
+  const viewModeImportedRef = React.useRef(false)
+
+  const cleanEditorPath = React.useMemo(
+    () => (fileId ? `/starbase/editor/${encodeURIComponent(sanitizePathParam(String(fileId)))}` : '/starbase'),
+    [fileId]
+  )
   const fileQ = useQuery({
     queryKey: ['file', fileId],
     queryFn: () => apiClient.get<FileDetail>(`/starbase-api/files/${fileId}`),
@@ -166,6 +250,10 @@ export default function Editor() {
     updatedAtRef.current = null
     appliedInitialHistoryRef.current = false
     ignoreDirtyUntilRef.current = 0
+    setEditorMode('normal')
+    setHotfixContext(null)
+    setShowSaveFirstPrompt(false)
+    viewModeImportedRef.current = false
   }, [fileId])
 
   const projectFiles = React.useMemo<ProjectFileMeta[]>(() => {
@@ -361,6 +449,30 @@ export default function Editor() {
   const fileIsUncommitted = Boolean(
     fileId && Array.isArray(uncommittedQ.data?.uncommittedFileIds) && uncommittedQ.data!.uncommittedFileIds.includes(fileId)
   )
+
+  const isAutoCommitMessage = React.useCallback((message: string | null | undefined) => {
+    const msg = String(message || '').toLowerCase()
+    return msg.startsWith('sync from starbase') ||
+      msg.startsWith('merge from draft') ||
+      msg.startsWith('pull from remote')
+  }, [])
+
+  const latestFileCommitQ = useQuery({
+    queryKey: ['vcs', 'latest-file-commit', fileQ.data?.projectId, fileId],
+    queryFn: async () => {
+      if (!fileQ.data?.projectId || !fileId) return null as FileCommitRef | null
+      const data = await apiClient.get<{ commits: FileCommitRef[] }>(
+        `/vcs-api/projects/${fileQ.data.projectId}/commits`,
+        { branch: 'all', fileId }
+      )
+      const commits = Array.isArray(data.commits) ? data.commits : []
+      const nonAuto = commits.filter((commit: any) => !isAutoCommitMessage(commit?.message))
+      return nonAuto.length > 0 ? nonAuto[0] : null
+    },
+    enabled: !!fileQ.data?.projectId && !!fileId,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
+  })
   const hasUnsavedVersion = Boolean(
     // Only show "Unsaved version" once the user has actually edited the diagram.
     // We persist lastEditedAt in sessionStorage so this also survives navigation.
@@ -421,6 +533,130 @@ export default function Editor() {
 
   // DMN evaluate mutation
   const selectedEngineId = useSelectedEngine()
+  const setSelectedEngineId = useEngineSelectorStore((s) => s.setSelectedEngineId)
+
+  const engineDeploymentsLatestQ = useQuery({
+    queryKey: ['engine-deployments', fileQ.data?.projectId, 'latest'],
+    queryFn: () => apiClient.get<LatestDeploymentByFile[]>(`/starbase-api/projects/${fileQ.data?.projectId}/engine-deployments/latest`),
+    enabled: !!fileQ.data?.projectId,
+    staleTime: 30_000,
+    retry: false,
+  })
+
+  const buildMissionControlTarget = React.useCallback(
+    (file: FileDetail | null | undefined, rows: LatestDeploymentByFile[] | undefined, engineIdOverride?: string | null) => {
+      if (!file) return null
+
+      const list = Array.isArray(rows) ? rows : []
+      const forFile = list.filter((r) => String(r?.fileId || '') === String(file.id))
+      if (forFile.length === 0) return null
+
+      const selectedEngineMatch = engineIdOverride
+        ? forFile.find((r) => String(r?.engineId || '') === String(engineIdOverride))
+        : null
+      const row = selectedEngineMatch || forFile[0]
+      const engineId = String(row?.engineId || '')
+      if (!engineId) return null
+
+      const artifacts = Array.isArray(row?.artifacts) ? row.artifacts : []
+
+      if (file.type === 'bpmn') {
+        const processArtifacts = artifacts
+          .filter((a) => String(a?.kind || '') === 'process' && String(a?.key || ''))
+          .sort((a, b) => Number(b?.version || 0) - Number(a?.version || 0))
+        const best = processArtifacts[0]
+        const version = Number(best?.version)
+        const key = String(best?.key || '')
+        if (!key || !Number.isFinite(version)) return null
+
+        return {
+          engineId,
+          path: '/mission-control/processes',
+          keyParam: 'process',
+          key,
+          version,
+        } as MissionControlTarget
+      }
+
+      if (file.type === 'dmn') {
+        const decisionArtifacts = artifacts
+          .filter((a) => String(a?.kind || '') === 'decision' && String(a?.key || ''))
+          .sort((a, b) => Number(b?.version || 0) - Number(a?.version || 0))
+        const best = decisionArtifacts[0]
+        const version = Number(best?.version)
+        const key = String(best?.key || '')
+        if (!key || !Number.isFinite(version)) return null
+
+        return {
+          engineId,
+          path: '/mission-control/decisions',
+          keyParam: 'decision',
+          key,
+          version,
+        } as MissionControlTarget
+      }
+
+      return null
+    },
+    []
+  )
+
+  const missionControlTarget = React.useMemo<MissionControlTarget | null>(
+    () => buildMissionControlTarget(fileQ.data, engineDeploymentsLatestQ.data, selectedEngineId),
+    [fileQ.data, engineDeploymentsLatestQ.data, selectedEngineId, buildMissionControlTarget]
+  )
+
+  const missionControlEngine = React.useMemo(() => {
+    if (!phase2EngineId || !fileQ.data) return null
+    const list = Array.isArray(engineDeploymentsLatestQ.data) ? engineDeploymentsLatestQ.data : []
+    return list.find((row) => String(row?.engineId || '') === phase2EngineId && String(row?.fileId || '') === String(fileQ.data.id)) || null
+  }, [phase2EngineId, fileQ.data, engineDeploymentsLatestQ.data])
+
+  const missionControlEngineLabel = React.useMemo(() => {
+    if (!phase2EngineId) return ''
+    const env = missionControlEngine?.environmentTag || null
+    const name = missionControlEngine?.engineName || null
+    return String(env || name || `Engine ${phase2EngineId}`)
+  }, [missionControlEngine, phase2EngineId])
+
+  const missionControlDeployedLabel = React.useMemo(() => {
+    if (typeof phase2ProcessVersion === 'number') return `v${phase2ProcessVersion}`
+    return ''
+  }, [phase2ProcessVersion])
+
+  const missionControlStarbaseLabel = React.useMemo(() => {
+    if (typeof phase2FileVersion === 'number') return `v${phase2FileVersion}`
+    if (phase2CommitId) return `commit ${String(phase2CommitId).slice(0, 7)}`
+    return ''
+  }, [phase2FileVersion, phase2CommitId])
+
+
+  const handleGoToMissionControl = React.useCallback(async () => {
+    const file = fileQ.data
+    if (!file) return
+
+    let latestRows = engineDeploymentsLatestQ.data
+    try {
+      const refetchResult = await engineDeploymentsLatestQ.refetch()
+      if (Array.isArray(refetchResult.data)) {
+        latestRows = refetchResult.data
+      }
+    } catch {
+      // Ignore refetch errors; fall back to cached data
+    }
+
+    const target = buildMissionControlTarget(file, latestRows, selectedEngineId)
+    if (!target) return
+
+    setSelectedEngineId(target.engineId)
+    const params = new URLSearchParams({
+      engineId: target.engineId,
+      [target.keyParam]: target.key,
+      version: String(target.version),
+    })
+    tenantNavigate(`${target.path}?${params.toString()}`)
+  }, [fileQ.data, engineDeploymentsLatestQ.data, engineDeploymentsLatestQ.refetch, selectedEngineId, buildMissionControlTarget, setSelectedEngineId, tenantNavigate])
+
   const evaluateMutation = useMutation({
     mutationFn: async (variables: Record<string, { value: any; type: string }>) => {
       if (!decisionKey) throw new Error('No decision key')
@@ -430,6 +666,53 @@ export default function Editor() {
       )
     }
   })
+
+  // Snapshot query for view mode — fetch XML for the target deployed version
+  const viewSnapshotQ = useQuery({
+    queryKey: ['vcs', 'snapshots', fileQ.data?.projectId, phase2CommitId],
+    queryFn: () => apiClient.get<{ files: Array<{ name: string; type: string; content: string | null; changeType: string }> }>(
+      `/vcs-api/projects/${fileQ.data!.projectId}/commits/${phase2CommitId}/snapshots`
+    ),
+    enabled: !!fileQ.data?.projectId && !!phase2CommitId && editorMode === 'view',
+    staleTime: Infinity,
+  })
+
+  // Import snapshot XML into modeler when entering view mode
+  React.useEffect(() => {
+    if (editorMode !== 'view' || !modelerReady || !modelerRef.current || viewModeImportedRef.current) return
+    const files = viewSnapshotQ.data?.files
+    if (!files || files.length === 0) return
+
+    const fileName = fileQ.data?.name
+    const fileType = fileQ.data?.type
+
+    // Find the right file snapshot (same logic as GitVersionsPanel)
+    let match = files.find((f) => f.name === fileName && f.type === fileType && f.content)
+    if (!match) match = files.find((f) => f.name === fileName && f.content)
+    if (!match) match = files.find((f) => f.type === fileType && f.content)
+    if (!match) match = files.find((f) => f.content != null)
+
+    if (match?.content) {
+      viewModeImportedRef.current = true
+      isRestoringRef.current = true
+      modelerRef.current.importXML(match.content).then(async () => {
+        isRestoringRef.current = false
+        // DMN: auto-open decision table / literal expression view (mirrors DMNCanvas logic)
+        try {
+          const m = modelerRef.current
+          const views = m?.getViews?.() || []
+          if (views.length > 0) {
+            const table = views.find((v: any) => v.type === 'decisionTable' || v.type === 'literalExpression')
+            if (table) await m.open(table)
+            else if (views[0]) await m.open(views[0])
+          }
+        } catch {}
+        try { fitViewport(modelerRef.current) } catch {}
+      }).catch(() => {
+        isRestoringRef.current = false
+      })
+    }
+  }, [editorMode, modelerReady, viewSnapshotQ.data, fileQ.data?.name, fileQ.data?.type])
 
   // Extract decision key from DMN XML
   React.useEffect(() => {
@@ -514,6 +797,18 @@ export default function Editor() {
     }
   }, [xmlHistory])
 
+  const fitViewport = React.useCallback((m: any) => {
+    try {
+      const canvas = m?.get?.('canvas')
+      if (!canvas) return
+      window.setTimeout(() => {
+        try {
+          canvas.zoom('fit-viewport')
+        } catch {}
+      }, 0)
+    } catch {}
+  }, [])
+
   // Keyboard shortcuts for undo/redo using persistent history
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -589,6 +884,7 @@ export default function Editor() {
             if (el) m.get('selection')?.select(el)
           }
         } catch {}
+        fitViewport(m)
         setTimeout(() => {
           isRestoringRef.current = false
         }, 100)
@@ -596,7 +892,7 @@ export default function Editor() {
       .catch(() => {
         isRestoringRef.current = false
       })
-  }, [modelerReady, xmlHistory.snapshots, xmlHistory.currentIndex, fileQ.data?.updatedAt])
+  }, [modelerReady, xmlHistory.snapshots, xmlHistory.currentIndex, fileQ.data?.updatedAt, fitViewport])
 
   React.useEffect(() => {
     let cancelled = false
@@ -717,6 +1013,146 @@ export default function Editor() {
     }
   }, [fileIdForSave, queryClient])
 
+  const restoreFromDeploymentMutation = useMutation({
+    mutationFn: async () => {
+      if (!fileId) throw new Error('Missing fileId')
+
+      const payload: { commitId?: string; fileVersionNumber?: number } = {}
+      if (phase2CommitId) payload.commitId = phase2CommitId
+      if (typeof phase2FileVersion === 'number') payload.fileVersionNumber = phase2FileVersion
+
+      return apiClient.post<RestoreFromCommitResponse>(
+        `/starbase-api/files/${encodeURIComponent(sanitizePathParam(String(fileId)))}/restore-from-commit`,
+        payload,
+      )
+    },
+    onSuccess: () => {
+      if (fileId) {
+        localStorage.removeItem(`xml-history-${fileId}`)
+      }
+      const isHotfix = fileId && sessionStorage.getItem(`hotfix-context-${fileId}`)
+      notify({
+        kind: 'success',
+        title: isHotfix ? 'Hotfix mode started' : 'Deployed snapshot restored',
+        subtitle: isHotfix ? 'Your draft now contains the deployed version. Edit and save a new version when ready.' : 'Now editing the deployed baseline in your draft.',
+      })
+      window.location.assign(toTenantPath(cleanEditorPath))
+    },
+    onError: (error) => {
+      const parsed = parseApiError(error, 'Failed to restore deployed snapshot')
+      notify({ kind: 'error', title: 'Restore failed', subtitle: parsed.message })
+    },
+  })
+
+  const handleKeepCurrentDraft = React.useCallback(() => {
+    setPhase2Dismissed(true)
+    tenantNavigate(cleanEditorPath, { replace: true })
+  }, [tenantNavigate, cleanEditorPath])
+
+  const handleEnterViewMode = React.useCallback(() => {
+    // Kill any pending autosave timer so it doesn't save snapshot XML to the server
+    if ((window as any).__autosaveTimer) {
+      clearTimeout((window as any).__autosaveTimer)
+      ;(window as any).__autosaveTimer = null
+    }
+    setPhase2Dismissed(true)
+    viewModeImportedRef.current = false
+    setEditorMode('view')
+  }, [])
+
+  const handleStartHotfix = React.useCallback(() => {
+    // If there are unsaved changes (local edits or uncommitted server draft), prompt to save first
+    if (localDirty || fileIsUncommitted) {
+      setShowSaveFirstPrompt(true)
+      return
+    }
+    // Proceed with hotfix restore
+    if (!phase2CanRestore || restoreFromDeploymentMutation.isPending) return
+    // Store hotfix context in sessionStorage so it survives page reload
+    const ctx = { fromCommitId: phase2CommitId, fromFileVersion: phase2FileVersion }
+    try { sessionStorage.setItem(`hotfix-context-${fileId}`, JSON.stringify(ctx)) } catch {}
+    restoreFromDeploymentMutation.mutate()
+  }, [localDirty, fileIsUncommitted, phase2CanRestore, restoreFromDeploymentMutation, phase2CommitId, phase2FileVersion, fileId])
+
+  const handleCancelHotfix = React.useCallback(() => {
+    if (!fileId) return
+    try { sessionStorage.removeItem(`hotfix-context-${fileId}`) } catch {}
+    setEditorMode('normal')
+    setHotfixContext(null)
+    // Reload file from server to restore original draft
+    queryClient.invalidateQueries({ queryKey: ['file', fileId] })
+    window.location.assign(toTenantPath(cleanEditorPath))
+  }, [fileId, queryClient, toTenantPath, cleanEditorPath])
+
+  const handleBackToDraft = React.useCallback(() => {
+    viewModeImportedRef.current = false
+    setEditorMode('normal')
+    // Reimport the file's current XML
+    if (modelerRef.current && fileQ.data?.xml) {
+      isRestoringRef.current = true
+      modelerRef.current.importXML(fileQ.data.xml).then(async () => {
+        isRestoringRef.current = false
+        // DMN: re-open decision table / literal expression view
+        try {
+          const m = modelerRef.current
+          const views = m?.getViews?.() || []
+          if (views.length > 0) {
+            const table = views.find((v: any) => v.type === 'decisionTable' || v.type === 'literalExpression')
+            if (table) await m.open(table)
+            else if (views[0]) await m.open(views[0])
+          }
+        } catch {}
+        try { fitViewport(modelerRef.current) } catch {}
+      }).catch(() => { isRestoringRef.current = false })
+    }
+  }, [fileQ.data?.xml])
+
+  const handleDeploySuccess = React.useCallback(() => {
+    ignoreDirtyUntilRef.current = Date.now() + 500
+    setLocalDirty(false)
+    setLastEditedAt(null)
+    // Clear hotfix context on successful deploy
+    if (fileId && editorMode === 'hotfix') {
+      try { sessionStorage.removeItem(`hotfix-context-${fileId}`) } catch {}
+      setEditorMode('normal')
+      setHotfixContext(null)
+    }
+  }, [fileId, editorMode])
+
+  const latestFileCommit = latestFileCommitQ.data || null
+  const sameCommitAsCurrentDraft = Boolean(
+    phase2CommitId && latestFileCommit?.id && String(latestFileCommit.id) === String(phase2CommitId)
+  )
+  const sameFileVersionAsCurrentDraft = Boolean(
+    typeof phase2FileVersion === 'number' &&
+    typeof latestFileCommit?.fileVersionNumber === 'number' &&
+    latestFileCommit.fileVersionNumber === phase2FileVersion
+  )
+  const isAlreadyAtExactDeployedBaseline = Boolean(
+    phase2IsMissionControl &&
+    !localDirty &&
+    !fileIsUncommitted &&
+    (sameCommitAsCurrentDraft || sameFileVersionAsCurrentDraft)
+  )
+  const phase2QueryReady = latestFileCommitQ.isFetched && !latestFileCommitQ.isFetching
+
+  // Show the modal when arriving from MC on a non-latest version
+  const showPhase2Banner =
+    phase2IsMissionControl &&
+    phase2QueryReady &&
+    !phase2Dismissed &&
+    (!!phase2ProcessKey || !!phase2DecisionKey) &&
+    !isAlreadyAtExactDeployedBaseline &&
+    editorMode === 'normal'
+
+  // Auto-dismiss when versions already match
+  React.useEffect(() => {
+    if (phase2AutoDismissedRef.current) return
+    if (!phase2QueryReady || !isAlreadyAtExactDeployedBaseline) return
+    phase2AutoDismissedRef.current = true
+    setPhase2Dismissed(true)
+  }, [phase2QueryReady, isAlreadyAtExactDeployedBaseline])
+
   if (fileQ.isLoading) return <p>Loading file…</p>
   if (fileQ.isError) {
     const accessErr = isProjectAccessError(fileQ.error)
@@ -728,6 +1164,13 @@ export default function Editor() {
   if (!fileQ.data) return <p>Not found.</p>
 
   const f = fileQ.data
+  const phase2TargetLabel = phase2ProcessKey
+    ? `process ${phase2ProcessKey}${phase2ProcessVersion ? ` (v${phase2ProcessVersion})` : ''}`
+    : `decision ${phase2DecisionKey}${phase2ProcessVersion ? ` (v${phase2ProcessVersion})` : ''}`
+  const phase2RestoreLabel = typeof phase2FileVersion === 'number'
+    ? `Starbase file v${phase2FileVersion}`
+    : (phase2CommitId ? `commit ${phase2CommitId.substring(0, 8)}` : 'deployed snapshot correlation')
+
   // initialize last known updatedAt once (or if server returns a greater value later)
   if (updatedAtRef.current == null || f.updatedAt > (updatedAtRef.current as number)) {
     updatedAtRef.current = f.updatedAt
@@ -807,8 +1250,33 @@ export default function Editor() {
             </a>
           </BreadcrumbItem>
         )}
-        <BreadcrumbItem isCurrentPage>{f.name}</BreadcrumbItem>
+        <BreadcrumbItem isCurrentPage>{f.name.replace(/\.(bpmn|dmn)$/i, '')}</BreadcrumbItem>
       </BreadcrumbBar>
+
+      {/* View mode banner */}
+      {editorMode === 'view' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--spacing-2) var(--spacing-4)', background: '#d0e2ff', borderBottom: '1px solid #a6c8ff' }}>
+          <span style={{ fontSize: 'var(--text-12)', fontWeight: 600, color: '#001d6c' }}>
+            Viewing v{phase2FileVersion ?? '?'}{phase2ProcessVersion ? ` (version ${phase2ProcessVersion})` : ''} · Read-only · Changes won&apos;t be saved
+          </span>
+          <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+            <Button kind="ghost" size="sm" onClick={handleBackToDraft}>Back to draft</Button>
+            <Button kind="primary" size="sm" disabled={!phase2CanRestore || restoreFromDeploymentMutation.isPending} onClick={handleStartHotfix}>
+              {restoreFromDeploymentMutation.isPending ? 'Starting hotfix…' : 'Start Hotfix'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Hotfix mode banner */}
+      {editorMode === 'hotfix' && hotfixContext && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--spacing-2) var(--spacing-4)', background: '#fff1c2', borderBottom: '1px solid #f1c21b' }}>
+          <span style={{ fontSize: 'var(--text-12)', fontWeight: 600, color: '#3a3000' }}>
+            Hotfix mode — editing from v{hotfixContext.fromFileVersion ?? '?'}
+          </span>
+          <Button kind="ghost" size="sm" onClick={handleCancelHotfix}>Cancel hotfix</Button>
+        </div>
+      )}
 
       {projectFilesError && (
         <div style={{ padding: 'var(--spacing-3) var(--spacing-4)' }}>
@@ -862,7 +1330,12 @@ export default function Editor() {
             <div style={{ fontSize: 'var(--text-12)', color: saving === 'error' ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}>
               {saving === 'saving' ? 'Saving…' : saving === 'saved' ? 'Saved' : saving === 'error' ? 'Save failed' : ''}
             </div>
-            <DeployButton projectId={f.projectId} size="sm" kind="ghost" />
+            <DeployButton projectId={f.projectId} fileIds={[f.id]} size="sm" kind="ghost" onDeploySuccess={handleDeploySuccess} />
+            {missionControlTarget && (
+              <Button kind="ghost" size="sm" renderIcon={Launch} onClick={handleGoToMissionControl}>
+                Mission Control
+              </Button>
+            )}
             <button
               onClick={handleUndo}
               disabled={!xmlHistory.canUndo}
@@ -907,7 +1380,12 @@ export default function Editor() {
             <div style={{ fontSize: 'var(--text-12)', color: saving === 'error' ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}>
               {saving === 'saving' ? 'Saving…' : saving === 'saved' ? 'Saved' : saving === 'error' ? 'Save failed' : ''}
             </div>
-            <DeployButton projectId={f.projectId} size="sm" kind="ghost" />
+            <DeployButton projectId={f.projectId} fileIds={[f.id]} size="sm" kind="ghost" onDeploySuccess={handleDeploySuccess} />
+            {missionControlTarget && (
+              <Button kind="ghost" size="sm" renderIcon={Launch} onClick={handleGoToMissionControl}>
+                Mission Control
+              </Button>
+            )}
             <button
               onClick={handleUndo}
               disabled={!xmlHistory.canUndo}
@@ -956,13 +1434,7 @@ export default function Editor() {
             onModelerReady={(m) => { 
               modelerRef.current = m
               setModelerReady(true)
-              // Fit viewport on initial load with padding to clear the palette
-              setTimeout(() => {
-                try {
-                  const canvas = m.get('canvas')
-                  canvas.zoom('fit-viewport')
-                } catch {}
-              }, 100)
+              fitViewport(m)
             }}
             implementMode={tabIndex === 1}
             onDirty={(label) => {
@@ -970,6 +1442,8 @@ export default function Editor() {
               if (isRestoringRef.current) return
               // Skip spurious dirty events right after saving/committing
               if (Date.now() < ignoreDirtyUntilRef.current) return
+              // Suppress all saves in view mode (use ref to avoid stale closure)
+              if (editorModeRef.current === 'view') return
 
               setLastEditedAt(Date.now())
               setLocalDirty(true)
@@ -991,6 +1465,8 @@ export default function Editor() {
                 try {
                   if (!modelerRef.current) return
                   if (Date.now() < ignoreDirtyUntilRef.current) return
+                  // Double-check: don't save if we switched to view mode while the timer was pending
+                  if (editorModeRef.current === 'view') return
                   setSaving('saving')
                   const { xml } = await modelerRef.current.saveXML({ format: true })
                   
@@ -1023,6 +1499,8 @@ export default function Editor() {
                   if (isRestoringRef.current) return
                   // Skip spurious dirty events right after saving/committing
                   if (Date.now() < ignoreDirtyUntilRef.current) return
+                  // Suppress all saves in view mode (use ref to avoid stale closure)
+                  if (editorModeRef.current === 'view') return
 
                   setLastEditedAt(Date.now())
                   setLocalDirty(true)
@@ -1042,6 +1520,8 @@ export default function Editor() {
                     try {
                       if (!modelerRef.current) return
                       if (Date.now() < ignoreDirtyUntilRef.current) return
+                      // Double-check: don't save if we switched to view mode while the timer was pending
+                      if (editorModeRef.current === 'view') return
                       setSaving('saving')
                       const { xml } = await modelerRef.current.saveXML({ format: true })
                       await saveXmlWithRetry(xml)
@@ -1311,6 +1791,111 @@ export default function Editor() {
         </ModalFooter>
       </ComposedModal>
 
+      {/* Deployed version navigation modal — View / Hotfix / Go to draft */}
+      <ComposedModal open={showPhase2Banner} size="sm" onClose={handleKeepCurrentDraft}>
+        <ModalHeader label={null} title="Deployed Version" closeModal={handleKeepCurrentDraft} />
+        <ModalBody>
+          <div style={{ display: 'grid', gap: 'var(--spacing-4)' }}>
+            <p style={{ margin: 0 }}>
+              {phase2ProcessVersion
+                ? `Engine version ${phase2ProcessVersion} corresponds to Starbase v${phase2FileVersion ?? '?'}.`
+                : `You opened ${phase2TargetLabel}.`}
+            </p>
+
+            {(localDirty || fileIsUncommitted) && (
+              <div style={{ display: 'grid', gap: 'var(--spacing-2)' }}>
+                <InlineNotification
+                  lowContrast
+                  hideCloseButton
+                  kind="warning"
+                  title="You have unsaved changes"
+                  subtitle="Save your current draft as a version before viewing or hotfixing, so you don't lose any work."
+                />
+                <Button
+                  kind="tertiary"
+                  size="sm"
+                  onClick={() => {
+                    setPhase2Dismissed(true)
+                    captureFocus()
+                    commitModal.openModal()
+                  }}
+                >
+                  Save version now
+                </Button>
+              </div>
+            )}
+
+            {!phase2CanRestore && (
+              <InlineNotification
+                lowContrast
+                hideCloseButton
+                kind="info"
+                title="Snapshot unavailable"
+                subtitle="This deployment has no exact saved snapshot reference. You can continue with your current draft."
+              />
+            )}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button kind="secondary" onClick={handleKeepCurrentDraft}>
+            Go to latest draft
+          </Button>
+          <Button
+            kind="tertiary"
+            disabled={!phase2CanRestore}
+            onClick={handleEnterViewMode}
+          >
+            View v{phase2FileVersion ?? '?'}
+          </Button>
+          <Button
+            kind="primary"
+            disabled={!phase2CanRestore || restoreFromDeploymentMutation.isPending}
+            onClick={handleStartHotfix}
+          >
+            {restoreFromDeploymentMutation.isPending ? 'Starting…' : `Hotfix v${phase2FileVersion ?? '?'}`}
+          </Button>
+        </ModalFooter>
+      </ComposedModal>
+
+      {/* Save-first prompt before hotfix */}
+      <ComposedModal open={showSaveFirstPrompt} size="sm" onClose={() => setShowSaveFirstPrompt(false)}>
+        <ModalHeader label={null} title="Unsaved changes" closeModal={() => setShowSaveFirstPrompt(false)} />
+        <ModalBody>
+          <p style={{ margin: 0 }}>
+            You have unsaved changes in your current draft. Starting a hotfix will replace your draft with v{phase2FileVersion ?? '?'}.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button kind="secondary" onClick={() => setShowSaveFirstPrompt(false)}>
+            Cancel
+          </Button>
+          <Button
+            kind="tertiary"
+            onClick={() => {
+              setShowSaveFirstPrompt(false)
+              // Discard unsaved changes and proceed with hotfix
+              setLocalDirty(false)
+              if (!phase2CanRestore || restoreFromDeploymentMutation.isPending) return
+              const ctx = { fromCommitId: phase2CommitId, fromFileVersion: phase2FileVersion }
+              try { sessionStorage.setItem(`hotfix-context-${fileId}`, JSON.stringify(ctx)) } catch {}
+              restoreFromDeploymentMutation.mutate()
+            }}
+          >
+            Discard &amp; continue
+          </Button>
+          <Button
+            kind="primary"
+            onClick={() => {
+              setShowSaveFirstPrompt(false)
+              captureFocus()
+              commitModal.openModal()
+            }}
+          >
+            Save changes first
+          </Button>
+        </ModalFooter>
+      </ComposedModal>
+
       {/* Version modal */}
       <CommitModal
         open={commitModal.isOpen}
@@ -1320,6 +1905,9 @@ export default function Editor() {
         }}
         projectId={f.projectId}
         fileId={fileId}
+        defaultMessage={editorMode === 'hotfix' && hotfixContext?.fromFileVersion ? `Hotfix from v${hotfixContext.fromFileVersion}` : undefined}
+        hotfixFromCommitId={editorMode === 'hotfix' ? hotfixContext?.fromCommitId ?? undefined : undefined}
+        hotfixFromFileVersion={editorMode === 'hotfix' ? hotfixContext?.fromFileVersion ?? undefined : undefined}
         beforeSubmit={async () => {
           try {
             // Suppress any modeler churn while we flush/save/commit.
@@ -1358,6 +1946,12 @@ export default function Editor() {
           ignoreDirtyUntilRef.current = Date.now() + 500
           setLocalDirty(false)
           setLastEditedAt(null)
+          // Clear hotfix context after successful commit
+          if (editorMode === 'hotfix' && fileId) {
+            try { sessionStorage.removeItem(`hotfix-context-${fileId}`) } catch {}
+            setEditorMode('normal')
+            setHotfixContext(null)
+          }
         }}
       />
     </div>

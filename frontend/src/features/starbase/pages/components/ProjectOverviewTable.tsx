@@ -292,12 +292,6 @@ export const ProjectOverviewTable = ({
                             <GitSyncStatus status={p.gitSyncStatus} />
                           </>
                         )}
-                        {!p.gitUrl && (() => {
-                          const s = projectStatusMap?.[p.id]
-                          const count = Number(s?.dirtyFileCount || 0)
-                          if (!count) return null
-                          return <VcsDirtyStatus count={count} />
-                        })()}
                       </span>
                     )}
                   </TableCell>

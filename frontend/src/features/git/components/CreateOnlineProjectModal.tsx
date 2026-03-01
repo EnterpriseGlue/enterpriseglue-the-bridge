@@ -42,6 +42,13 @@ export default function CreateOnlineProjectModal({ open, onClose, existingProjec
     existingRepo,
     projectName,
     setProjectName,
+    importFromEngine,
+    setImportFromEngine,
+    selectedImportEngineId,
+    setSelectedImportEngineId,
+    importableEngines,
+    importableEnginesQuery,
+    canImportFromEngine,
     connectToGit,
     setConnectToGit,
     repoMode,
@@ -157,6 +164,71 @@ export default function CreateOnlineProjectModal({ open, onClose, existingProjec
             invalid={!!fieldErrors.projectName}
             invalidText={fieldErrors.projectName}
           />
+        )}
+
+        {!isExistingProject && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+              <Toggle
+                id="import-from-engine"
+                labelText="Import latest BPMN/DMN from engine"
+                labelA="Off"
+                labelB="On"
+                toggled={importFromEngine}
+                onToggle={(checked) => {
+                  setImportFromEngine(checked)
+                  if (!checked) {
+                    setSelectedImportEngineId('')
+                  }
+                }}
+                disabled={isLoading || !canImportFromEngine}
+              />
+            </div>
+
+            {importFromEngine && canImportFromEngine && (
+              <Select
+                id="import-engine"
+                labelText="Source Engine *"
+                value={selectedImportEngineId}
+                onChange={(e) => {
+                  setSelectedImportEngineId(e.target.value)
+                  setFieldErrors(prev => ({ ...prev, importEngineId: '' }))
+                }}
+                disabled={isLoading || importableEnginesQuery.isLoading}
+                invalid={!!fieldErrors.importEngineId}
+                invalidText={fieldErrors.importEngineId}
+              >
+                <SelectItem value="" text={importableEnginesQuery.isLoading ? 'Loading engines...' : 'Select engine...'} />
+                {importableEngines.map((engine) => (
+                  <SelectItem
+                    key={engine.id}
+                    value={engine.id}
+                    text={`${engine.name} (${engine.role})`}
+                  />
+                ))}
+              </Select>
+            )}
+
+            {importFromEngine && canImportFromEngine && !importableEnginesQuery.isLoading && importableEngines.length === 0 && (
+              <InlineNotification
+                kind="info"
+                title="No accessible engines"
+                subtitle="You currently don't have an engine role that allows importing definitions."
+                lowContrast
+                hideCloseButton
+              />
+            )}
+
+            {!canImportFromEngine && (
+              <InlineNotification
+                kind="info"
+                title="Import unavailable"
+                subtitle="Import from engine is only available when creating a new local project or a new repository project."
+                lowContrast
+                hideCloseButton
+              />
+            )}
+          </>
         )}
 
         {/* Connect to Git toggle */}

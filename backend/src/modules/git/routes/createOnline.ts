@@ -21,6 +21,11 @@ import { credentialService } from '@shared/services/git/CredentialService.js';
 import { encrypt } from '@shared/services/encryption.js';
 import { remoteGitService } from '@shared/services/git/RemoteGitService.js';
 import { vcsService } from '@shared/services/versioning/index.js';
+import {
+  applyPreparedEngineImportToProject,
+  assertUserCanImportFromEngine,
+  prepareLatestEngineImport,
+} from '@shared/services/starbase/engine-import-service.js';
 
 const router = Router();
 
@@ -33,6 +38,10 @@ interface CreateOnlineRequest {
   description?: string;
   // Auth - either token or use saved credentials
   token?: string;
+  importFromEngine?: {
+    enabled?: boolean;
+    engineId?: string;
+  };
 }
 
 const createOnlineSchema = z.object({
@@ -43,6 +52,10 @@ const createOnlineSchema = z.object({
   isPrivate: z.boolean().optional(),
   description: z.string().optional(),
   token: z.string().optional(),
+  importFromEngine: z.object({
+    enabled: z.boolean().optional(),
+    engineId: z.string().optional(),
+  }).optional(),
 });
 
 const checkRepoExistsSchema = z.object({
@@ -74,6 +87,7 @@ router.post('/git-api/create-online', apiLimiter, requireAuth, validateBody(crea
     isPrivate = true,
     description,
     token,
+    importFromEngine,
   } = req.body as CreateOnlineRequest;
 
   if (typeof projectName !== 'string') {
@@ -92,6 +106,14 @@ router.post('/git-api/create-online', apiLimiter, requireAuth, validateBody(crea
   const repositoryNameTrim = repositoryName.trim();
   if (!repositoryNameTrim) {
     throw Errors.validation('Repository name is required');
+  }
+
+  const importEngineId = importFromEngine?.enabled
+    ? String(importFromEngine.engineId || '').trim()
+    : '';
+
+  if (importFromEngine?.enabled && !importEngineId) {
+    throw Errors.validation('Engine selection is required when import is enabled');
   }
 
   const dataSource = await getDataSource();
@@ -116,6 +138,12 @@ router.post('/git-api/create-online', apiLimiter, requireAuth, validateBody(crea
   
   if (!accessToken) {
     throw Errors.noCredentials('No credentials available. Please connect to the provider first or provide a token.');
+  }
+
+  let preparedImport: Awaited<ReturnType<typeof prepareLatestEngineImport>> | null = null;
+  if (importEngineId) {
+    await assertUserCanImportFromEngine(userId, importEngineId);
+    preparedImport = await prepareLatestEngineImport(importEngineId);
   }
 
   try {
@@ -189,6 +217,15 @@ router.post('/git-api/create-online', apiLimiter, requireAuth, validateBody(crea
       .orIgnore()
       .execute();
 
+    if (preparedImport) {
+      await applyPreparedEngineImportToProject({
+        manager: dataSource.manager,
+        projectId,
+        userId,
+        importData: preparedImport,
+      });
+    }
+
     logger.info('Local project created', { projectId, projectName });
 
     // Step 5: Initialize VCS
@@ -240,20 +277,21 @@ router.post('/git-api/create-online', apiLimiter, requireAuth, validateBody(crea
       },
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) throw error;
     logger.error('Create online project failed', { userId, providerId, error });
+    const message = error instanceof Error ? error.message : String(error || '');
     
     // Handle specific error types
-    if (error.message?.includes('already exists')) {
+    if (message.includes('already exists')) {
       throw Errors.duplicate('Repository', 'repositoryName');
     }
     
-    if (error.message?.includes('authentication') || error.message?.includes('credentials')) {
+    if (message.includes('authentication') || message.includes('credentials')) {
       throw Errors.authFailed('Authentication failed. Please check your credentials.');
     }
 
-    throw Errors.internal(error.message || 'Failed to create project');
+    throw Errors.internal(message || 'Failed to create project');
   }
 }));
 
@@ -298,9 +336,13 @@ router.post('/git-api/check-repo-exists', apiLimiter, requireAuth, validateBody(
         url: existingRepo.htmlUrl,
       } : null
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const status = typeof error === 'object' && error !== null && 'status' in error
+      ? (error as { status?: number }).status
+      : undefined;
+
     // If we get a 404, the repo doesn't exist
-    if (error.status === 404) {
+    if (status === 404) {
       return res.json({ exists: false, repository: null });
     }
     throw error;

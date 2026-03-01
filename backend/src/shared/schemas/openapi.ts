@@ -391,6 +391,39 @@ registry.registerPath({
   },
 });
 
+// GET /mission-control-api/process-definitions/edit-target (resolve Starbase edit target for a deployed process version)
+const ProcessEditTargetResponse = z.object({
+  canShowEditButton: z.boolean(),
+  canEdit: z.boolean(),
+  engineId: z.string(),
+  processKey: z.string(),
+  processVersion: z.number(),
+  projectId: z.string(),
+  fileId: z.string(),
+  engineDeploymentId: z.string().optional(),
+  commitId: z.string().nullable().optional(),
+  fileVersionNumber: z.number().nullable().optional(),
+  mappingSource: z.enum(['git-commit', 'db-timestamp', 'db-latest', 'deployment-timestamp']).optional(),
+  artifactCreatedAt: z.number().optional(),
+});
+registry.register('ProcessEditTarget', ProcessEditTargetResponse);
+registry.registerPath({
+  method: 'get',
+  path: '/mission-control-api/process-definitions/edit-target',
+  request: {
+    query: z.object({
+      engineId: z.string(),
+      key: z.string(),
+      version: z.string(),
+      processDefinitionId: z.string().optional(),
+    }),
+  },
+  responses: {
+    200: { description: 'Starbase file target for the deployed process version', content: { 'application/json': { schema: ProcessEditTargetResponse } } },
+    404: { description: 'No deployed process mapping found' },
+  },
+});
+
 // GET /mission-control-api/process-definitions/{id}/active-activity-counts
 registry.registerPath({
   method: 'get',
@@ -1003,6 +1036,39 @@ registry.registerPath({ method: 'get', path: '/mission-control-api/decision-defi
 registry.registerPath({ method: 'get', path: '/mission-control-api/decision-definitions/{id}/xml', request: { params: z.object({ id: z.string() }) }, responses: { 200: { description: 'DMN XML', content: { 'application/json': { schema: z.object({ dmnXml: z.string() }) } } } } });
 registry.registerPath({ method: 'post', path: '/mission-control-api/decision-definitions/{id}/evaluate', request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: EvaluateDecisionRequest } } } }, responses: { 200: { description: 'Decision result', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
 
+// GET /mission-control-api/decision-definitions/edit-target (resolve Starbase edit target for a deployed decision version)
+const DecisionEditTargetResponse = z.object({
+  canShowEditButton: z.boolean(),
+  canEdit: z.boolean(),
+  engineId: z.string(),
+  decisionKey: z.string(),
+  decisionVersion: z.number(),
+  projectId: z.string(),
+  fileId: z.string(),
+  engineDeploymentId: z.string().optional(),
+  commitId: z.string().nullable().optional(),
+  fileVersionNumber: z.number().nullable().optional(),
+  mappingSource: z.enum(['git-commit', 'db-timestamp', 'db-latest', 'deployment-timestamp']).optional(),
+  artifactCreatedAt: z.number().optional(),
+});
+registry.register('DecisionEditTarget', DecisionEditTargetResponse);
+registry.registerPath({
+  method: 'get',
+  path: '/mission-control-api/decision-definitions/edit-target',
+  request: {
+    query: z.object({
+      engineId: z.string(),
+      key: z.string(),
+      version: z.string(),
+      decisionDefinitionId: z.string().optional(),
+    }),
+  },
+  responses: {
+    200: { description: 'Starbase file target for the deployed decision version', content: { 'application/json': { schema: DecisionEditTargetResponse } } },
+    404: { description: 'No deployed decision mapping found' },
+  },
+});
+
 // Jobs
 registry.register('Job', JobSchema);
 registry.register('JobDefinition', JobDefinitionSchema);
@@ -1436,6 +1502,648 @@ registry.registerPath({
   request: { params: z.object({ engineId: z.string() }), body: { content: { 'application/json': { schema: RequestAccessRequest } } } },
   responses: { 200: { description: 'Access request result', content: { 'application/json': { schema: z.object({ status: z.string(), autoApproved: z.boolean().optional(), requestId: z.string().optional() }) } } } },
 });
+
+// -----------------------------
+// Starbase API - Folders
+// -----------------------------
+registry.register('Folder', FolderSchema);
+registry.register('FolderSummary', FolderSummarySchema);
+
+// GET /starbase-api/projects/:projectId/contents (project contents tree)
+registry.register('ProjectContents', ProjectContentsSchema);
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/projects/{projectId}/contents',
+  request: { params: z.object({ projectId: z.string() }), query: z.object({ folderId: z.string().optional() }) },
+  responses: { 200: { description: 'Project contents (folders + files)', content: { 'application/json': { schema: ProjectContentsSchema } } } },
+});
+
+// GET /starbase-api/projects/:projectId/folders (flat folder list)
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/projects/{projectId}/folders',
+  request: { params: z.object({ projectId: z.string() }) },
+  responses: { 200: { description: 'List all folders in project', content: { 'application/json': { schema: z.array(FolderSummarySchema) } } } },
+});
+
+// POST /starbase-api/projects/:projectId/folders (create folder)
+registry.register('CreateFolderRequest', CreateFolderRequest);
+registry.registerPath({
+  method: 'post',
+  path: '/starbase-api/projects/{projectId}/folders',
+  request: { params: z.object({ projectId: z.string() }), body: { content: { 'application/json': { schema: CreateFolderRequest } } } },
+  responses: { 201: { description: 'Folder created', content: { 'application/json': { schema: FolderSchema } } } },
+});
+
+// PATCH /starbase-api/folders/:folderId (rename/move folder)
+registry.register('UpdateFolderRequest', UpdateFolderRequest);
+registry.registerPath({
+  method: 'patch',
+  path: '/starbase-api/folders/{folderId}',
+  request: { params: z.object({ folderId: z.string() }), body: { content: { 'application/json': { schema: UpdateFolderRequest } } } },
+  responses: { 200: { description: 'Folder updated', content: { 'application/json': { schema: z.object({ id: z.string(), name: z.string(), parentFolderId: z.string().nullable(), updatedAt: z.number() }) } } } },
+});
+
+// GET /starbase-api/folders/:folderId/delete-preview
+registry.register('FolderDeletePreview', FolderDeletePreviewSchema);
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/folders/{folderId}/delete-preview',
+  request: { params: z.object({ folderId: z.string() }) },
+  responses: { 200: { description: 'Preview of folder deletion impact', content: { 'application/json': { schema: FolderDeletePreviewSchema } } } },
+});
+
+// DELETE /starbase-api/folders/:folderId
+registry.registerPath({
+  method: 'delete',
+  path: '/starbase-api/folders/{folderId}',
+  request: { params: z.object({ folderId: z.string() }) },
+  responses: { 204: { description: 'Folder deleted' } },
+});
+
+// GET /starbase-api/folders/:folderId/download (zip)
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/folders/{folderId}/download',
+  request: { params: z.object({ folderId: z.string() }) },
+  responses: { 200: { description: 'ZIP archive of folder contents', content: { 'application/zip': { schema: z.string() } } }, 204: { description: 'Empty folder' } },
+});
+
+// GET /starbase-api/projects/:projectId/download (zip)
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/projects/{projectId}/download',
+  request: { params: z.object({ projectId: z.string() }) },
+  responses: { 200: { description: 'ZIP archive of project', content: { 'application/zip': { schema: z.string() } } }, 204: { description: 'Empty project' } },
+});
+
+// GET /starbase-api/files/:fileId/download (XML attachment)
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/files/{fileId}/download',
+  request: { params: z.object({ fileId: z.string() }) },
+  responses: { 200: { description: 'File XML download', content: { 'application/xml': { schema: z.string() } } }, 404: { description: 'Not found' } },
+});
+
+// POST /starbase-api/files/:fileId/restore-from-commit
+registry.registerPath({
+  method: 'post',
+  path: '/starbase-api/files/{fileId}/restore-from-commit',
+  request: {
+    params: z.object({ fileId: z.string() }),
+    body: { content: { 'application/json': { schema: z.object({ commitId: z.string().optional(), fileVersionNumber: z.number().optional() }) } } },
+  },
+  responses: { 200: { description: 'File restored', content: { 'application/json': { schema: z.object({ restored: z.boolean(), fileId: z.string(), commitId: z.string(), fileVersionNumber: z.number().nullable(), updatedAt: z.number() }) } } } },
+});
+
+// GET /starbase-api/projects/:projectId/engine-access
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/projects/{projectId}/engine-access',
+  request: { params: z.object({ projectId: z.string() }) },
+  responses: { 200: { description: 'Engine access status for project', content: { 'application/json': { schema: z.object({ accessedEngines: z.array(z.unknown()), pendingRequests: z.array(z.unknown()), availableEngines: z.array(z.unknown()) }) } } } },
+});
+
+// GET /starbase-api/projects/:projectId/engine-deployments
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/projects/{projectId}/engine-deployments',
+  request: { params: z.object({ projectId: z.string() }), query: z.object({ limit: z.string().optional() }) },
+  responses: { 200: { description: 'Engine deployments for project', content: { 'application/json': { schema: z.array(z.unknown()) } } } },
+});
+
+// GET /starbase-api/projects/:projectId/engine-deployments/latest
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/projects/{projectId}/engine-deployments/latest',
+  request: { params: z.object({ projectId: z.string() }) },
+  responses: { 200: { description: 'Latest engine deployments per file', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// GET /starbase-api/projects/:projectId/files/:fileId/deployments
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/projects/{projectId}/files/{fileId}/deployments',
+  request: { params: z.object({ projectId: z.string(), fileId: z.string() }) },
+  responses: { 200: { description: 'Deployments for a specific file', content: { 'application/json': { schema: z.array(z.unknown()) } } } },
+});
+
+// GET /starbase-api/projects/:projectId/files/:fileId/deployments/history
+registry.registerPath({
+  method: 'get',
+  path: '/starbase-api/projects/{projectId}/files/{fileId}/deployments/history',
+  request: { params: z.object({ projectId: z.string(), fileId: z.string() }) },
+  responses: { 200: { description: 'Full deployment history for a file', content: { 'application/json': { schema: z.array(z.unknown()) } } } },
+});
+
+// -----------------------------
+// Mission Control API - Additional Endpoints
+// -----------------------------
+
+// GET /mission-control-api/process-definitions/{id}/activity-counts-by-state
+registry.registerPath({
+  method: 'get',
+  path: '/mission-control-api/process-definitions/{id}/activity-counts-by-state',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 200: { description: 'Activity counts grouped by state', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// POST /mission-control-api/process-definitions/key/{key}/start
+registry.registerPath({
+  method: 'post',
+  path: '/mission-control-api/process-definitions/key/{key}/start',
+  request: { params: z.object({ key: z.string() }), body: { content: { 'application/json': { schema: z.object({ variables: z.record(z.unknown()).optional(), businessKey: z.string().optional() }) } } } },
+  responses: { 200: { description: 'Process instance started', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// GET /mission-control-api/process-definitions/key/{key}/statistics
+registry.registerPath({
+  method: 'get',
+  path: '/mission-control-api/process-definitions/key/{key}/statistics',
+  request: { params: z.object({ key: z.string() }) },
+  responses: { 200: { description: 'Process definition statistics', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// GET /mission-control-api/process-instances/{id}/activity-instances (runtime)
+registry.registerPath({
+  method: 'get',
+  path: '/mission-control-api/process-instances/{id}/activity-instances',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 200: { description: 'Runtime activity instance tree', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// GET /mission-control-api/process-instances/{id}/jobs
+registry.registerPath({
+  method: 'get',
+  path: '/mission-control-api/process-instances/{id}/jobs',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 200: { description: 'Jobs for process instance', content: { 'application/json': { schema: z.array(JobSchema) } } } },
+});
+
+// GET /mission-control-api/process-instances/{id}/failed-external-tasks
+registry.registerPath({
+  method: 'get',
+  path: '/mission-control-api/process-instances/{id}/failed-external-tasks',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 200: { description: 'Failed external tasks for instance', content: { 'application/json': { schema: z.array(ExternalTaskSchema) } } } },
+});
+
+// POST /mission-control-api/process-instances/{id}/variables (modify)
+registry.registerPath({
+  method: 'post',
+  path: '/mission-control-api/process-instances/{id}/variables',
+  request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.object({ modifications: z.record(z.unknown()) }) } } } },
+  responses: { 204: { description: 'Variables modified' } },
+});
+
+// POST /mission-control-api/decision-definitions/key/{key}/evaluate
+registry.registerPath({
+  method: 'post',
+  path: '/mission-control-api/decision-definitions/key/{key}/evaluate',
+  request: { params: z.object({ key: z.string() }), body: { content: { 'application/json': { schema: EvaluateDecisionRequest } } } },
+  responses: { 200: { description: 'Decision result', content: { 'application/json': { schema: z.array(z.unknown()) } } } },
+});
+
+// PUT /mission-control-api/batches/{id}/suspended
+registry.registerPath({
+  method: 'put',
+  path: '/mission-control-api/batches/{id}/suspended',
+  request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.object({ suspended: z.boolean() }) } } } },
+  responses: { 204: { description: 'Batch suspension state changed' } },
+});
+
+// DELETE /mission-control-api/batches/{id}/record
+registry.registerPath({
+  method: 'delete',
+  path: '/mission-control-api/batches/{id}/record',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 204: { description: 'Batch record deleted' } },
+});
+
+// POST /mission-control-api/migration/generate (engine auto-mapping - actual path without /plan/)
+registry.registerPath({
+  method: 'post',
+  path: '/mission-control-api/migration/generate',
+  request: { body: { content: { 'application/json': { schema: z.object({ sourceDefinitionId: z.string(), targetDefinitionId: z.string(), updateEventTriggers: z.boolean().optional() }) } } } },
+  responses: { 200: { description: 'Generated migration plan', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// -----------------------------
+// VCS (Version Control) API
+// -----------------------------
+
+// GET /vcs-api/projects/uncommitted-status (batch)
+registry.registerPath({
+  method: 'get',
+  path: '/vcs-api/projects/uncommitted-status',
+  request: { query: z.object({ projectIds: z.string() }) },
+  responses: { 200: { description: 'Batch uncommitted status', content: { 'application/json': { schema: z.object({ statuses: z.record(z.object({ hasUncommittedChanges: z.boolean(), dirtyFileCount: z.number() })) }) } } } },
+});
+
+// POST /vcs-api/projects/:projectId/commit
+registry.registerPath({
+  method: 'post',
+  path: '/vcs-api/projects/{projectId}/commit',
+  request: {
+    params: z.object({ projectId: z.string().uuid() }),
+    body: { content: { 'application/json': { schema: z.object({ message: z.string(), fileIds: z.array(z.string()).optional(), hotfixFromCommitId: z.string().optional(), hotfixFromFileVersion: z.number().optional() }) } } },
+  },
+  responses: { 200: { description: 'Commit created', content: { 'application/json': { schema: z.object({ commitId: z.string(), message: z.string(), fileCount: z.number(), createdAt: z.number() }) } } } },
+});
+
+// POST /vcs-api/projects/:projectId/publish
+registry.registerPath({
+  method: 'post',
+  path: '/vcs-api/projects/{projectId}/publish',
+  request: { params: z.object({ projectId: z.string().uuid() }) },
+  responses: { 200: { description: 'Draft merged to main', content: { 'application/json': { schema: z.object({ success: z.boolean(), mergeCommitId: z.string(), filesChanged: z.number() }) } } } },
+});
+
+// GET /vcs-api/projects/:projectId/commits
+registry.registerPath({
+  method: 'get',
+  path: '/vcs-api/projects/{projectId}/commits',
+  request: { params: z.object({ projectId: z.string().uuid() }), query: z.object({ branch: z.enum(['draft', 'main', 'all']).optional(), fileId: z.string().optional() }) },
+  responses: { 200: { description: 'Commit history', content: { 'application/json': { schema: z.object({ commits: z.array(z.unknown()) }) } } } },
+});
+
+// GET /vcs-api/projects/:projectId/status
+registry.registerPath({
+  method: 'get',
+  path: '/vcs-api/projects/{projectId}/status',
+  request: { params: z.object({ projectId: z.string().uuid() }) },
+  responses: { 200: { description: 'VCS status', content: { 'application/json': { schema: z.object({ initialized: z.boolean(), draftBranchId: z.string().optional(), mainBranchId: z.string().optional(), hasUnpublishedCommits: z.boolean().optional(), lastDraftCommit: z.unknown().nullable().optional(), lastMainCommit: z.unknown().nullable().optional() }) } } } },
+});
+
+// GET /vcs-api/projects/:projectId/uncommitted-files
+registry.registerPath({
+  method: 'get',
+  path: '/vcs-api/projects/{projectId}/uncommitted-files',
+  request: { params: z.object({ projectId: z.string().uuid() }), query: z.object({ baseline: z.enum(['main', 'draft']).optional() }) },
+  responses: { 200: { description: 'Uncommitted file IDs', content: { 'application/json': { schema: z.object({ hasUncommittedChanges: z.boolean(), uncommittedFileIds: z.array(z.string()), uncommittedFolderIds: z.array(z.string()) }) } } } },
+});
+
+// GET /vcs-api/projects/:projectId/commits/:commitId/files
+registry.registerPath({
+  method: 'get',
+  path: '/vcs-api/projects/{projectId}/commits/{commitId}/files',
+  request: { params: z.object({ projectId: z.string().uuid(), commitId: z.string() }) },
+  responses: { 200: { description: 'File snapshots for commit', content: { 'application/json': { schema: z.object({ files: z.array(z.unknown()) }) } } } },
+});
+
+// POST /vcs-api/projects/:projectId/commits/:commitId/restore
+registry.registerPath({
+  method: 'post',
+  path: '/vcs-api/projects/{projectId}/commits/{commitId}/restore',
+  request: { params: z.object({ projectId: z.string().uuid(), commitId: z.string() }) },
+  responses: { 200: { description: 'Files restored from commit', content: { 'application/json': { schema: z.object({ success: z.boolean(), filesRestored: z.number(), newCommitId: z.string() }) } } } },
+});
+
+// -----------------------------
+// Auth API
+// -----------------------------
+
+// POST /api/auth/login
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/login',
+  request: { body: { content: { 'application/json': { schema: z.object({ email: z.string().email(), password: z.string() }) } } } },
+  responses: { 200: { description: 'Login successful', content: { 'application/json': { schema: z.object({ user: z.unknown(), token: z.string().optional() }) } } }, 401: { description: 'Invalid credentials' } },
+});
+
+// POST /api/auth/logout
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/logout',
+  responses: { 200: { description: 'Logged out' } },
+});
+
+// POST /api/auth/refresh
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/refresh',
+  responses: { 200: { description: 'Token refreshed', content: { 'application/json': { schema: z.object({ user: z.unknown() }) } } }, 401: { description: 'Not authenticated' } },
+});
+
+// GET /api/auth/me
+registry.registerPath({
+  method: 'get',
+  path: '/api/auth/me',
+  responses: { 200: { description: 'Current user profile', content: { 'application/json': { schema: z.unknown() } } }, 401: { description: 'Not authenticated' } },
+});
+
+// PATCH /api/auth/me
+registry.registerPath({
+  method: 'patch',
+  path: '/api/auth/me',
+  request: { body: { content: { 'application/json': { schema: z.object({ firstName: z.string().optional(), lastName: z.string().optional() }) } } } },
+  responses: { 200: { description: 'Profile updated', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// POST /api/auth/change-password
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/change-password',
+  request: { body: { content: { 'application/json': { schema: z.object({ currentPassword: z.string(), newPassword: z.string() }) } } } },
+  responses: { 200: { description: 'Password changed' }, 400: { description: 'Invalid current password' } },
+});
+
+// POST /api/auth/forgot-password
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/forgot-password',
+  request: { body: { content: { 'application/json': { schema: z.object({ email: z.string().email() }) } } } },
+  responses: { 200: { description: 'Reset email sent (always returns 200)' } },
+});
+
+// POST /api/auth/reset-password
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/reset-password',
+  request: { body: { content: { 'application/json': { schema: z.object({ token: z.string(), password: z.string() }) } } } },
+  responses: { 200: { description: 'Password reset' }, 400: { description: 'Invalid or expired token' } },
+});
+
+// POST /api/auth/reset-password-with-token
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/reset-password-with-token',
+  request: { body: { content: { 'application/json': { schema: z.object({ token: z.string(), password: z.string() }) } } } },
+  responses: { 200: { description: 'Password reset with token' }, 400: { description: 'Invalid token' } },
+});
+
+// GET /api/auth/verify-reset-token
+registry.registerPath({
+  method: 'get',
+  path: '/api/auth/verify-reset-token',
+  request: { query: z.object({ token: z.string() }) },
+  responses: { 200: { description: 'Token valid' }, 400: { description: 'Invalid or expired token' } },
+});
+
+// POST /api/auth/resend-verification
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/resend-verification',
+  request: { body: { content: { 'application/json': { schema: z.object({ email: z.string().email() }) } } } },
+  responses: { 200: { description: 'Verification email resent' } },
+});
+
+// POST /api/auth/verify-email
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/verify-email',
+  request: { body: { content: { 'application/json': { schema: z.object({ token: z.string() }) } } } },
+  responses: { 200: { description: 'Email verified' }, 400: { description: 'Invalid token' } },
+});
+
+// GET /api/auth/branding
+registry.registerPath({
+  method: 'get',
+  path: '/api/auth/branding',
+  responses: { 200: { description: 'Platform branding config', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// GET /api/auth/platform-settings (public)
+registry.registerPath({
+  method: 'get',
+  path: '/api/auth/platform-settings',
+  responses: { 200: { description: 'Public platform settings', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// SSO - Google
+registry.registerPath({ method: 'get', path: '/api/auth/google/start', responses: { 302: { description: 'Redirect to Google OAuth' } } });
+registry.registerPath({ method: 'get', path: '/api/auth/google', responses: { 302: { description: 'Redirect to Google OAuth' } } });
+registry.registerPath({ method: 'get', path: '/api/auth/google/callback', responses: { 302: { description: 'Google OAuth callback redirect' } } });
+registry.registerPath({ method: 'get', path: '/api/auth/google/status', responses: { 200: { description: 'Google SSO config status', content: { 'application/json': { schema: z.object({ enabled: z.boolean() }) } } } } });
+
+// SSO - Microsoft
+registry.registerPath({ method: 'get', path: '/api/auth/microsoft/start', responses: { 302: { description: 'Redirect to Microsoft OAuth' } } });
+registry.registerPath({ method: 'get', path: '/api/auth/microsoft', responses: { 302: { description: 'Redirect to Microsoft OAuth' } } });
+registry.registerPath({ method: 'get', path: '/api/auth/microsoft/callback', responses: { 302: { description: 'Microsoft OAuth callback redirect' } } });
+registry.registerPath({ method: 'get', path: '/api/auth/microsoft/status', responses: { 200: { description: 'Microsoft SSO config status', content: { 'application/json': { schema: z.object({ enabled: z.boolean() }) } } } } });
+
+// SSO - SAML
+registry.registerPath({ method: 'get', path: '/api/auth/saml/start', responses: { 302: { description: 'Redirect to SAML IdP' } } });
+registry.registerPath({ method: 'get', path: '/api/auth/saml', responses: { 302: { description: 'Redirect to SAML IdP' } } });
+registry.registerPath({ method: 'post', path: '/api/auth/saml/callback', responses: { 302: { description: 'SAML assertion callback redirect' } } });
+registry.registerPath({ method: 'get', path: '/api/auth/saml/metadata', responses: { 200: { description: 'SAML SP metadata XML', content: { 'application/xml': { schema: z.string() } } } } });
+registry.registerPath({ method: 'get', path: '/api/auth/saml/status', responses: { 200: { description: 'SAML config status', content: { 'application/json': { schema: z.object({ enabled: z.boolean() }) } } } } });
+
+// Tenant SSO config
+registry.registerPath({
+  method: 'get',
+  path: '/api/t/{tenantSlug}/auth/sso-config',
+  request: { params: z.object({ tenantSlug: z.string() }) },
+  responses: { 200: { description: 'SSO config for tenant', content: { 'application/json': { schema: z.unknown() } } } },
+});
+
+// -----------------------------
+// Admin API - Setup & Email
+// -----------------------------
+
+// GET /api/admin/setup-status
+registry.registerPath({
+  method: 'get',
+  path: '/api/admin/setup-status',
+  responses: { 200: { description: 'Platform setup status', content: { 'application/json': { schema: z.object({ setupComplete: z.boolean() }) } } } },
+});
+
+// POST /api/admin/mark-setup-complete
+registry.registerPath({
+  method: 'post',
+  path: '/api/admin/mark-setup-complete',
+  responses: { 200: { description: 'Setup marked complete' } },
+});
+
+// Email configs
+registry.registerPath({
+  method: 'get',
+  path: '/api/admin/email-configs',
+  responses: { 200: { description: 'List email configs', content: { 'application/json': { schema: z.array(z.unknown()) } } } },
+});
+registry.registerPath({
+  method: 'post',
+  path: '/api/admin/email-configs',
+  request: { body: { content: { 'application/json': { schema: z.unknown() } } } },
+  responses: { 201: { description: 'Created', content: { 'application/json': { schema: z.unknown() } } } },
+});
+registry.registerPath({
+  method: 'patch',
+  path: '/api/admin/email-configs/{id}',
+  request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.unknown() } } } },
+  responses: { 200: { description: 'Updated', content: { 'application/json': { schema: z.unknown() } } } },
+});
+registry.registerPath({
+  method: 'delete',
+  path: '/api/admin/email-configs/{id}',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 204: { description: 'Deleted' } },
+});
+registry.registerPath({
+  method: 'post',
+  path: '/api/admin/email-configs/{id}/set-default',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 200: { description: 'Set as default' } },
+});
+registry.registerPath({
+  method: 'post',
+  path: '/api/admin/email-configs/{id}/test',
+  request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.object({ to: z.string().email() }) } } } },
+  responses: { 200: { description: 'Test email sent' } },
+});
+
+// Email platform name
+registry.registerPath({
+  method: 'put',
+  path: '/api/admin/email-platform-name',
+  request: { body: { content: { 'application/json': { schema: z.object({ name: z.string() }) } } } },
+  responses: { 200: { description: 'Platform name updated' } },
+});
+
+// Email templates
+registry.registerPath({
+  method: 'get',
+  path: '/api/admin/email-templates',
+  responses: { 200: { description: 'List email templates', content: { 'application/json': { schema: z.array(z.unknown()) } } } },
+});
+registry.registerPath({
+  method: 'patch',
+  path: '/api/admin/email-templates/{id}',
+  request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.unknown() } } } },
+  responses: { 200: { description: 'Template updated', content: { 'application/json': { schema: z.unknown() } } } },
+});
+registry.registerPath({
+  method: 'post',
+  path: '/api/admin/email-templates/{id}/preview',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 200: { description: 'Template preview HTML', content: { 'application/json': { schema: z.object({ html: z.string() }) } } } },
+});
+registry.registerPath({
+  method: 'post',
+  path: '/api/admin/email-templates/{id}/reset',
+  request: { params: z.object({ id: z.string() }) },
+  responses: { 200: { description: 'Template reset to default' } },
+});
+
+// -----------------------------
+// Authorization (Authz) API
+// -----------------------------
+
+// POST /api/authz/check
+registry.registerPath({
+  method: 'post',
+  path: '/api/authz/check',
+  request: { body: { content: { 'application/json': { schema: z.object({ resource: z.string(), action: z.string(), resourceId: z.string().optional() }) } } } },
+  responses: { 200: { description: 'Authorization check result', content: { 'application/json': { schema: z.object({ allowed: z.boolean() }) } } } },
+});
+
+// POST /api/authz/check-batch
+registry.registerPath({
+  method: 'post',
+  path: '/api/authz/check-batch',
+  request: { body: { content: { 'application/json': { schema: z.object({ checks: z.array(z.object({ resource: z.string(), action: z.string(), resourceId: z.string().optional() })) }) } } } },
+  responses: { 200: { description: 'Batch authorization results', content: { 'application/json': { schema: z.object({ results: z.array(z.object({ allowed: z.boolean() })) }) } } } },
+});
+
+// Authz policies
+registry.registerPath({ method: 'get', path: '/api/authz/policies', responses: { 200: { description: 'List policies', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'post', path: '/api/authz/policies', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 201: { description: 'Policy created', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'put', path: '/api/authz/policies/{id}', request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Policy updated', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'delete', path: '/api/authz/policies/{id}', request: { params: z.object({ id: z.string() }) }, responses: { 204: { description: 'Policy deleted' } } });
+
+// Authz audit
+registry.registerPath({ method: 'get', path: '/api/authz/audit', responses: { 200: { description: 'Authorization audit log', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+
+// SSO mappings
+registry.registerPath({ method: 'get', path: '/api/authz/sso-mappings', responses: { 200: { description: 'List SSO role mappings', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'post', path: '/api/authz/sso-mappings', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 201: { description: 'Mapping created', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'put', path: '/api/authz/sso-mappings/{id}', request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Mapping updated', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'delete', path: '/api/authz/sso-mappings/{id}', request: { params: z.object({ id: z.string() }) }, responses: { 204: { description: 'Mapping deleted' } } });
+registry.registerPath({ method: 'post', path: '/api/authz/sso-mappings/test', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Test SSO mapping result', content: { 'application/json': { schema: z.unknown() } } } } });
+
+// -----------------------------
+// Audit API
+// -----------------------------
+registry.registerPath({ method: 'get', path: '/api/audit/logs', request: { query: z.object({ limit: z.string().optional(), offset: z.string().optional() }).passthrough() }, responses: { 200: { description: 'Audit logs', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'get', path: '/api/audit/logs/resource/{resourceType}/{resourceId}', request: { params: z.object({ resourceType: z.string(), resourceId: z.string() }) }, responses: { 200: { description: 'Audit logs by resource', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'get', path: '/api/audit/logs/user/{userId}', request: { params: z.object({ userId: z.string() }) }, responses: { 200: { description: 'Audit logs by user', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'get', path: '/api/audit/actions', responses: { 200: { description: 'Available audit actions', content: { 'application/json': { schema: z.array(z.string()) } } } } });
+registry.registerPath({ method: 'get', path: '/api/audit/stats', responses: { 200: { description: 'Audit statistics', content: { 'application/json': { schema: z.unknown() } } } } });
+
+// -----------------------------
+// Dashboard API
+// -----------------------------
+registry.registerPath({ method: 'get', path: '/api/dashboard/context', responses: { 200: { description: 'Dashboard context data', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'get', path: '/api/dashboard/stats', responses: { 200: { description: 'Dashboard statistics', content: { 'application/json': { schema: z.unknown() } } } } });
+
+// -----------------------------
+// Notifications API
+// -----------------------------
+registry.registerPath({ method: 'get', path: '/api/notifications', responses: { 200: { description: 'List notifications', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'post', path: '/api/notifications', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 201: { description: 'Notification created' } } });
+registry.registerPath({ method: 'patch', path: '/api/notifications/read', request: { body: { content: { 'application/json': { schema: z.object({ ids: z.array(z.string()).optional() }) } } } }, responses: { 200: { description: 'Notifications marked as read' } } });
+registry.registerPath({ method: 'delete', path: '/api/notifications/{id}', request: { params: z.object({ id: z.string() }) }, responses: { 204: { description: 'Notification deleted' } } });
+
+// -----------------------------
+// Users API
+// -----------------------------
+registry.registerPath({ method: 'get', path: '/api/users', request: { query: z.object({ limit: z.string().optional(), offset: z.string().optional() }) }, responses: { 200: { description: 'List users', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'post', path: '/api/users', request: { body: { content: { 'application/json': { schema: z.object({ email: z.string().email(), firstName: z.string().optional(), lastName: z.string().optional(), password: z.string().optional(), role: z.string().optional() }) } } } }, responses: { 201: { description: 'User created', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'get', path: '/api/users/{id}', request: { params: z.object({ id: z.string() }) }, responses: { 200: { description: 'User details', content: { 'application/json': { schema: z.unknown() } } }, 404: { description: 'Not found' } } });
+registry.registerPath({ method: 'put', path: '/api/users/{id}', request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'User updated', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'post', path: '/api/users/{id}/unlock', request: { params: z.object({ id: z.string() }) }, responses: { 200: { description: 'User unlocked' } } });
+
+// -----------------------------
+// Git API - Extended
+// -----------------------------
+
+// Admin providers
+registry.registerPath({ method: 'get', path: '/git-api/admin/providers', responses: { 200: { description: 'List admin git providers', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'put', path: '/git-api/admin/providers/{id}', request: { params: z.object({ id: z.string() }), body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Provider updated', content: { 'application/json': { schema: z.unknown() } } } } });
+
+// Providers
+registry.registerPath({ method: 'get', path: '/git-api/providers', responses: { 200: { description: 'List git providers', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'get', path: '/git-api/providers/{id}', request: { params: z.object({ id: z.string() }) }, responses: { 200: { description: 'Provider details', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'get', path: '/git-api/providers/{id}/repos', request: { params: z.object({ id: z.string() }) }, responses: { 200: { description: 'List repos for provider', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+
+// Credentials
+registry.registerPath({ method: 'get', path: '/git-api/credentials', responses: { 200: { description: 'List git credentials', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'post', path: '/git-api/credentials', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 201: { description: 'Credential created', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'patch', path: '/git-api/credentials/{credentialId}', request: { params: z.object({ credentialId: z.string() }), body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Credential updated', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'delete', path: '/git-api/credentials/{credentialId}', request: { params: z.object({ credentialId: z.string() }) }, responses: { 204: { description: 'Credential deleted' } } });
+registry.registerPath({ method: 'delete', path: '/git-api/credentials/{providerId}', request: { params: z.object({ providerId: z.string() }) }, responses: { 204: { description: 'Provider credentials deleted' } } });
+registry.registerPath({ method: 'get', path: '/git-api/credentials/{credentialId}/namespaces', request: { params: z.object({ credentialId: z.string() }) }, responses: { 200: { description: 'Available namespaces', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'post', path: '/git-api/credentials/{providerId}/validate', request: { params: z.object({ providerId: z.string() }), body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Credential validation result', content: { 'application/json': { schema: z.object({ valid: z.boolean() }) } } } } });
+
+// Clone & create
+registry.registerPath({ method: 'post', path: '/git-api/clone', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 201: { description: 'Repository cloned', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'post', path: '/git-api/create-online', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 201: { description: 'Online repo created', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'post', path: '/git-api/check-repo-exists', request: { body: { content: { 'application/json': { schema: z.object({ url: z.string() }) } } } }, responses: { 200: { description: 'Check result', content: { 'application/json': { schema: z.object({ exists: z.boolean() }) } } } } });
+registry.registerPath({ method: 'post', path: '/git-api/repo-info', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Repository info', content: { 'application/json': { schema: z.unknown() } } } } });
+
+// Git deployments
+registry.registerPath({ method: 'get', path: '/git-api/deployments', request: { query: z.object({ projectId: z.string().optional() }).passthrough() }, responses: { 200: { description: 'List git deployments', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+registry.registerPath({ method: 'get', path: '/git-api/deployments/{id}', request: { params: z.object({ id: z.string() }) }, responses: { 200: { description: 'Deployment details', content: { 'application/json': { schema: z.unknown() } } }, 404: { description: 'Not found' } } });
+registry.registerPath({ method: 'get', path: '/git-api/projects/{projectId}/deployments', request: { params: z.object({ projectId: z.string() }) }, responses: { 200: { description: 'Deployments for project', content: { 'application/json': { schema: z.array(z.unknown()) } } } } });
+
+// Git sync
+registry.registerPath({ method: 'post', path: '/git-api/sync', request: { body: { content: { 'application/json': { schema: z.object({ projectId: z.string() }) } } } }, responses: { 200: { description: 'Sync started', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'get', path: '/git-api/sync/status', request: { query: z.object({ projectId: z.string() }) }, responses: { 200: { description: 'Sync status', content: { 'application/json': { schema: z.unknown() } } } } });
+
+// Git lock heartbeat
+registry.registerPath({ method: 'put', path: '/git-api/locks/{lockId}/heartbeat', request: { params: z.object({ lockId: z.string() }) }, responses: { 200: { description: 'Lock heartbeat renewed' } } });
+
+// Git OAuth
+registry.registerPath({ method: 'get', path: '/git-api/oauth/{providerId}/authorize', request: { params: z.object({ providerId: z.string() }) }, responses: { 302: { description: 'Redirect to OAuth provider' } } });
+registry.registerPath({ method: 'get', path: '/git-api/oauth/{providerId}/authorize/redirect', request: { params: z.object({ providerId: z.string() }) }, responses: { 302: { description: 'OAuth redirect' } } });
+registry.registerPath({ method: 'get', path: '/git-api/oauth/{providerId}/config', request: { params: z.object({ providerId: z.string() }) }, responses: { 200: { description: 'OAuth config', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'post', path: '/git-api/oauth/{providerId}/refresh', request: { params: z.object({ providerId: z.string() }) }, responses: { 200: { description: 'Token refreshed' } } });
+registry.registerPath({ method: 'get', path: '/git-api/oauth/authorize/redirect', responses: { 302: { description: 'Generic OAuth redirect' } } });
+registry.registerPath({ method: 'post', path: '/git-api/oauth/callback', responses: { 200: { description: 'OAuth callback processed' } } });
+
+// Git project connection
+registry.registerPath({ method: 'post', path: '/git-api/project-connection', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Project connection established', content: { 'application/json': { schema: z.unknown() } } } } });
+registry.registerPath({ method: 'put', path: '/git-api/project-connection/token', request: { body: { content: { 'application/json': { schema: z.unknown() } } } }, responses: { 200: { description: 'Connection token updated' } } });
 
 export function generateOpenApi() {
   const generator = new OpenApiGeneratorV3(registry.definitions);

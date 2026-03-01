@@ -192,12 +192,29 @@ export default function ProjectDetail() {
     enabled: !!projectId,
   })
 
+  // Fetch git repository info to check if project has git connection
+  const gitRepoQ = useQuery({
+    queryKey: ['git', 'repository', projectId],
+    queryFn: async () => {
+      const repos = await apiClient.get<any[]>('/git-api/repositories', { projectId })
+        .catch(() => [])
+      if (!Array.isArray(repos) || repos.length === 0) return null
+      return repos[0] || null
+    },
+    enabled: !!projectId,
+    staleTime: 60 * 1000,
+  })
+
+  // Show sync button only if: at least one sync option is enabled AND project has git connection
+  // Also hide while loading to prevent flash
+  const hasGitConnection = !gitRepoQ.isLoading && !!gitRepoQ.data
+
   const uncommittedQ = useQuery({
     queryKey: ['uncommitted-files', projectId, 'main'],
     queryFn: () => apiClient.get<{ hasUncommittedChanges: boolean; uncommittedFileIds: string[]; uncommittedFolderIds: string[] }>(
       `/vcs-api/projects/${projectId}/uncommitted-files`
     ),
-    enabled: !!projectId,
+    enabled: !!projectId && hasGitConnection,
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000,
   })
@@ -217,19 +234,6 @@ export default function ProjectDetail() {
   const anySyncEnabled = (platformSettings?.syncPushEnabled ?? true) || 
                          (platformSettings?.syncPullEnabled ?? false)
 
-  // Fetch git repository info to check if project has git connection
-  const gitRepoQ = useQuery({
-    queryKey: ['git', 'repository', projectId],
-    queryFn: async () => {
-      const repos = await apiClient.get<any[]>('/git-api/repositories', { projectId })
-        .catch(() => [])
-      if (!Array.isArray(repos) || repos.length === 0) return null
-      return repos[0] || null
-    },
-    enabled: !!projectId,
-    staleTime: 60 * 1000,
-  })
-
   // Fetch project-level Git connection info (for token warning banner)
   const gitConnectionQ = useQuery({
     queryKey: ['git-connection', projectId],
@@ -238,9 +242,6 @@ export default function ProjectDetail() {
     staleTime: 60 * 1000,
   })
 
-  // Show sync button only if: at least one sync option is enabled AND project has git connection
-  // Also hide while loading to prevent flash
-  const hasGitConnection = !gitRepoQ.isLoading && !!gitRepoQ.data
   const showSyncButton = anySyncEnabled && hasGitConnection
 
   const handleBatchDelete = async () => {
@@ -852,6 +853,7 @@ export default function ProjectDetail() {
               resolveUpdatedByLabel={resolveUpdatedByLabel}
               uncommittedFileIdsSet={uncommittedFileIdsSet}
               uncommittedFolderIdsSet={uncommittedFolderIdsSet}
+              hasGitConnection={hasGitConnection}
               showSyncButton={showSyncButton}
               canDeployByRole={canDeployByRole}
               onOpenSync={(cancelSelection) => {

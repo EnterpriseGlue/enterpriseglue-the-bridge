@@ -106,17 +106,22 @@ function createTenantScopedRouter(options: { includeAuditRoute?: boolean } = {})
   router.use(engineDeploymentsRoute);
 
   // Mission Control routes (engines, batches, processes, etc.)
+  // Keep processDefinitionsRoute and decisionsRoute first so specific routes like
+  // /mission-control-api/process-definitions/edit-target and
+  // /mission-control-api/decision-definitions/edit-target are not shadowed
+  // by legacy generic routes mounted in missionControlRoute (which strips engineId
+  // from req.query via requireEngineReadOrWrite middleware).
+  router.use(processDefinitionsRoute);
+  router.use(decisionsRoute);
   router.use(missionControlRoute);
   router.use(enginesAndFiltersRoute);
   router.use(batchesRoute);
   router.use(migrationRoute);
   router.use(directRoute);
-  router.use(processDefinitionsRoute);
   router.use(processInstancesRoute);
   router.use(tasksRoute);
   router.use(externalTasksRoute);
   router.use(messagesRoute);
-  router.use(decisionsRoute);
   router.use(jobsRoute);
   router.use(historyExtendedRoute);
   router.use(metricsRoute);

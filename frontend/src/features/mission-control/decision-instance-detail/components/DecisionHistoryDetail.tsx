@@ -20,7 +20,7 @@ import {
   TableBody,
   TableCell,
 } from '@carbon/react'
-import { Copy } from '@carbon/icons-react'
+import { Copy, Launch } from '@carbon/icons-react'
 import { PageLoader } from '../../../../shared/components/PageLoader'
 import { BreadcrumbBar } from '../../../shared/components/BreadcrumbBar'
 import { apiClient } from '../../../../shared/api/client'
@@ -29,6 +29,20 @@ import styles from '../../process-instance-detail/styles/InstanceDetail.module.c
 import SplitPane from 'react-split-pane'
 
 const DMNDrdMini = React.lazy(() => import('../../../starbase/components/DMNDrdMini'))
+
+type DecisionEditTarget = {
+  canShowEditButton: boolean
+  canEdit: boolean
+  engineId: string
+  decisionKey: string
+  decisionVersion: number
+  projectId: string
+  fileId: string
+  engineDeploymentId?: string
+  commitId?: string | null
+  fileVersionNumber?: number | null
+  mappingSource?: string
+}
 
 type HistoricDecisionInstance = {
   id: string
@@ -202,6 +216,62 @@ export default function DecisionHistoryDetail() {
     }
   }, [])
 
+  // Parse engine version number from definition ID (e.g. "myDecision:2:abc" -> 2)
+  const decisionKey = decision?.decisionDefinitionKey || null
+  const decisionVersion = React.useMemo(() => {
+    const defId = decision?.decisionDefinitionId || ''
+    if (!defId) return null
+    const parts = defId.split(':')
+    if (parts.length >= 2) {
+      const v = Number(parts[1])
+      if (Number.isFinite(v) && v > 0) return v
+    }
+    return null
+  }, [decision?.decisionDefinitionId])
+
+  const decisionEditTargetQ = useQuery({
+    queryKey: ['mission-control', 'decision-edit-target', selectedEngineId, decisionKey, decisionVersion, decision?.decisionDefinitionId],
+    queryFn: () => apiClient.get<DecisionEditTarget>('/mission-control-api/decision-definitions/edit-target', {
+      engineId: selectedEngineId,
+      key: decisionKey,
+      version: decisionVersion,
+      decisionDefinitionId: decision?.decisionDefinitionId,
+    }),
+    enabled: !!selectedEngineId && !!decisionKey && decisionVersion !== null,
+    retry: false,
+    staleTime: 15_000,
+  })
+
+  const decisionEditTarget = decisionEditTargetQ.data || null
+  const showEditButton = Boolean(
+    decisionKey &&
+    decisionVersion !== null &&
+    decisionEditTarget?.canShowEditButton &&
+    decisionEditTarget?.fileId
+  )
+
+  const handleEditInStarbase = React.useCallback(() => {
+    if (!decisionEditTarget?.fileId || decisionVersion === null || !decisionKey) return
+
+    const params = new URLSearchParams({
+      source: 'mission-control',
+      engineId: String(selectedEngineId || decisionEditTarget.engineId || ''),
+      decision: decisionKey,
+      version: String(decisionVersion),
+      deploymentId: String(decisionEditTarget.engineDeploymentId || ''),
+      mappingSource: String(decisionEditTarget.mappingSource || ''),
+    })
+
+    if (decisionEditTarget.commitId) {
+      params.set('commitId', String(decisionEditTarget.commitId))
+    }
+    if (typeof decisionEditTarget.fileVersionNumber === 'number') {
+      params.set('fileVersion', String(decisionEditTarget.fileVersionNumber))
+    }
+
+    tenantNavigate(`/starbase/editor/${encodeURIComponent(sanitizePathParam(decisionEditTarget.fileId))}?${params.toString()}`)
+  }, [decisionEditTarget, decisionVersion, decisionKey, selectedEngineId, tenantNavigate])
+
   // Check if initial data is loading
   const isInitialLoading = histQ.isLoading || xmlQ.isLoading
 
@@ -209,7 +279,20 @@ export default function DecisionHistoryDetail() {
     <PageLoader isLoading={isInitialLoading} skeletonType="instance-detail">
     <div className={styles.container}>
       {/* Breadcrumb Bar - shared component (same as InstanceDetail) */}
-      <BreadcrumbBar>
+      <BreadcrumbBar
+        rightActions={showEditButton ? (
+          <Button
+            kind="ghost"
+            size="sm"
+            renderIcon={Launch}
+            onClick={handleEditInStarbase}
+            disabled={!decisionEditTarget?.canEdit || decisionEditTargetQ.isFetching}
+            title={decisionEditTarget?.canEdit ? 'Edit deployed version in Starbase' : 'You do not have edit access for this project'}
+          >
+            Edit
+          </Button>
+        ) : null}
+      >
         <BreadcrumbItem>
           <a href={toTenantPath('/mission-control')} onClick={(e) => { e.preventDefault(); tenantNavigate('/mission-control'); }}>
             Mission Control

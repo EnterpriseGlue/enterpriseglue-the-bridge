@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import * as gitComponents from '../../../../src/features/git/components';
+import * as gitComponents from '@src/features/git/components';
 
 describe('git components index', () => {
   it('exports git components', () => {

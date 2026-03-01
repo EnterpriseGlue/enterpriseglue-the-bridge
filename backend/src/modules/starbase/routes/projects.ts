@@ -19,17 +19,36 @@ import { EngineHealth } from '@shared/db/entities/EngineHealth.js';
 import { EngineProjectAccess } from '@shared/db/entities/EngineProjectAccess.js';
 import { EngineAccessRequest } from '@shared/db/entities/EngineAccessRequest.js';
 import { EnvironmentTag } from '@shared/db/entities/EnvironmentTag.js';
-import { In } from 'typeorm';
+import { In, type EntityManager } from 'typeorm';
 import { CascadeDeleteService } from '@shared/services/cascade-delete.js';
 import { generateId, unixTimestamp } from '@shared/utils/id.js';
 import { projectMemberService } from '@shared/services/platform-admin/ProjectMemberService.js';
 import { engineAccessService } from '@shared/services/platform-admin/index.js';
 import { projectCreateLimiter, apiLimiter } from '@shared/middleware/rateLimiter.js';
 import { MANAGE_ROLES, OWNER_ROLES, VIEW_ROLES } from '@shared/constants/roles.js';
+import {
+  applyPreparedEngineImportToProject,
+  assertUserCanImportFromEngine,
+  prepareLatestEngineImport,
+} from '@shared/services/starbase/engine-import-service.js';
 
 // Validation schemas
 const projectIdParamSchema = z.object({ projectId: z.string().uuid() });
-const createProjectBodySchema = z.object({ name: z.string().min(1).max(255) });
+const createProjectBodySchema = z.object({
+  name: z.string().min(1).max(255),
+  importFromEngine: z.object({
+    enabled: z.boolean().optional(),
+    engineId: z.string().min(1).optional(),
+  }).optional(),
+}).superRefine((value: { importFromEngine?: { enabled?: boolean; engineId?: string } }, ctx: z.RefinementCtx) => {
+  if (value.importFromEngine?.enabled && !value.importFromEngine.engineId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['importFromEngine', 'engineId'],
+      message: 'Engine selection is required when import is enabled',
+    });
+  }
+});
 const renameProjectBodySchema = z.object({ name: z.string().min(1).max(255) });
 
 const r = Router();
@@ -70,6 +89,33 @@ interface UserRow {
   lastName: string | null;
 }
 
+interface MemberRawRow {
+  p_id: string;
+  p_name: string;
+  p_owner_id?: string;
+  p_ownerId?: string;
+  p_created_at?: number;
+  p_createdAt?: number;
+}
+
+interface AccessedEngineResponse {
+  engineId: string;
+  engineName: string;
+  baseUrl: string;
+  environment: { name: string; color: string } | null;
+  manualDeployAllowed?: boolean;
+  health: { status: string; latencyMs: number | null } | null;
+  grantedAt: number;
+  isLegacy?: boolean;
+}
+
+interface PendingRequestWithDetails {
+  requestId: string;
+  engineId: string;
+  engineName: string;
+  requestedAt: number;
+}
+
 /**
  * Get all projects for current user
  * 
@@ -97,8 +143,8 @@ r.get('/starbase-api/projects', apiLimiter, requireAuth, asyncHandler(async (req
     .innerJoin(ProjectMember, 'pm', 'pm.projectId = p.id')
     .where('pm.userId = :userId', { userId })
     .select(['p.id', 'p.name', 'p.ownerId', 'p.createdAt'])
-    .getRawMany();
-  const memberRowsMapped = memberRows.map((r: any) => ({
+    .getRawMany<MemberRawRow>();
+  const memberRowsMapped = memberRows.map((r: MemberRawRow) => ({
     id: r.p_id,
     name: r.p_name,
     ownerId: r.p_owner_id || r.p_ownerId,
@@ -197,7 +243,7 @@ r.get('/starbase-api/projects', apiLimiter, requireAuth, asyncHandler(async (req
     });
 
     // Get user details from database
-    const memberUserIds = [...new Set(memberRowsData.map((m) => String(m.userId)))];
+    const memberUserIds = [...new Set(memberRowsData.map((m: ProjectMember) => String(m.userId)))];
     const userDetailsMap = new Map<string, { firstName: string | null; lastName: string | null }>();
     
     if (memberUserIds.length > 0) {
@@ -264,13 +310,32 @@ r.get('/starbase-api/projects', apiLimiter, requireAuth, asyncHandler(async (req
  */
 r.post('/starbase-api/projects', apiLimiter, requireAuth, projectCreateLimiter, validateBody(createProjectBodySchema), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
-  const { name } = req.body;
+  const {
+    name,
+    importFromEngine,
+  } = req.body as {
+    name: string;
+    importFromEngine?: {
+      enabled?: boolean;
+      engineId?: string;
+    };
+  };
   const trimmed = name.trim();
+  const importEngineId = importFromEngine?.enabled
+    ? String(importFromEngine.engineId || '').trim()
+    : '';
+
+  let preparedImport: Awaited<ReturnType<typeof prepareLatestEngineImport>> | null = null;
+  if (importEngineId) {
+    await assertUserCanImportFromEngine(userId, importEngineId);
+    preparedImport = await prepareLatestEngineImport(importEngineId);
+  }
+
   const id = generateId();
   const now = unixTimestamp();
   const dataSource = await getDataSource();
 
-  await dataSource.transaction(async (manager) => {
+  await dataSource.transaction(async (manager: EntityManager) => {
     await manager.getRepository(Project).insert({
       id,
       name: trimmed,
@@ -305,6 +370,15 @@ r.post('/starbase-api/projects', apiLimiter, requireAuth, projectCreateLimiter, 
       })
       .orIgnore()
       .execute();
+
+    if (preparedImport) {
+      await applyPreparedEngineImportToProject({
+        manager,
+        projectId: id,
+        userId,
+        importData: preparedImport,
+      });
+    }
   });
 
   res.json({ id, name: trimmed, ownerId: userId, createdAt: now, updatedAt: now });
@@ -365,11 +439,13 @@ r.get('/starbase-api/projects/:projectId/engine-access', apiLimiter, requireAuth
   });
 
   // Get engine details for accessed engines
-  const engineIds = accessRows.map((r: any) => r.engineId).filter((id: string) => id !== '__env__');
-  let accessedEngines: any[] = [];
+  const engineIds = accessRows
+    .map((r: Pick<EngineProjectAccess, 'engineId'>) => r.engineId)
+    .filter((id: string) => id !== '__env__');
+  let accessedEngines: AccessedEngineResponse[] = [];
   
   // Handle special __env__ engine (legacy environment-based engine)
-  const envEngineAccess = accessRows.find((r: any) => r.engineId === '__env__');
+  const envEngineAccess = accessRows.find((r: Pick<EngineProjectAccess, 'engineId'>) => r.engineId === '__env__');
   if (envEngineAccess) {
     // Get env engine health from environment variable
     const envBaseUrl = process.env.CAMUNDA_BASE_URL || process.env.ENGINE_BASE_URL;
@@ -391,7 +467,9 @@ r.get('/starbase-api/projects/:projectId/engine-access', apiLimiter, requireAuth
     });
     
     // Get environment tags for all engines
-    const envTagIds = engineRows.map((e: any) => e.environmentTagId).filter(Boolean) as string[];
+    const envTagIds = engineRows
+      .map((e: Pick<Engine, 'environmentTagId'>) => e.environmentTagId)
+      .filter(Boolean) as string[];
     let envTagMap = new Map<string, { name: string; color: string; manualDeployAllowed: boolean }>();
     if (envTagIds.length > 0) {
       const envTags = await envTagRepo.find({
@@ -418,8 +496,8 @@ r.get('/starbase-api/projects/:projectId/engine-access', apiLimiter, requireAuth
       }
     }
     
-    for (const a of accessRows.filter((r: any) => r.engineId !== '__env__')) {
-      const engine = engineRows.find((e: any) => e.id === a.engineId);
+    for (const a of accessRows.filter((r: Pick<EngineProjectAccess, 'engineId'>) => r.engineId !== '__env__')) {
+      const engine = engineRows.find((e: Pick<Engine, 'id' | 'name' | 'baseUrl' | 'environmentTagId'>) => e.id === a.engineId);
       const envTag = engine?.environmentTagId ? envTagMap.get(engine.environmentTagId) : null;
       const health = healthMap.get(a.engineId) || null;
       accessedEngines.push({
@@ -441,16 +519,16 @@ r.get('/starbase-api/projects/:projectId/engine-access', apiLimiter, requireAuth
   });
 
   // Get engine details for pending requests
-  const pendingEngineIds = pendingRequests.map((r: any) => r.engineId);
-  let pendingWithDetails: any[] = [];
+  const pendingEngineIds = pendingRequests.map((r: Pick<EngineAccessRequest, 'engineId'>) => r.engineId);
+  let pendingWithDetails: PendingRequestWithDetails[] = [];
   if (pendingEngineIds.length > 0) {
     const pendingEngineRows = await engineRepo.find({
       where: { id: In(pendingEngineIds) },
       select: ['id', 'name', 'baseUrl']
     });
     
-    pendingWithDetails = pendingRequests.map((r: any) => {
-      const engine = pendingEngineRows.find((e: any) => e.id === r.engineId);
+    pendingWithDetails = pendingRequests.map((r: Pick<EngineAccessRequest, 'id' | 'engineId' | 'createdAt'>) => {
+      const engine = pendingEngineRows.find((e: Pick<Engine, 'id' | 'name' | 'baseUrl'>) => e.id === r.engineId);
       return {
         requestId: r.id,
         engineId: r.engineId,
@@ -468,8 +546,8 @@ r.get('/starbase-api/projects/:projectId/engine-access', apiLimiter, requireAuth
   // Filter out engines that are already accessed or have pending requests
   const usedEngineIds = new Set([...engineIds, ...pendingEngineIds]);
   const availableEngines = allEngines
-    .filter((e: any) => !usedEngineIds.has(e.id))
-    .map((e: any) => ({ id: e.id, name: e.name || e.baseUrl || 'Unknown' }));
+    .filter((e: Pick<Engine, 'id'>) => !usedEngineIds.has(e.id))
+    .map((e: Pick<Engine, 'id' | 'name' | 'baseUrl'>) => ({ id: e.id, name: e.name || e.baseUrl || 'Unknown' }));
 
   res.json({
     accessedEngines,

@@ -201,13 +201,17 @@ export function CompactDataTable<TData>({
                 <td 
                   colSpan={columns.length} 
                   style={{ 
-                    height: "24px", 
+                    padding: "32px 16px",
                     textAlign: "center",
                     color: "var(--cds-text-secondary)",
-                    fontSize: "12px",
+                    fontSize: "13px",
+                    lineHeight: "1.4",
                   }}
                 >
-                  No results.
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--cds-text-primary)" }}>No results found</span>
+                    <span>Try adjusting your filters or search criteria.</span>
+                  </div>
                 </td>
               </tr>
             )}

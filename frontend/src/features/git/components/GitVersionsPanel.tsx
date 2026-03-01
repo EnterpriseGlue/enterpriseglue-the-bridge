@@ -5,9 +5,10 @@
 
 import React, { useState, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Modal, Button, InlineNotification, InlineLoading, ProgressIndicator, ProgressStep, Toggle } from '@carbon/react';
+import { Modal, Button, InlineNotification, InlineLoading, ProgressIndicator, ProgressStep, Toggle, Dropdown } from '@carbon/react';
 import { apiClient } from '../../../shared/api/client';
 import { parseApiError } from '../../../shared/api/apiErrorUtils';
+import { useTenantNavigate } from '../../../shared/hooks/useTenantNavigate';
 
 // Lazy load the viewers
 const Viewer = lazy(() => import('../../shared/components/Viewer'));
@@ -33,9 +34,12 @@ interface VcsCommit {
   fileVersionNumber?: number | null; // Sequential version number for this specific file
   source?: string;
   isRemote?: boolean;
+  hotfixFromCommitId?: string | null;
+  hotfixFromFileVersion?: number | null;
 }
 
 const MANUAL_SOURCES = new Set(['manual', 'restore']);
+const ENGINE_ACCESS_ROLES = new Set(['owner', 'delegate', 'operator', 'deployer']);
 
 function isManualCommit(commit: VcsCommit): boolean {
   return MANUAL_SOURCES.has(commit.source ?? 'manual');
@@ -65,6 +69,37 @@ interface FileSnapshot {
   type: string;
   content: string | null;
   changeType: string;
+}
+
+interface EnvironmentTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface EngineWithAccess {
+  id: string;
+  name?: string;
+  baseUrl?: string;
+  myRole?: string;
+}
+
+interface LatestDeploymentByFile {
+  engineId?: string;
+  engineName?: string | null;
+  environmentTag?: string | null;
+  deployedAt?: number | null;
+  fileId?: string | null;
+  fileGitCommitId?: string | null;
+  artifacts?: Array<{ kind?: string; key?: string; version?: number }>;
+}
+
+type MissionControlTarget = {
+  engineId: string;
+  path: '/mission-control/processes' | '/mission-control/decisions';
+  keyParam: 'process' | 'decision';
+  key: string;
+  version: number;
 }
 
 function formatTime(timestamp: number): string {
@@ -111,23 +146,124 @@ function formatEditedTime(timestamp: number): string {
   return `Edited ${new Date(timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
 }
 
-function InlineTag({ type, children }: { type: string; children: React.ReactNode }) {
+function InlineTag({ type, children, style }: { type: string; children: React.ReactNode; style?: React.CSSProperties }) {
   const safeType = String(type || 'gray');
   const className = `cds--tag cds--tag--sm cds--layout--size-sm cds--tag--${safeType}`;
   return (
-    <span className={className} style={{ display: 'inline-flex', alignItems: 'center' }}>
+    <span className={className} style={{ display: 'inline-flex', alignItems: 'center', ...style }}>
       {children}
     </span>
   );
 }
 
+function InlineTagButton({ type, title, onClick, children, style, className }: { type: string; title?: string; onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void; children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={onClick}
+      className={className}
+      style={{
+        border: 'none',
+        background: 'transparent',
+        padding: 0,
+        display: 'inline-flex',
+        cursor: onClick ? 'pointer' : 'default',
+      }}
+    >
+      <InlineTag type={type} style={style}>{children}</InlineTag>
+    </button>
+  );
+}
+
+function parseHexColor(value: string): { r: number; g: number; b: number } | null {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  let hex = raw.startsWith('#') ? raw.slice(1) : raw;
+  if (hex.length === 3) {
+    hex = hex.split('').map((c) => c + c).join('');
+  }
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return null;
+  const num = Number.parseInt(hex, 16);
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255,
+  };
+}
+
+function getReadableTextColor(value: string): string {
+  const rgb = parseHexColor(value);
+  if (!rgb) return '#ffffff';
+  const luminance = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+  return luminance > 160 ? '#1b1b1b' : '#ffffff';
+}
+
+function getEnvironmentBadgeStyle(color: string | null): React.CSSProperties | undefined {
+  if (!color) return undefined;
+  return {
+    backgroundColor: color,
+    borderColor: color,
+    color: getReadableTextColor(color),
+  };
+}
+
+function getEnvironmentLabel(row: LatestDeploymentByFile): string {
+  return String(row.environmentTag || row.engineName || row.engineId || 'Engine');
+}
+
+function getEnvironmentTone(label: string): string {
+  const key = label.toLowerCase();
+  if (key.includes('prod')) return 'red';
+  if (key.includes('stag')) return 'purple';
+  if (key.includes('test')) return 'blue';
+  if (key.includes('dev')) return 'green';
+  return 'cool-gray';
+}
+
+function normalizeEnvironmentLabel(label: string): string {
+  return String(label || '').trim().toLowerCase();
+}
+
+function getDeploymentVersion(row: LatestDeploymentByFile, fileType: 'bpmn' | 'dmn'): number | null {
+  const desiredKind = fileType === 'dmn' ? 'decision' : 'process';
+  const versions = (Array.isArray(row.artifacts) ? row.artifacts : [])
+    .filter((artifact) => String(artifact?.kind || '') === desiredKind)
+    .map((artifact) => Number(artifact?.version))
+    .filter((version) => Number.isFinite(version));
+  if (versions.length === 0) return null;
+  return Math.max(...versions);
+}
+
+function getMissionControlTarget(row: LatestDeploymentByFile, fileType: 'bpmn' | 'dmn'): MissionControlTarget | null {
+  const desiredKind = fileType === 'dmn' ? 'decision' : 'process';
+  const artifacts = Array.isArray(row.artifacts) ? row.artifacts : [];
+  const matches = artifacts
+    .filter((artifact) => String(artifact?.kind || '') === desiredKind && String(artifact?.key || ''))
+    .sort((a, b) => Number(b?.version || 0) - Number(a?.version || 0));
+  const best = matches[0];
+  const key = String(best?.key || '');
+  const version = Number(best?.version);
+  const engineId = String(row.engineId || '');
+  if (!engineId || !key || !Number.isFinite(version)) return null;
+  return {
+    engineId,
+    path: fileType === 'dmn' ? '/mission-control/decisions' : '/mission-control/processes',
+    keyParam: fileType === 'dmn' ? 'decision' : 'process',
+    key,
+    version,
+  };
+}
+
 export default function GitVersionsPanel({ projectId, fileId, fileName, fileType = 'bpmn', hasUnsavedVersion, lastEditedAt }: GitVersionsPanelProps) {
   const queryClient = useQueryClient();
+  const { tenantNavigate } = useTenantNavigate();
   const [selectedCommit, setSelectedCommit] = useState<VcsCommit | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewXml, setPreviewXml] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(10);
   const [showSystemVersions, setShowSystemVersions] = useState(false);
+  const [environmentFilter, setEnvironmentFilter] = useState<{ id: string; label: string } | null>({ id: 'all', label: 'All environments' });
 
   // Fetch VCS commit history filtered to this specific file
   const commitsQuery = useQuery({
@@ -149,6 +285,31 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
     enabled: !!projectId,
     staleTime: 10000, // 10 seconds
     refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const enginesQuery = useQuery({
+    queryKey: ['engines', 'mine'],
+    queryFn: () => apiClient.get<EngineWithAccess[]>('/engines-api/engines', undefined, { credentials: 'include' }).catch(() => []),
+    staleTime: 60000,
+  });
+
+  const hasEngineAccess = React.useMemo(() => {
+    const engines = Array.isArray(enginesQuery.data) ? enginesQuery.data : [];
+    return engines.some((engine) => ENGINE_ACCESS_ROLES.has(String(engine?.myRole || '')));
+  }, [enginesQuery.data]);
+
+  const deploymentsQuery = useQuery({
+    queryKey: ['engine-deployments', projectId, fileId, 'history'],
+    queryFn: () => apiClient.get<LatestDeploymentByFile[]>(`/starbase-api/projects/${projectId}/files/${fileId}/deployments/history`),
+    enabled: !!projectId && !!fileId && hasEngineAccess,
+    staleTime: 10000,
+  });
+
+  const environmentTagsQuery = useQuery({
+    queryKey: ['engines', 'environment-tags'],
+    queryFn: () => apiClient.get<EnvironmentTag[]>('/engines-api/environment-tags', undefined, { credentials: 'include' }),
+    enabled: hasEngineAccess,
+    staleTime: 60000,
   });
 
   // Fetch file snapshots for selected commit
@@ -181,10 +342,14 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
     },
   });
 
-  const handleCommitClick = (commit: VcsCommit) => {
+  const openCommitPreview = React.useCallback((commit: VcsCommit) => {
     setSelectedCommit(commit);
     setPreviewXml(null); // Reset preview XML
     setPreviewOpen(true);
+  }, []);
+
+  const handleCommitClick = (commit: VcsCommit) => {
+    openCommitPreview(commit);
   };
 
   const handleClosePreview = () => {
@@ -198,6 +363,77 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
       restoreMutation.mutate(selectedCommit.id);
     }
   };
+
+  const deploymentsForFile = React.useMemo(() => {
+    if (!fileId || !hasEngineAccess) return [] as LatestDeploymentByFile[];
+    return (Array.isArray(deploymentsQuery.data) ? deploymentsQuery.data : [])
+      .filter((row) => String(row?.fileId || '') === String(fileId));
+  }, [deploymentsQuery.data, fileId, hasEngineAccess]);
+
+  const environmentColorByName = React.useMemo(() => {
+    const map = new Map<string, string>();
+    const tags = Array.isArray(environmentTagsQuery.data) ? environmentTagsQuery.data : [];
+    for (const tag of tags) {
+      const key = normalizeEnvironmentLabel(tag.name);
+      if (!key || !tag.color) continue;
+      map.set(key, String(tag.color));
+    }
+    return map;
+  }, [environmentTagsQuery.data]);
+
+  const environmentItems = React.useMemo(() => {
+    const labels = new Map<string, { id: string; label: string }>();
+    for (const row of deploymentsForFile) {
+      const label = getEnvironmentLabel(row);
+      if (!label) continue;
+      labels.set(label, { id: label, label });
+    }
+    const list = Array.from(labels.values()).sort((a, b) => a.label.localeCompare(b.label));
+    return [{ id: 'all', label: 'All environments' }, ...list];
+  }, [deploymentsForFile]);
+
+  React.useEffect(() => {
+    if (!environmentFilter) {
+      setEnvironmentFilter(environmentItems[0] || { id: 'all', label: 'All environments' });
+      return;
+    }
+    const stillExists = environmentItems.some((item) => item.id === environmentFilter.id);
+    if (!stillExists) {
+      setEnvironmentFilter(environmentItems[0] || { id: 'all', label: 'All environments' });
+    }
+  }, [environmentFilter, environmentItems]);
+
+  const activeEnvironment = environmentFilter?.id && environmentFilter.id !== 'all'
+    ? environmentFilter.id
+    : null;
+
+  const deploymentsByCommit = React.useMemo(() => {
+    if (!hasEngineAccess) return new Map<string, Array<{ label: string; tone: string; versionLabel: string; title: string; target: MissionControlTarget | null; color: string | null }>>();
+    const map = new Map<string, Array<{ label: string; tone: string; versionLabel: string; title: string; target: MissionControlTarget | null; color: string | null }>>();
+    const seenByCommit = new Map<string, Set<string>>();
+    for (const row of deploymentsForFile) {
+      const commitId = String(row?.fileGitCommitId || '').trim();
+      if (!commitId) continue;
+      const envLabel = getEnvironmentLabel(row);
+      if (activeEnvironment && envLabel !== activeEnvironment) continue;
+      const tone = getEnvironmentTone(envLabel);
+      const color = environmentColorByName.get(normalizeEnvironmentLabel(envLabel)) || null;
+      const engineVersion = getDeploymentVersion(row, fileType);
+      const target = getMissionControlTarget(row, fileType);
+      const versionLabel = engineVersion !== null ? `v${engineVersion}` : 'v?';
+      const key = `${envLabel}:${versionLabel}`;
+      const seen = seenByCommit.get(commitId) ?? new Set<string>();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      seenByCommit.set(commitId, seen);
+      const deployedAt = typeof row.deployedAt === 'number' ? formatTimeExact(row.deployedAt) : null;
+      const title = deployedAt ? `${envLabel} ${versionLabel} • ${deployedAt}` : `${envLabel} ${versionLabel}`;
+      const list = map.get(commitId) ?? [];
+      list.push({ label: envLabel, tone, versionLabel, title, target, color });
+      map.set(commitId, list);
+    }
+    return map;
+  }, [deploymentsForFile, fileType, activeEnvironment, environmentColorByName, hasEngineAccess]);
 
   // Extract XML from snapshots when loaded
   React.useEffect(() => {
@@ -224,11 +460,11 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
       let file: FileSnapshot | undefined;
 
       if (fileName) {
-        const exactMatches = files.filter(f => f.name === fileName && f.type === fileType);
+        const exactMatches = files.filter((f) => f.name === fileName && f.type === fileType);
         if (exactMatches.length > 0) {
           file = pickBest(exactMatches);
         } else {
-          const nameMatches = files.filter(f => f.name === fileName);
+          const nameMatches = files.filter((f) => f.name === fileName);
           if (nameMatches.length > 0) {
             file = pickBest(nameMatches);
           }
@@ -237,14 +473,14 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
 
       // Fallbacks: latest by type, then any file with content
       if (!file) {
-        const typeMatches = files.filter(f => f.type === fileType);
+        const typeMatches = files.filter((f) => f.type === fileType);
         if (typeMatches.length > 0) {
           file = pickBest(typeMatches);
         }
       }
 
       if (!file) {
-        const anyWithContent = files.filter(f => f.content);
+        const anyWithContent = files.filter((f) => f.content);
         if (anyWithContent.length > 0) {
           file = pickBest(anyWithContent);
         }
@@ -255,6 +491,34 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
       }
     }
   }, [snapshotsQuery.data, fileName, fileType]);
+
+  const handleJumpToCommit = React.useCallback((commit: VcsCommit, event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openCommitPreview(commit);
+  }, [openCommitPreview]);
+
+  const handleOpenMissionControl = React.useCallback((target: MissionControlTarget | null, event: React.MouseEvent<HTMLButtonElement>) => {
+    if (!target) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const params = new URLSearchParams({
+      engineId: target.engineId,
+      [target.keyParam]: target.key,
+      version: String(target.version),
+    });
+    tenantNavigate(`${target.path}?${params.toString()}`);
+  }, [tenantNavigate]);
+
+  const handleDeploymentClick = React.useCallback((commit: VcsCommit, target: MissionControlTarget | null, event: React.MouseEvent<HTMLButtonElement>) => {
+    if (target) {
+      handleOpenMissionControl(target, event);
+      return;
+    }
+    handleJumpToCommit(commit, event);
+  }, [handleOpenMissionControl, handleJumpToCommit]);
+
+  const showDeploymentUi = hasEngineAccess;
 
   if (commitsQuery.isLoading) {
     return <div style={{ padding: 'var(--spacing-4)', fontSize: 'var(--text-12)', color: 'var(--color-text-tertiary)' }}>Loading versions...</div>;
@@ -292,9 +556,13 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
     return b.createdAt - a.createdAt;
   });
 
+  const commitsForDisplay = activeEnvironment
+    ? commits.filter((commit) => deploymentsByCommit.has(commit.id))
+    : commits;
+
   // Show newest N, but render oldest->newest for ProgressIndicator so latest is always the current step.
   // We will reverse the *visual* order with CSS so latest appears at the top.
-  const visibleCommitsNewestFirst = commits.slice(0, Math.min(visibleCount, commits.length));
+  const visibleCommitsNewestFirst = commitsForDisplay.slice(0, Math.min(visibleCount, commitsForDisplay.length));
   const visibleCommits = [...visibleCommitsNewestFirst].reverse();
   const latestIndex = Math.max(visibleCommits.length - 1, 0);
 
@@ -303,11 +571,13 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
   // If everything is saved, we set currentIndex to one-past-the-end so all saved versions render as complete (checkmark).
   const currentIndex = visibleCommits.length;
 
-  if (commits.length === 0) {
+  if (commitsForDisplay.length === 0) {
     return (
       <div style={{ padding: 'var(--spacing-4)' }}>
         <div style={{ fontSize: 'var(--text-14)', color: 'var(--color-text-secondary)' }}>
-          No versions yet. Save a version to start tracking changes.
+          {activeEnvironment
+            ? `No versions deployed to ${activeEnvironment}.`
+            : 'No versions yet. Save a version to start tracking changes.'}
         </div>
       </div>
     );
@@ -379,6 +649,54 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
           }
         `}</style>
 
+        <style>{`
+          .git-versions-progress .cds--progress-step-button,
+          .git-versions-progress .bx--progress-step-button {
+            cursor: default;
+          }
+          .git-versions-progress .cds--progress-step-button:hover,
+          .git-versions-progress .bx--progress-step-button:hover {
+            background-color: transparent;
+            box-shadow: none;
+          }
+          .git-versions-progress .cds--progress-step-button:hover .cds--progress-label,
+          .git-versions-progress .bx--progress-step-button:hover .bx--progress-label {
+            color: inherit;
+            text-decoration: none;
+          }
+          .git-versions-progress .cds--progress-label,
+          .git-versions-progress .bx--progress-label,
+          .git-versions-step-title {
+            cursor: default;
+          }
+          .git-versions-pill {
+            cursor: pointer !important;
+          }
+        `}</style>
+
+        {showDeploymentUi && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--spacing-3)' }}>
+              <Dropdown
+                id="environment-filter"
+                size="sm"
+                label="All environments"
+                titleText=""
+                items={environmentItems}
+                itemToString={(item: any) => item?.label || ''}
+                selectedItem={environmentFilter ?? environmentItems[0]}
+                onChange={({ selectedItem }: any) => setEnvironmentFilter(selectedItem || environmentItems[0])}
+              />
+              {activeEnvironment && (
+                <span style={{ fontSize: 'var(--text-12)', color: 'var(--color-text-tertiary)' }}>
+                  Showing deployments for {activeEnvironment}
+                </span>
+              )}
+            </div>
+
+          </>
+        )}
+
         <div className="git-versions-progress">
           <ProgressIndicator
             vertical
@@ -397,6 +715,7 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
             const origin = commit.isRemote ? 'Remote' : 'Local';
             const isPreviewable = showUnsavedStep ? true : !isLatest;
             const timeText = formatTime(commit.createdAt);
+            const deploymentBadges = deploymentsByCommit.get(commit.id) || [];
 
             const Step: any = ProgressStep;
 
@@ -415,6 +734,25 @@ export default function GitVersionsPanel({ projectId, fileId, fileName, fileType
                       {!isManualCommit(commit) && getSourceLabel(commit.source) && (
                         <InlineTag type="gray">{getSourceLabel(commit.source)}</InlineTag>
                       )}
+                      {typeof commit.hotfixFromFileVersion === 'number' && (
+                        <span title={`Hotfix from v${commit.hotfixFromFileVersion}`}><InlineTag type="magenta">Hotfix</InlineTag></span>
+                      )}
+                      {showDeploymentUi && deploymentBadges.map((deployment, index) => {
+                        const badgeStyle = { ...getEnvironmentBadgeStyle(deployment.color), cursor: 'pointer' } as React.CSSProperties;
+                        const title = deployment.target ? 'Open in Mission Control' : 'Jump to Starbase version';
+                        return (
+                          <InlineTagButton
+                            key={`${commit.id}-${deployment.label}-${index}`}
+                            className="git-versions-pill"
+                            type={deployment.tone}
+                            title={title}
+                            onClick={(event) => handleDeploymentClick(commit, deployment.target, event)}
+                            style={badgeStyle}
+                          >
+                            <span title={deployment.title}>{deployment.label} {deployment.versionLabel}</span>
+                          </InlineTagButton>
+                        );
+                      })}
                       <span style={{ fontSize: 'var(--text-12)', color: 'var(--color-text-secondary)' }}>{timeText}</span>
                     </span>
                   </span>

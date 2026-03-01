@@ -2,8 +2,9 @@ import React from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { useTenantNavigate } from '../../../shared/hooks/useTenantNavigate'
 import { sanitizePathParam } from '../../../shared/utils/sanitize'
-import { Pause, Play, TrashCan, Renew, Migrate, Close } from '@carbon/icons-react'
-import { BreadcrumbItem } from '@carbon/react'
+import { Pause, Play, TrashCan, Renew, Migrate, Close, Launch } from '@carbon/icons-react'
+import { BreadcrumbItem, Button } from '@carbon/react'
+import { useQuery } from '@tanstack/react-query'
 import { BreadcrumbBar } from '../../shared/components/BreadcrumbBar'
 import { TableSearchBar } from '../../../shared/components/ui/TableSearchBar'
 import SplitPane from 'react-split-pane'
@@ -26,10 +27,25 @@ import {
 import { EngineAccessError, isEngineAccessError } from '../shared/components/EngineAccessError'
 import { apiClient } from '../../../shared/api/client'
 import { useSelectedEngine } from '../../../components/EngineSelector'
+import { useEngineSelectorStore } from '../../../stores/engineSelectorStore'
 
 const SPLIT_PANE_STORAGE_KEY = 'processes-split-pane-size-v2'
 const DEFAULT_SPLIT_SIZE = '75%'
 const Viewer = React.lazy(() => import('../../shared/components/Viewer'))
+
+type ProcessEditTarget = {
+  canShowEditButton: boolean
+  canEdit: boolean
+  engineId: string
+  processKey: string
+  processVersion: number
+  projectId: string
+  fileId: string
+  engineDeploymentId?: string
+  commitId?: string | null
+  fileVersionNumber?: number | null
+  mappingSource?: string
+}
 
 export default function ProcessesOverviewPage() {
   const { tenantNavigate, toTenantPath } = useTenantNavigate()
@@ -37,6 +53,7 @@ export default function ProcessesOverviewPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { alertState, showAlert, closeAlert } = useAlert()
   const selectedEngineId = useSelectedEngine()
+  const setSelectedEngineId = useEngineSelectorStore((s) => s.setSelectedEngineId)
   const { clearViewports } = useDiagramViewStore()
 
   // Split pane state with localStorage persistence
@@ -145,6 +162,18 @@ export default function ProcessesOverviewPage() {
   // Destructure data from hooks
   const { defItems, versions, currentKey, defIdForVersion, xmlQ, countsQ, countsByStateQ, previewCountQ, instQ, defsQ, defIdQ } = processesData
 
+  React.useEffect(() => {
+    const engineIdParam = String(searchParams.get('engineId') || '')
+    if (!engineIdParam) return
+    if (!selectedEngineId || selectedEngineId !== engineIdParam) {
+      setSelectedEngineId(engineIdParam)
+      return
+    }
+
+    searchParams.delete('engineId')
+    setSearchParams(searchParams, { replace: true })
+  }, [searchParams, selectedEngineId, setSelectedEngineId, setSearchParams])
+
   // If we were navigated here from a call activity link pill, auto-select the process from the URL
   React.useEffect(() => {
     const processKey = searchParams.get('process')
@@ -157,6 +186,27 @@ export default function ProcessesOverviewPage() {
       setSearchParams(searchParams, { replace: true })
     }
   }, [searchParams, defItems, setSelectedProcess, setSearchParams])
+
+  React.useEffect(() => {
+    const rawVersion = searchParams.get('version')
+    if (!rawVersion) return
+
+    const parsedVersion = Number(rawVersion)
+    if (!Number.isFinite(parsedVersion)) {
+      searchParams.delete('version')
+      setSearchParams(searchParams, { replace: true })
+      return
+    }
+
+    if (versions.length === 0) return
+
+    if (versions.includes(parsedVersion) && selectedVersion !== parsedVersion) {
+      setSelectedVersion(parsedVersion)
+    }
+
+    searchParams.delete('version')
+    setSearchParams(searchParams, { replace: true })
+  }, [searchParams, versions, selectedVersion, setSelectedVersion, setSearchParams])
 
   // If we were navigated here from a link pill, auto-select the node (activity id)
   React.useEffect(() => {
@@ -171,6 +221,49 @@ export default function ProcessesOverviewPage() {
   }, [searchParams, setFlowNode, setSearchParams])
 
   const fromInstanceId = location?.state?.fromInstanceId as string | undefined || searchParams.get('fromInstance') || undefined
+
+  const processEditTargetQ = useQuery({
+    queryKey: ['mission-control', 'process-edit-target', selectedEngineId, selectedProcess?.key, selectedVersion, defIdForVersion],
+    queryFn: () => apiClient.get<ProcessEditTarget>('/mission-control-api/process-definitions/edit-target', {
+      engineId: selectedEngineId,
+      key: selectedProcess?.key,
+      version: selectedVersion,
+      processDefinitionId: defIdForVersion,
+    }),
+    enabled: !!selectedEngineId && !!selectedProcess?.key && selectedVersion !== null,
+    retry: false,
+    staleTime: 15_000,
+  })
+
+  const processEditTarget = processEditTargetQ.data || null
+  const showEditButton = Boolean(
+    selectedProcess &&
+    selectedVersion !== null &&
+    processEditTarget?.canShowEditButton &&
+    processEditTarget?.fileId
+  )
+
+  const handleEditInStarbase = React.useCallback(() => {
+    if (!processEditTarget?.fileId || selectedVersion === null || !selectedProcess?.key) return
+
+    const params = new URLSearchParams({
+      source: 'mission-control',
+      engineId: String(selectedEngineId || processEditTarget.engineId || ''),
+      process: selectedProcess.key,
+      version: String(selectedVersion),
+      deploymentId: String(processEditTarget.engineDeploymentId || ''),
+      mappingSource: String(processEditTarget.mappingSource || ''),
+    })
+
+    if (processEditTarget.commitId) {
+      params.set('commitId', String(processEditTarget.commitId))
+    }
+    if (typeof processEditTarget.fileVersionNumber === 'number') {
+      params.set('fileVersion', String(processEditTarget.fileVersionNumber))
+    }
+
+    tenantNavigate(`/starbase/editor/${encodeURIComponent(sanitizePathParam(processEditTarget.fileId))}?${params.toString()}`)
+  }, [processEditTarget, selectedVersion, selectedProcess?.key, selectedEngineId, tenantNavigate])
 
   // Viewer API for managing BPMN diagram
   const [viewerApi, setViewerApi] = React.useState<any>(null)
@@ -518,7 +611,20 @@ export default function ProcessesOverviewPage() {
       flexDirection: 'column',
     }}>
       {/* Breadcrumb Bar - shared component */}
-      <BreadcrumbBar>
+      <BreadcrumbBar
+        rightActions={showEditButton ? (
+          <Button
+            kind="ghost"
+            size="sm"
+            renderIcon={Launch}
+            onClick={handleEditInStarbase}
+            disabled={!processEditTarget?.canEdit || processEditTargetQ.isFetching}
+            title={processEditTarget?.canEdit ? 'Edit deployed version in Starbase' : 'You do not have edit access for this project'}
+          >
+            Edit
+          </Button>
+        ) : null}
+      >
         <BreadcrumbItem>
           <a href={toTenantPath('/mission-control')} onClick={(e) => { e.preventDefault(); tenantNavigate('/mission-control'); }}>
             Mission Control
