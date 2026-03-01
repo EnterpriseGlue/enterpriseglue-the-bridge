@@ -1,4 +1,4 @@
-import type { EnterpriseFrontendPlugin } from '@enterpriseglue/enterprise-plugin-api/frontend';
+import type { EnterpriseFrontendPlugin, FrontendPluginContext } from '@enterpriseglue/enterprise-plugin-api/frontend';
 import type { ComponentType } from 'react';
 import { 
   registerComponentOverride, 
@@ -7,6 +7,14 @@ import {
   markInitialized,
   type NavExtension,
 } from './extensionRegistry';
+import { apiClient, ApiError } from '../shared/api/client';
+import { parseApiError, getUiErrorMessage, getErrorMessageFromResponse } from '../shared/api/apiErrorUtils';
+import { PageHeader, PageLayout, PAGE_GRADIENTS } from '../shared/components/PageLayout';
+import ConfirmModal from '../shared/components/ConfirmModal';
+import InviteMemberModal from '../components/InviteMemberModal';
+import { useAuth } from '../shared/hooks/useAuth';
+import { useModal } from '../shared/hooks/useModal';
+import { useToast } from '../shared/notifications/ToastProvider';
 
 const emptyPlugin: EnterpriseFrontendPlugin = { routes: [], tenantRoutes: [], navItems: [], menuItems: [] };
 
@@ -110,6 +118,25 @@ export async function loadEnterpriseFrontendPlugin(): Promise<EnterpriseFrontend
             registerNavItem(item);
           }
         }
+      }
+
+      // Provide shared host utilities to the plugin via dependency injection
+      if (typeof plugin.init === 'function') {
+        const context: FrontendPluginContext = {
+          api: {
+            client: apiClient,
+            errors: { ApiError: ApiError as any, parseApiError, getUiErrorMessage, getErrorMessageFromResponse },
+          },
+          components: {
+            PageHeader,
+            PageLayout,
+            PAGE_GRADIENTS,
+            ConfirmModal,
+            InviteMemberModal,
+          },
+          hooks: { useAuth, useModal, useToast },
+        };
+        plugin.init(context);
       }
 
       // Mark registry as initialized

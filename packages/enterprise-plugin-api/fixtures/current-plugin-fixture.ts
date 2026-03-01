@@ -13,6 +13,7 @@ export const frontendPluginFixture = {
   menuItems: [{ id: 'enterprise-menu', label: 'Enterprise' }],
   componentOverrides: [{ name: 'engines-page', component: () => null }],
   featureOverrides: [{ flag: 'multiTenant', enabled: true }],
+  init(_context: any) { /* host provides shared utilities */ },
 };
 
 export const backendPluginFixture = {

@@ -49,7 +49,7 @@ assert_contains "$BACKEND_DTS" "migrateEnterpriseDatabase" "backend migrateEnter
 
 if [[ "$MODE" == "current" ]]; then
   assert_contains "$PKG_JSON" '"private": false' "non-private plugin-api package"
-  assert_contains "$PKG_JSON" '"version": "0.1.0"' "plugin-api baseline version"
+  assert_contains "$PKG_JSON" '"version": "0.2.0"' "plugin-api baseline version"
 
   if ! npm pack --dry-run ./packages/enterprise-plugin-api >/dev/null; then
     echo "❌ [plugin-api-compat] plugin-api npm pack dry-run failed"
