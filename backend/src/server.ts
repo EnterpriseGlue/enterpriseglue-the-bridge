@@ -18,6 +18,11 @@ const enterprisePlugin = await loadEnterpriseBackendPlugin();
 app.locals.enterprisePluginLoaded = Boolean(
   enterprisePlugin && (enterprisePlugin.registerRoutes || enterprisePlugin.migrateEnterpriseDatabase)
 );
+console.log(
+  `[Enterprise] Backend plugin status: loaded=${app.locals.enterprisePluginLoaded}, ` +
+    `registerRoutes=${Boolean(enterprisePlugin.registerRoutes)}, ` +
+    `migrateEnterpriseDatabase=${Boolean(enterprisePlugin.migrateEnterpriseDatabase)}`
+);
 
 try {
   // Pass database-agnostic connection pool to enterprise plugin

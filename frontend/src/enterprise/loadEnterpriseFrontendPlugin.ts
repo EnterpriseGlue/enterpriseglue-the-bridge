@@ -1,15 +1,65 @@
 import type { EnterpriseFrontendPlugin } from '@enterpriseglue/enterprise-plugin-api/frontend';
+import type { ComponentType } from 'react';
 import { 
   registerComponentOverride, 
   registerFeatureOverride,
   registerNavItem,
   markInitialized,
+  type NavExtension,
 } from './extensionRegistry';
 
 const emptyPlugin: EnterpriseFrontendPlugin = { routes: [], tenantRoutes: [], navItems: [], menuItems: [] };
 
-async function dynamicImport(specifier: string): Promise<any> {
-  const importer = new Function('s', 'return import(s)') as (s: string) => Promise<any>;
+type FrontendPluginModuleShape = {
+  default?: unknown;
+  enterpriseFrontendPlugin?: unknown;
+  plugin?: unknown;
+};
+
+type FrontendPluginRuntimeShape = EnterpriseFrontendPlugin & {
+  componentOverrides?: unknown[];
+  featureOverrides?: unknown[];
+  navItems?: unknown[];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object';
+}
+
+function isComponentOverrideCandidate(
+  value: unknown
+): value is { name: string; component: ComponentType<Record<string, unknown>> } {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const { name, component } = value;
+  const validComponentType = typeof component === 'function' || (isRecord(component) && component !== null);
+  return typeof name === 'string' && validComponentType;
+}
+
+function isFeatureOverrideCandidate(value: unknown): value is { flag: string; enabled: boolean } {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return typeof value.flag === 'string' && typeof value.enabled === 'boolean';
+}
+
+function isNavItemCandidate(value: unknown): value is NavExtension {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === 'string' &&
+    typeof value.path === 'string' &&
+    typeof value.label === 'string'
+  );
+}
+
+async function dynamicImport(specifier: string): Promise<unknown> {
+  const importer = new Function('s', 'return import(s)') as (s: string) => Promise<unknown>;
   return importer(specifier);
 }
 
@@ -27,13 +77,16 @@ let cached: Promise<EnterpriseFrontendPlugin> | null = null;
 export async function loadEnterpriseFrontendPlugin(): Promise<EnterpriseFrontendPlugin> {
   try {
     const mod = await dynamicImport('@enterpriseglue/enterprise-frontend');
-    const plugin = mod?.default ?? mod?.enterpriseFrontendPlugin ?? mod?.plugin ?? mod;
+    const imported = (mod ?? {}) as FrontendPluginModuleShape;
+    const pluginCandidate = imported.default ?? imported.enterpriseFrontendPlugin ?? imported.plugin ?? mod;
 
-    if (plugin && typeof plugin === 'object') {
+    if (pluginCandidate && typeof pluginCandidate === 'object') {
+      const plugin = pluginCandidate as FrontendPluginRuntimeShape;
+
       // Register component overrides with extension registry
       if (Array.isArray(plugin.componentOverrides)) {
         for (const override of plugin.componentOverrides) {
-          if (override?.name && override?.component) {
+          if (isComponentOverrideCandidate(override)) {
             registerComponentOverride(override.name, override.component);
           }
         }
@@ -43,7 +96,7 @@ export async function loadEnterpriseFrontendPlugin(): Promise<EnterpriseFrontend
       // The plugin already handles feature flag checking internally
       if (Array.isArray(plugin.featureOverrides)) {
         for (const override of plugin.featureOverrides) {
-          if (override?.flag !== undefined) {
+          if (isFeatureOverrideCandidate(override)) {
             registerFeatureOverride(override);
           }
         }
@@ -53,7 +106,7 @@ export async function loadEnterpriseFrontendPlugin(): Promise<EnterpriseFrontend
       // These appear in the sidebar/header menus
       if (Array.isArray(plugin.navItems)) {
         for (const item of plugin.navItems) {
-          if (item?.id && item?.path) {
+          if (isNavItemCandidate(item)) {
             registerNavItem(item);
           }
         }

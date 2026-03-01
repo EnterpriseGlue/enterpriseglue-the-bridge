@@ -2,9 +2,12 @@
  * Database-agnostic connection pool interface
  */
 export interface ConnectionPool {
-  query<T = any>(sql: string, params?: any[] | Record<string, any>): Promise<{ rows: T[]; rowCount: number }>;
+  query<T = unknown>(
+    sql: string,
+    params?: ReadonlyArray<unknown> | Record<string, unknown>
+  ): Promise<{ rows: T[]; rowCount: number }>;
   close(): Promise<void>;
-  getNativePool(): any;
+  getNativePool(): unknown;
 }
 
 export interface EnterpriseBackendContext {
