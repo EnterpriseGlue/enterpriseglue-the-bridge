@@ -418,7 +418,7 @@ export function createProtectedChildRoutes(isRootLevel: boolean): RouteObject[] 
       path: `${pathPrefix}engines`, 
       element: (
         <FeatureFlagGuard flag="engines" fallback={<Navigate to={fallbackPath} replace />}>
-          <EnginesPage />
+          <ExtensionPage name="engines-page" fallback={<EnginesPage />} />
         </FeatureFlagGuard>
       )
     },

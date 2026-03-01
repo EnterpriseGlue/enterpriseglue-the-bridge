@@ -23,6 +23,11 @@
     "test:e2e:smoke:oracle:images": "bash ./scripts/e2e-smoke-oracle.sh",
     "test:ci": "npm run test:unit && npm run test:integration && npm run test:e2e && npm --prefix backend run db:cleanup-test-data",
     "test:ci:pr": "npm run test:unit && npm run test:integration && npm run test:e2e:smoke && npm --prefix backend run db:cleanup-test-data",
+    "guard:oss-ee-boundary": "bash ./scripts/check-oss-ee-boundary.sh",
+    "guard:plugin-api:current": "bash ./scripts/check-plugin-api-compat.sh current",
+    "guard:plugin-api:next": "bash ./scripts/check-plugin-api-compat.sh next",
+    "guard:plugin-boot:oss": "bash ./scripts/check-plugin-boot-mode.sh oss",
+    "plugin-api:pack": "mkdir -p ./.artifacts && npm pack ./packages/enterprise-plugin-api --pack-destination ./.artifacts",
     "ci:watch": "bash ./scripts/ci-watch.sh",
     "ci:watch:trigger": "bash ./scripts/ci-watch.sh docker-images --trigger"
   },

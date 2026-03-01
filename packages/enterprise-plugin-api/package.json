@@ -1,7 +1,9 @@
 {
   "name": "@enterpriseglue/enterprise-plugin-api",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Plugin API contract types for EnterpriseGlue OSS/EE boundary",
+  "license": "Apache-2.0",
+  "private": false,
   "type": "module",
   "types": "./src/index.d.ts",
   "exports": {
@@ -17,5 +19,20 @@
       "types": "./src/frontend.d.ts",
       "default": "./src/frontend.js"
     }
+  },
+  "files": [
+    "src/**/*.d.ts",
+    "src/**/*.js",
+    "src/**/*.ts",
+    "fixtures/"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss.git",
+    "directory": "packages/enterprise-plugin-api"
   }
 }
