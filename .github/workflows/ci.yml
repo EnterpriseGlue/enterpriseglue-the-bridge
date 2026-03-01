@@ -202,13 +202,16 @@ jobs:
           node-version: 20
 
       - name: Package plugin-api artifact
-        run: npm run plugin-api:pack
+        run: |
+          npm run plugin-api:pack
+          echo "--- Artifacts directory ---"
+          ls -la .artifacts/
 
       - name: Upload plugin-api artifact
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: plugin-api-package
-          path: ./.artifacts/*.tgz
+          path: .artifacts/
           if-no-files-found: error
 
   compose-render:
