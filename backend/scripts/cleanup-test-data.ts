@@ -8,6 +8,7 @@
  * Usage: npx tsx scripts/cleanup-test-data.ts
  */
 
+import 'reflect-metadata';
 import { getDataSource } from '../../packages/shared/src/db/data-source.js';
 import { Brackets } from 'typeorm';
 import { Engine } from '../../packages/shared/src/db/entities/Engine.js';
