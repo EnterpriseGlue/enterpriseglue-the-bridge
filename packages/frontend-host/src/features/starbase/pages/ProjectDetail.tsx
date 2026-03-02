@@ -927,7 +927,7 @@ export default function ProjectDetail() {
 
         <ComposedModal open={createFileModal.isOpen} size="sm" onClose={() => createFileModal.closeModal()}>
           <ModalHeader
-            label={null}
+            label={undefined}
             title={`New ${createFileModal.data === 'dmn' ? 'DMN' : 'BPMN'} diagram`}
             closeModal={() => createFileModal.closeModal()}
           />
@@ -958,7 +958,7 @@ export default function ProjectDetail() {
 
         <ComposedModal open={newFolderModal.isOpen} size="sm" onClose={() => newFolderModal.closeModal()}>
           <ModalHeader
-            label={null}
+            label={undefined}
             title="New folder"
             closeModal={() => newFolderModal.closeModal()}
           />

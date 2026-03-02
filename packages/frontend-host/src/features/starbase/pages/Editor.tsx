@@ -1715,7 +1715,7 @@ export default function Editor() {
       </div>
 
       <ComposedModal open={linkModalOpen} size="md" onClose={closeLinkModal}>
-        <ModalHeader label={null} title={`Link ${linkTypeLabel}`} closeModal={closeLinkModal} />
+        <ModalHeader label={undefined} title={`Link ${linkTypeLabel}`} closeModal={closeLinkModal} />
         <ModalBody style={{ overflow: 'visible', paddingBottom: 'var(--spacing-6)' }}>
           <div style={{ display: 'grid', gap: 'var(--spacing-5)', overflow: 'visible' }}>
           {linkModalError && (
@@ -1793,7 +1793,7 @@ export default function Editor() {
 
       {/* Deployed version navigation modal — View / Hotfix / Go to draft */}
       <ComposedModal open={showPhase2Banner} size="sm" onClose={handleKeepCurrentDraft}>
-        <ModalHeader label={null} title="Deployed Version" closeModal={handleKeepCurrentDraft} />
+        <ModalHeader label={undefined} title="Deployed Version" closeModal={handleKeepCurrentDraft} />
         <ModalBody>
           <div style={{ display: 'grid', gap: 'var(--spacing-4)' }}>
             <p style={{ margin: 0 }}>
@@ -1859,7 +1859,7 @@ export default function Editor() {
 
       {/* Save-first prompt before hotfix */}
       <ComposedModal open={showSaveFirstPrompt} size="sm" onClose={() => setShowSaveFirstPrompt(false)}>
-        <ModalHeader label={null} title="Unsaved changes" closeModal={() => setShowSaveFirstPrompt(false)} />
+        <ModalHeader label={undefined} title="Unsaved changes" closeModal={() => setShowSaveFirstPrompt(false)} />
         <ModalBody>
           <p style={{ margin: 0 }}>
             You have unsaved changes in your current draft. Starting a hotfix will replace your draft with v{phase2FileVersion ?? '?'}.
