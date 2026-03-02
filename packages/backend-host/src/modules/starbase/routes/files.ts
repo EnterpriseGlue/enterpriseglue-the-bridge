@@ -20,7 +20,7 @@ import { syncFileUpdate } from '@enterpriseglue/shared/services/versioning/index
 import { extractBpmnProcessId, extractDmnDecisionId, updateStarbaseFileNameInXml } from '@enterpriseglue/shared/utils/starbase-xml.js';
 import { projectMemberService } from '@enterpriseglue/shared/services/platform-admin/ProjectMemberService.js';
 import { fileOperationsLimiter, apiLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
-import type { ProjectRole } from '@enterpriseglue/shared/contracts/roles';
+import type { ProjectRole } from '@enterpriseglue/shared/contracts/roles.js';
 
 // Validation schemas
 const projectIdParamSchema = z.object({ projectId: z.string().uuid() });
