@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.4.19](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.4.18...v0.4.19) (2026-03-02)
+
+
+### Bug Fixes
+
+* **oracle:** declare oracledb dependency and clarify env config ([#64](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/64)) ([ab27c12](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/ab27c128f6670bee30ec2ab198c65d49d33e8777))
+
 ## [0.4.18](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.4.17...v0.4.18) (2026-03-02)
 
 
