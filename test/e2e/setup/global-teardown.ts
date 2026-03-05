@@ -80,7 +80,7 @@ async function fetchJson<T>(
 }
 
 async function cleanupDatabaseArtifacts(userId: string, engineId?: string | null) {
-  const pgModule = await import('../../../backend/node_modules/pg/lib/index.js');
+  const pgModule = await import('pg');
   const Pool = (pgModule.default?.Pool || pgModule.Pool) as typeof import('pg').Pool;
   const schema = process.env.POSTGRES_SCHEMA || 'main';
   const pool = new Pool({
@@ -228,7 +228,7 @@ export default async function globalTeardown() {
       await cleanupDatabaseArtifacts(data.userId, data.engineId || null);
 
       if (data.cleanupAdmin && data.adminUserId) {
-        const pgModule = await import('../../../backend/node_modules/pg/lib/index.js');
+        const pgModule = await import('pg');
         const Pool = (pgModule.default?.Pool || pgModule.Pool) as typeof import('pg').Pool;
         const schema = process.env.POSTGRES_SCHEMA || 'main';
         const pool = new Pool({
