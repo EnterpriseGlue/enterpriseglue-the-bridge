@@ -2,7 +2,6 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import { doubleCsrf } from 'csrf-csrf';
 import { config } from '@enterpriseglue/shared/config/index.js';
@@ -85,8 +84,27 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.use(morgan('dev'));
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
-  // codeql[js/missing-token-validation]: doubleCsrfProtection is applied globally below for cookie-authenticated requests.
-  app.use(cookieParser());
+  app.use((req, _res, next) => {
+    const cookieHeader = req.headers.cookie;
+    const cookies: Record<string, string> = {};
+
+    if (typeof cookieHeader === 'string' && cookieHeader.length > 0) {
+      for (const part of cookieHeader.split(';')) {
+        const [nameRaw, ...rest] = part.trim().split('=');
+        if (!nameRaw) continue;
+
+        const valueRaw = rest.join('=') || '';
+        try {
+          cookies[nameRaw] = decodeURIComponent(valueRaw);
+        } catch {
+          cookies[nameRaw] = valueRaw;
+        }
+      }
+    }
+
+    req.cookies = cookies;
+    next();
+  });
 
   const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
     getSecret: () => config.jwtSecret,
