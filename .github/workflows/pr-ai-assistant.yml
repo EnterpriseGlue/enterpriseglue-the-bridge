@@ -95,7 +95,17 @@ jobs:
               }
 
               const scope = inferScope(paths);
-              const summary = normalizeTitleSummary(title);
+              const fallbackSummary = (() => {
+                if (docsOnly) return 'refresh documentation';
+                if (breaking) return `introduce ${scope} breaking changes`;
+                if (security) return `harden ${scope} security`; 
+                if (feature) return `add ${scope} capability`;
+                if (fix) return `resolve ${scope} issue`;
+                return `refine ${scope} behavior`;
+              })();
+              const summary = normalizeTitleSummary(title) === 'update changes'
+                ? fallbackSummary
+                : normalizeTitleSummary(title);
               const bang = breaking ? '!' : '';
               const suggestedTitle = `${type}(${scope})${bang}: ${summary}`;
 
@@ -137,6 +147,9 @@ jobs:
               'You are a release engineering assistant.',
               'Return ONLY valid JSON with keys: title, release_label, impact, confidence, reasoning.',
               'title must follow conventional format: type(scope): summary.',
+              'Use a human, natural tone in the summary (short verb + object).',
+              'Avoid robotic fillers like "update changes", "misc", or "various fixes".',
+              'Prefer concrete verbs (add, refine, resolve, streamline, harden).',
               'Allowed release_label values: ' + releaseLabels.join(', ') + '.',
               'Allowed impact values: patch, minor, major.',
               'Use major only for clearly breaking changes.',
