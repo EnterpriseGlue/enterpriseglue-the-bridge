@@ -1,4 +1,4 @@
-import { DataSourceOptions } from 'typeorm';
+import { DataSourceOptions, getMetadataArgsStorage } from 'typeorm';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -43,6 +43,20 @@ export class PostgresAdapter implements DatabaseAdapter {
   constructor() {
     this.schema = config.postgresSchema;
     this.logging = config.nodeEnv === 'development';
+
+    this.normalizeSchemaForPostgres();
+  }
+
+  private normalizeSchemaForPostgres(): void {
+    const metadata = getMetadataArgsStorage();
+    const targetSchema = this.schema;
+
+    for (const table of metadata.tables) {
+      const tableSchema = table.schema?.toLowerCase();
+      if (!tableSchema || tableSchema === 'main') {
+        table.schema = targetSchema;
+      }
+    }
   }
 
   getDataSourceOptions(): DataSourceOptions {
