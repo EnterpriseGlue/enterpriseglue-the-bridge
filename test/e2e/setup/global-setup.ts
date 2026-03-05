@@ -56,7 +56,7 @@ export default async function globalSetup() {
   let adminUserId: string | null = null;
 
   const { hashPassword } = await import('../../../packages/shared/src/utils/password.ts');
-  const pgModule = await import('../../../backend/node_modules/pg/lib/index.js');
+  const pgModule = await import('pg');
   const Pool = (pgModule.default?.Pool || pgModule.Pool) as typeof import('pg').Pool;
   const schema = process.env.POSTGRES_SCHEMA || 'main';
 
