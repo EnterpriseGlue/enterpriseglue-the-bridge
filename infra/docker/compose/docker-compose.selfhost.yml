@@ -59,7 +59,7 @@ services:
       backend:
         condition: service_healthy
     environment:
-      API_UPSTREAM: backend:${API_PORT:-8787}
+      API_UPSTREAM: ${API_UPSTREAM:-backend:${API_PORT:-8787}}
     ports:
       - "${FRONTEND_HOST_PORT:-8080}:8080"
     networks:

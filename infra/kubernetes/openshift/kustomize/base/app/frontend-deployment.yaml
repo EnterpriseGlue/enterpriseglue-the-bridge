@@ -32,7 +32,10 @@ spec:
               protocol: TCP
           env:
             - name: API_UPSTREAM
-              value: enterpriseglue-backend:8787
+              valueFrom:
+                configMapKeyRef:
+                  name: enterpriseglue-config
+                  key: API_UPSTREAM
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

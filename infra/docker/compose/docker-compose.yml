@@ -51,7 +51,7 @@ services:
     restart: unless-stopped
     init: true
     environment:
-      API_UPSTREAM: backend:${API_PORT:-8787}
+      API_UPSTREAM: ${API_UPSTREAM:-backend:${API_PORT:-8787}}
     depends_on:
       backend:
         condition: service_started

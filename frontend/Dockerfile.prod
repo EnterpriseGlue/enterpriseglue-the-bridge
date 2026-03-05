@@ -3,7 +3,6 @@ FROM node:20-alpine AS build
 WORKDIR /repo
 
 ARG API_BASE_URL
-ARG API_UPSTREAM=backend:8787
 ENV VITE_API_BASE_URL=${API_BASE_URL}
 
 # Copy workspace manifests for npm ci layer caching
@@ -16,16 +15,26 @@ COPY packages/enterprise-plugin-api/package.json packages/enterprise-plugin-api/
 COPY backend/package.json backend/
 
 RUN apk upgrade --no-cache \
+    && apk add --no-cache busybox-static \
     && npm ci -w frontend --include=dev --no-audit --no-fund
 
 COPY frontend frontend
 COPY packages packages
 RUN npm -w frontend run build \
-    && sed "s|\${API_UPSTREAM}|${API_UPSTREAM}|g" frontend/nginx.conf > /tmp/nginx.conf
+    && mkdir -p /tmp/busybox-bin \
+    && cp /bin/busybox.static /tmp/busybox-bin/busybox \
+    && ln -s busybox /tmp/busybox-bin/sh \
+    && ln -s busybox /tmp/busybox-bin/sed
 
 FROM cgr.dev/chainguard/nginx:latest
 
-COPY --from=build /tmp/nginx.conf /etc/nginx/conf.d/nginx.default.conf
+COPY --from=build /tmp/busybox-bin/ /busybox/
+COPY --from=build /repo/frontend/nginx.conf /nginx-site.conf.template
+COPY --from=build /repo/frontend/nginx-main.conf /etc/nginx/nginx.conf
 COPY --from=build /repo/frontend/dist /usr/share/nginx/html
+COPY --from=build --chmod=755 /repo/frontend/nginx-entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
 
 EXPOSE 8080
