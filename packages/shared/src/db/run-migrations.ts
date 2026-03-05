@@ -1,3 +1,4 @@
+import { QueryRunner } from 'typeorm';
 import { getDataSource, adapter } from './data-source.js';
 import { EnvironmentTag } from './entities/EnvironmentTag.js';
 import { PlatformSettings } from './entities/PlatformSettings.js';
@@ -13,17 +14,105 @@ import { GitCredential } from './entities/GitCredential.js';
 /**
  * Ensure schema exists using TypeORM QueryRunner APIs (no raw SQL)
  */
+async function ensureSchemaExistsWithRunner(queryRunner: QueryRunner, schemaName: string): Promise<void> {
+  const hasSchema = await queryRunner.hasSchema(schemaName);
+  if (!hasSchema) {
+    await queryRunner.createSchema(schemaName, true);
+  }
+}
+
 export async function ensureSchemaExists(schemaName: string): Promise<void> {
   const dataSource = await getDataSource();
   const queryRunner = dataSource.createQueryRunner();
 
   try {
-    const hasSchema = await queryRunner.hasSchema(schemaName);
-    if (!hasSchema) {
-      await queryRunner.createSchema(schemaName, true);
-    }
+    await ensureSchemaExistsWithRunner(queryRunner, schemaName);
   } finally {
     await queryRunner.release();
+  }
+}
+
+const quoteIdentifier = (value: string): string => `"${value.replace(/"/g, '""')}"`;
+
+async function listSchemaTables(queryRunner: QueryRunner, schemaName: string): Promise<string[]> {
+  const rows: Array<{ table_name: string }> = await queryRunner.query(
+    "SELECT table_name FROM information_schema.tables WHERE table_schema = $1 AND table_type = 'BASE TABLE'",
+    [schemaName]
+  );
+  return rows.map((row) => row.table_name);
+}
+
+async function listSchemaSequences(queryRunner: QueryRunner, schemaName: string): Promise<string[]> {
+  const rows: Array<{ sequence_name: string }> = await queryRunner.query(
+    'SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = $1',
+    [schemaName]
+  );
+  return rows.map((row) => row.sequence_name);
+}
+
+async function listSchemaEnums(queryRunner: QueryRunner, schemaName: string): Promise<string[]> {
+  const rows: Array<{ type_name: string }> = await queryRunner.query(
+    "SELECT t.typname AS type_name FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = $1 AND t.typtype = 'e'",
+    [schemaName]
+  );
+  return rows.map((row) => row.type_name);
+}
+
+async function autoMigratePostgresSchema(queryRunner: QueryRunner, schemaName: string): Promise<void> {
+  const sourceSchema = 'main';
+  const targetSchema = schemaName;
+
+  if (!targetSchema || targetSchema === sourceSchema || targetSchema === 'public') {
+    return;
+  }
+
+  const sourceTables = await listSchemaTables(queryRunner, sourceSchema);
+  if (sourceTables.length === 0) {
+    return;
+  }
+
+  const targetTables = await listSchemaTables(queryRunner, targetSchema);
+  if (targetTables.length > 0) {
+    throw new Error(
+      `Detected tables in both "${sourceSchema}" and "${targetSchema}" schemas. ` +
+      'Manual cleanup is required before automatic migration can run.'
+    );
+  }
+
+  await ensureSchemaExistsWithRunner(queryRunner, targetSchema);
+
+  console.log(
+    `  🔁 Migrating ${sourceTables.length} table(s) from "${sourceSchema}" to "${targetSchema}"...`
+  );
+
+  const enums = await listSchemaEnums(queryRunner, sourceSchema);
+
+  await queryRunner.startTransaction();
+  try {
+    for (const typeName of enums) {
+      await queryRunner.query(
+        `ALTER TYPE ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(typeName)} SET SCHEMA ${quoteIdentifier(targetSchema)}`
+      );
+    }
+
+    for (const tableName of sourceTables) {
+      await queryRunner.query(
+        `ALTER TABLE ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(tableName)} SET SCHEMA ${quoteIdentifier(targetSchema)}`
+      );
+    }
+
+    const sequences = await listSchemaSequences(queryRunner, sourceSchema);
+    for (const sequenceName of sequences) {
+      await queryRunner.query(
+        `ALTER SEQUENCE ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(sequenceName)} SET SCHEMA ${quoteIdentifier(targetSchema)}`
+      );
+    }
+
+    await queryRunner.commitTransaction();
+    console.log(`  ✅ Schema migration completed to "${targetSchema}".`);
+  } catch (error) {
+    await queryRunner.rollbackTransaction();
+    throw error;
   }
 }
 
@@ -37,13 +126,12 @@ export async function runMigrations() {
   const dbType = adapter.getDatabaseType();
   const schemaName = adapter.getSchemaName();
   
-  // Ensure schema exists using QueryRunner helpers (schema name still comes from adapter config)
+  // Ensure schema exists BEFORE DataSource init (migrations need the schema)
   if (schemaName && schemaName !== 'public') {
     try {
       await ensureSchemaExists(schemaName);
       console.log(`  ✅ Schema "${schemaName}" ensured`);
     } catch (error: any) {
-      // Schema might already exist or be managed externally (e.g., Oracle DBA)
       if (dbType === 'oracle') {
         console.log(`  ℹ️  Oracle schema "${schemaName}" should be created by DBA`);
       } else {
@@ -51,13 +139,22 @@ export async function runMigrations() {
       }
     }
   }
-  
+
   try {
     // Initialize TypeORM DataSource (runs pending migrations if any)
     const dataSource = await getDataSource();
 
     const queryRunner = dataSource.createQueryRunner();
     try {
+      if (dbType === 'postgres' && schemaName) {
+        try {
+          await autoMigratePostgresSchema(queryRunner, schemaName);
+        } catch (error) {
+          console.error('❌ Schema auto-migration failed. Aborting startup.');
+          throw error;
+        }
+      }
+
       const coreBootstrapEntities = [
         User,
         SsoProvider,
