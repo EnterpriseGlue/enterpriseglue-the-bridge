@@ -93,6 +93,7 @@ Primary sources:
 ### Core Settings
 - `API_BASE_URL`: preferred compose-level env alias for API origin
 - `VITE_API_BASE_URL`: frontend runtime variable consumed by browser code (Vite-exposed)
+- `API_UPSTREAM`: frontend Nginx upstream override (defaults to `backend:${API_PORT}` in Docker)
 
 In Docker compose, `API_BASE_URL` is mapped to `VITE_API_BASE_URL` for frontend runtime.
 For production same-origin routing through Nginx, leave `API_BASE_URL` empty.

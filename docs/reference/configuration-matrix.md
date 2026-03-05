@@ -100,6 +100,7 @@ via dedicated backend environment variables.
 | --- | --- | --- | --- |
 | API_BASE_URL | No | empty in prod | Preferred compose-level env alias for API origin |
 | VITE_API_BASE_URL | No | mapped from `API_BASE_URL` | Frontend runtime variable exposed by Vite |
+| API_UPSTREAM | No | `backend:${API_PORT}` | Frontend Nginx upstream override |
 | VITE_FEATURE_* | No | true | Feature flags per module |
 
 ## Git & Encryption
