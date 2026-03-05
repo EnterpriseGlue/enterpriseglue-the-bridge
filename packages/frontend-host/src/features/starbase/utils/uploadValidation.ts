@@ -2,12 +2,31 @@ import { QueryClient } from '@tanstack/react-query'
 import { apiClient } from '../../../shared/api/client'
 import { parseApiError } from '../../../shared/api/apiErrorUtils'
 
-export function detectCamundaEngine(xml: Document) {
-  const root = xml.documentElement
-  const nsAttrs = Array.from(root.attributes).filter(a => a.name === 'xmlns' || a.name.startsWith('xmlns:'))
-  const hasZeebeNs = nsAttrs.some(a => a.value.includes('zeebe'))
-  const hasZeebeElements = xml.getElementsByTagNameNS('*', 'taskDefinition').length > 0 || xml.getElementsByTagNameNS('*', 'ioMapping').length > 0
-  const hasZeebePrefix = !!xml.getElementsByTagName('zeebe:taskDefinition').length || !!xml.getElementsByTagName('zeebe:ioMapping').length
+function toXmlText(xml: Document | string): string {
+  if (typeof xml === 'string') return xml
+  return new XMLSerializer().serializeToString(xml)
+}
+
+function extractRootTagName(xmlText: string): string | null {
+  const withoutComments = xmlText.replace(/<!--[\s\S]*?-->/g, '')
+  const withoutDeclaration = withoutComments.replace(/^\s*<\?xml[\s\S]*?\?>\s*/i, '')
+  const openTag = withoutDeclaration.match(/^<([A-Za-z_][\w.-]*(?::[A-Za-z_][\w.-]*)?)(\s[^>]*)?(\/?)>/)
+  if (!openTag) return null
+
+  const rootTag = openTag[1]
+  const isSelfClosing = openTag[3] === '/'
+  if (isSelfClosing) return rootTag.toLowerCase()
+
+  const escapedRootTag = rootTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const closeTagPattern = new RegExp(`<\\s*\\/\\s*${escapedRootTag}\\s*>`, 'i')
+  return closeTagPattern.test(withoutDeclaration) ? rootTag.toLowerCase() : null
+}
+
+export function detectCamundaEngine(xml: Document | string) {
+  const xmlText = toXmlText(xml)
+  const hasZeebeNs = /xmlns(?::[A-Za-z_][\w.-]*)?\s*=\s*['"][^'"]*zeebe[^'"]*['"]/i.test(xmlText)
+  const hasZeebeElements = /<\s*(?:[A-Za-z_][\w.-]*:)?(?:taskDefinition|ioMapping)\b/i.test(xmlText)
+  const hasZeebePrefix = /<\s*zeebe:(?:taskDefinition|ioMapping)\b/i.test(xmlText)
   const isCamunda8 = hasZeebeNs || hasZeebeElements || hasZeebePrefix
   const isCamunda7 = !isCamunda8
   return { isCamunda7, isCamunda8 }
@@ -37,27 +56,21 @@ export async function validateAndUploadFile(params: {
     return
   }
 
-  let xml: Document
-  try {
-    const parser = new DOMParser()
-    // codeql[js/xss-through-dom]: Parsing local BPMN/DMN XML for validation only; output is never injected into DOM.
-    xml = parser.parseFromString(text, 'application/xml')
-    const parserError = xml.getElementsByTagName('parsererror')[0]
-    if (parserError) throw new Error('Invalid XML')
-  } catch {
+  const rootTag = extractRootTagName(text)
+  if (!rootTag) {
     showToast({ kind: 'error', title: 'Upload failed', subtitle: 'File is not valid XML.' })
     return
   }
 
-  const rootTag = xml.documentElement.tagName
-  const isBpmn = rootTag.toLowerCase().includes('definitions') && (text.includes('spec/BPMN') || text.includes('bpmn:definitions'))
-  const isDmn = rootTag.toLowerCase().includes('definitions') && (text.includes('spec/DMN') || text.includes('dmn:definitions'))
+  const isDefinitionsRoot = rootTag.endsWith('definitions')
+  const isBpmn = isDefinitionsRoot && (text.includes('spec/BPMN') || text.includes('bpmn:definitions'))
+  const isDmn = isDefinitionsRoot && (text.includes('spec/DMN') || text.includes('dmn:definitions'))
   if (!isBpmn && !isDmn) {
     showToast({ kind: 'error', title: 'Upload failed', subtitle: 'File is not a BPMN or DMN definition.' })
     return
   }
 
-  const engine = detectCamundaEngine(xml)
+  const engine = detectCamundaEngine(text)
   if (engine.isCamunda8) {
     showToast({ kind: 'error', title: 'Upload failed', subtitle: 'Camunda 8 / Zeebe diagrams are not supported. Please upload a Camunda 7 BPMN/DMN file.' })
     return
