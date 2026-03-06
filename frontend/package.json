@@ -24,7 +24,7 @@
     "bpmn-js-create-append-anything": "^1.0.1",
     "bpmn-js-element-templates": "^2.14.0",
     "bpmn-js-properties-panel": "^5.42.3",
-    "bpmn-moddle": "^9.0.0",
+    "bpmn-moddle": "^10.0.0",
     "bpmnlint": "^11.6.1",
     "bpmnlint-plugin-camunda-compat": "^2.44.0",
     "camunda-bpmn-js": "^5.14.2",
