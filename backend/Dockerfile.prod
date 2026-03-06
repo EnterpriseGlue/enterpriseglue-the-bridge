@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim AS build
+FROM node:25-bookworm-slim AS build
 
 WORKDIR /repo
 
@@ -22,7 +22,7 @@ RUN npm -w packages/backend-host run build
 COPY backend backend
 RUN npm -w backend run build:skip-generate
 
-FROM node:20-bookworm-slim AS deps
+FROM node:25-bookworm-slim AS deps
 
 WORKDIR /repo
 
