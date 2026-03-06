@@ -15,10 +15,10 @@ vi.mock('@enterpriseglue/shared/middleware/projectAuth.js', () => ({
 }));
 
 vi.mock('@enterpriseglue/shared/services/git/LockManager.js', () => ({
-  LockManager: vi.fn().mockImplementation(() => ({
-    acquireLock: vi.fn().mockResolvedValue({ lockId: 'lock-1' }),
-    releaseLock: vi.fn().mockResolvedValue(undefined),
-  })),
+  LockManager: class {
+    acquireLock = vi.fn().mockResolvedValue({ lockId: 'lock-1' });
+    releaseLock = vi.fn().mockResolvedValue(undefined);
+  },
 }));
 
 vi.mock('@enterpriseglue/shared/db/data-source.js', () => ({

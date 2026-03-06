@@ -16,9 +16,9 @@ vi.mock('@enterpriseglue/shared/middleware/projectAuth.js', () => ({
 }));
 
 vi.mock('@enterpriseglue/shared/services/git/GitService.js', () => ({
-  GitService: vi.fn().mockImplementation(() => ({
-    listDeployments: vi.fn().mockResolvedValue([]),
-  })),
+  GitService: class {
+    listDeployments = vi.fn().mockResolvedValue([]);
+  },
 }));
 
 vi.mock('@enterpriseglue/shared/db/data-source.js', () => ({

@@ -79,7 +79,7 @@ describe('POST /api/auth/logout', () => {
     vi.clearAllMocks();
   });
 
-  async function issueCsrfToken(agent: request.SuperAgentTest) {
+  async function issueCsrfToken(agent: ReturnType<typeof request.agent>) {
     const response = await agent
       .get('/api/csrf-token')
       .set('Cookie', 'accessToken=test-cookie-token');
