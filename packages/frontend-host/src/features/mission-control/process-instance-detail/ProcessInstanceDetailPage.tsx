@@ -8,7 +8,7 @@ import { Modal, Select, BreadcrumbItem, SelectItem, TextInput, TextArea, InlineN
 import { Launch } from '@carbon/icons-react'
 import { BreadcrumbBar } from '../../shared/components/BreadcrumbBar'
 import type { ElementLinkInfo } from '../../shared/components/viewer/viewerTypes'
-import SplitPane from 'react-split-pane'
+import { SplitPane, Pane } from 'react-split-pane'
 import { useAlert } from '../../../shared/hooks/useAlert'
 import { PageLoader } from '../../../shared/components/PageLoader'
 import { useInstanceData } from './components/hooks/useInstanceData'
@@ -820,17 +820,12 @@ export default function ProcessInstanceDetailPage() {
 
       {/* SplitPane wrapper - needed because react-split-pane uses absolute positioning */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-        {/* @ts-expect-error - react-split-pane has type incompatibility with React 19 */}
         <SplitPane
-          split="horizontal"
-          size={splitSize}
-          onChange={handleSplitChange}
-          minSize={200}
-          maxSize={-200}
+          direction="vertical"
+          onResize={(sizes) => handleSplitChange(sizes[0])}
           className={styles.splitPane}
-          pane1Style={{ overflow: 'hidden' }}
-          pane2Style={{ overflow: 'auto' }}
         >
+        <Pane size={splitSize} minSize={200} style={{ overflow: 'hidden' }}>
         <ProcessInstanceDiagramPane
           instanceId={instanceId}
           xml={xmlQ.data as string}
@@ -838,7 +833,9 @@ export default function ProcessInstanceDetailPage() {
           onDiagramReset={applyOverlays}
           onElementNavigate={handleElementNavigate}
         />
+        </Pane>
 
+        <Pane minSize={200} style={{ overflow: 'auto' }}>
         <ProcessInstanceBottomPane
           historyContext={historyContext}
           defName={defName}
@@ -933,6 +930,7 @@ export default function ProcessInstanceDetailPage() {
             onExitModificationMode: requestExitModificationMode,
           }}
         />
+        </Pane>
       </SplitPane>
       </div>
 

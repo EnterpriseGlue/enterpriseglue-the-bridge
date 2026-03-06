@@ -41,7 +41,8 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('react-split-pane', () => ({
-  default: ({ children }: any) => <div>{children}</div>,
+  SplitPane: ({ children }: any) => <div>{children}</div>,
+  Pane: ({ children }: any) => <div>{children}</div>,
 }));
 
 vi.mock('@src/features/mission-control/decisions-overview/components/DecisionsDataTable', () => ({

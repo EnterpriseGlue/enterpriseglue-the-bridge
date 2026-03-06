@@ -7,7 +7,7 @@ import { BreadcrumbItem, Button } from '@carbon/react'
 import { useQuery } from '@tanstack/react-query'
 import { BreadcrumbBar } from '../../shared/components/BreadcrumbBar'
 import { TableSearchBar } from '../../../shared/components/ui/TableSearchBar'
-import SplitPane from 'react-split-pane'
+import { SplitPane, Pane } from 'react-split-pane'
 import { useProcessesFilterStore } from '../shared/stores/processesFilterStore'
 import { useDiagramViewStore } from '../shared/stores/diagramViewStore'
 import { createCountBadge, getBadgePosition } from '../../shared/components/viewer/viewerUtils'
@@ -661,13 +661,9 @@ export default function ProcessesOverviewPage() {
 
       {/* SplitPane wrapper - needed because react-split-pane uses absolute positioning */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-        {/* @ts-ignore - react-split-pane types not compatible with React 19 */}
         <SplitPane
-          split="horizontal"
-          size={splitSize}
-          onChange={handleSplitChange}
-          minSize={200}
-          maxSize={-200}
+          direction="vertical"
+          onResize={(sizes) => handleSplitChange(sizes[0])}
           style={{ 
             position: 'absolute',
             top: 0,
@@ -675,9 +671,8 @@ export default function ProcessesOverviewPage() {
             right: 0,
             bottom: 0,
           }}
-          pane1Style={{ overflow: 'hidden' }}
-          pane2Style={{ overflow: 'auto' }}
         >
+        <Pane size={splitSize} minSize={200} style={{ overflow: 'hidden' }}>
         <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border-primary)', position: 'relative', overflow: 'hidden', height: '100%', width: '100%' }}>
           {!currentKey && (
             <div style={{ color: 'var(--color-text-tertiary)', position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--z-base)' }}>To view a Diagram, select a Process in the Filters panel</div>
@@ -730,8 +725,10 @@ export default function ProcessesOverviewPage() {
             </>
           )}
         </div>
+        </Pane>
 
         {/* DataTable area */}
+        <Pane minSize={200} style={{ overflow: 'auto' }}>
         <div style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--cds-layer-01)' }}>
           {/* Action bar - Carbon DataTable toolbar style */}
           <div style={{ 
@@ -919,6 +916,7 @@ export default function ProcessesOverviewPage() {
             />
           </div>
         </div>
+        </Pane>
       </SplitPane>
       </div>
 

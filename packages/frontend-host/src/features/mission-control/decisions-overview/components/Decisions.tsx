@@ -8,7 +8,7 @@ import {
 import { Launch } from '@carbon/icons-react'
 import { BreadcrumbBar } from '../../../shared/components/BreadcrumbBar'
 import { listDecisionDefinitions, fetchDecisionDefinitionDmnXml, listDecisionHistory, type DecisionHistoryEntry } from '../api/decisions'
-import SplitPane from 'react-split-pane'
+import { SplitPane, Pane } from 'react-split-pane'
 import { useSearchParams, useLocation } from 'react-router-dom'
 import { sanitizePathParam } from '../../../../shared/utils/sanitize'
 import { useTenantNavigate } from '../../../../shared/hooks/useTenantNavigate'
@@ -431,13 +431,9 @@ export default function Decisions() {
 
       {/* SplitPane wrapper - needed because react-split-pane uses absolute positioning */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-      {/* @ts-ignore - react-split-pane types not compatible with React 19 */}
       <SplitPane
-        split="horizontal"
-        size={splitSize}
-        onChange={handleSplitChange}
-        minSize={200}
-        maxSize={-200}
+        direction="vertical"
+        onResize={(sizes) => handleSplitChange(sizes[0])}
         style={{ 
           marginTop: 'var(--spacing-0)', 
           position: 'relative',
@@ -445,10 +441,9 @@ export default function Decisions() {
           marginRight: '0',
           width: '100%'
         }}
-        pane1Style={{ overflow: 'hidden' }}
-        pane2Style={{ overflow: 'auto' }}
       >
         {/* DMN Diagram area (top pane) */}
+        <Pane size={splitSize} minSize={200} style={{ overflow: 'hidden' }}>
         <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border-primary)', position: 'relative', overflow: 'hidden', height: '100%', width: '100%' }}>
           {!currentKey ? (
             <div style={{ color: 'var(--color-text-tertiary)', position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--z-base)' }}>
@@ -482,8 +477,10 @@ export default function Decisions() {
             </React.Suspense>
           )}
         </div>
+        </Pane>
 
         {/* DataTable area (bottom pane) */}
+        <Pane minSize={200} style={{ overflow: 'auto' }}>
         <div style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
           {/* Action bar */}
           <div style={{ 
@@ -530,6 +527,7 @@ export default function Decisions() {
             )}
           </div>
         </div>
+        </Pane>
       </SplitPane>
       </div>
     </div>
