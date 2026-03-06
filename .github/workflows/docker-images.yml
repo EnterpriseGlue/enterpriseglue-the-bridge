@@ -324,7 +324,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trivy scan backend published image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.34.2
         with:
           image-ref: '${{ needs.publish.outputs.backend_image }}:${{ needs.publish.outputs.image_tag }}'
           format: 'json'
@@ -336,7 +336,7 @@ jobs:
 
       - name: Trivy scan frontend published image
         if: ${{ !cancelled() }}
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.34.2
         with:
           image-ref: '${{ needs.publish.outputs.frontend_image }}:${{ needs.publish.outputs.image_tag }}'
           format: 'json'
