@@ -40,7 +40,7 @@ jobs:
     environment: production
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install OpenShift CLI
         uses: redhat-actions/oc-installer@v1
