@@ -50,14 +50,19 @@ function getRolesFromMembership(membership: MembershipWithRoles | null): Project
 
 const router = Router();
 
+const uuidLikeSchema = z.string().regex(
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+  'Invalid UUID format'
+);
+
 // Validation schemas
 const projectIdSchema = z.object({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeSchema,
 });
 
 const memberIdSchema = z.object({
-  projectId: z.string().uuid(),
-  userId: z.string().uuid(),
+  projectId: uuidLikeSchema,
+  userId: uuidLikeSchema,
 });
 
 const addMemberSchema = z.object({

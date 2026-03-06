@@ -23,13 +23,18 @@ import { fileOperationsLimiter, apiLimiter } from '@enterpriseglue/shared/middle
 import type { ProjectRole } from '@enterpriseglue/shared/contracts/roles.js';
 
 // Validation schemas
-const projectIdParamSchema = z.object({ projectId: z.string().uuid() });
-const fileIdParamSchema = z.object({ fileId: z.string().uuid() });
+const uuidLikeSchema = z.string().regex(
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+  'Invalid UUID format'
+);
+
+const projectIdParamSchema = z.object({ projectId: uuidLikeSchema });
+const fileIdParamSchema = z.object({ fileId: uuidLikeSchema });
 
 const createFileBodySchema = z.object({
   type: z.string().default('bpmn'),
   name: z.string().min(1).max(255),
-  folderId: z.string().uuid().nullable().optional(),
+  folderId: uuidLikeSchema.nullable().optional(),
   xml: z.string().optional(),
 });
 
@@ -40,7 +45,7 @@ const updateFileBodySchema = z.object({
 
 const patchFileBodySchema = z.object({
   name: z.string().min(1).max(255).optional(),
-  folderId: z.string().uuid().nullable().optional(),
+  folderId: uuidLikeSchema.nullable().optional(),
 });
 
 const restoreFromCommitBodySchema = z.object({
