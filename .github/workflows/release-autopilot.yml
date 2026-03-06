@@ -32,15 +32,18 @@ jobs:
             const pr = context.payload.pull_request;
             const autopilotEnabled = String(process.env.AI_AUTOPILOT_ENABLED || 'false').toLowerCase() === 'true';
             const releaseAutopilotEnabled = String(process.env.RELEASE_AUTOPILOT_ENABLED || 'false').toLowerCase() === 'true';
+            const authorLogin = String(pr.user?.login || '').toLowerCase();
             const allowedAuthor = 'haryselman';
+            const isReleasePleaseBranch = (pr.head.ref || '').startsWith('release-please--branches--');
+            const isAllowedBotReleasePR = isReleasePleaseBranch && authorLogin.endsWith('[bot]');
             if (!autopilotEnabled) {
               core.notice('AI_AUTOPILOT_ENABLED is false. Skipping autopilot merge.');
               core.setOutput('should_enable', 'false');
               return;
             }
 
-            if (String(pr.user?.login || '').toLowerCase() !== allowedAuthor) {
-              core.notice(`PR author is not ${allowedAuthor}. Skipping auto-merge.`);
+            if (authorLogin !== allowedAuthor && !isAllowedBotReleasePR) {
+              core.notice(`PR author is not ${allowedAuthor} and not an allowed release bot PR. Skipping auto-merge.`);
               core.setOutput('should_enable', 'false');
               return;
             }
@@ -54,7 +57,6 @@ jobs:
             const labels = (pr.labels || []).map((label) => label.name);
 
             // Release Please PRs: opt-in (disabled by default)
-            const isReleasePleaseBranch = (pr.head.ref || '').startsWith('release-please--branches--');
             const isReleasePleaseLabel = labels.includes('autorelease: pending') || labels.includes('autorelease: triggered');
             const isReleasePR = isReleasePleaseBranch || isReleasePleaseLabel;
 
