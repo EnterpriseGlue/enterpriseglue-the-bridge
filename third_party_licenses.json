@@ -21,7 +21,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/vercel/ms"
   },
-  "simple-git@3.30.0": {
+  "simple-git@3.32.3": {
     "licenses": "MIT",
     "repository": "https://github.com/steveukx/git-js",
     "publisher": "Steve King",

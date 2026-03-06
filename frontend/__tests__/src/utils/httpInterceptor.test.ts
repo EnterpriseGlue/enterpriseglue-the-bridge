@@ -26,6 +26,7 @@ describe('httpInterceptor', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     Object.defineProperty(window, 'location', {
       value: originalLocation,
       writable: true,
@@ -226,21 +227,29 @@ describe('httpInterceptor', () => {
 
     describe('concurrent requests during refresh', () => {
       it('queues requests while refresh is in progress', async () => {
-
-        const first401 = new Response(null, { status: 401 });
-        const second401 = new Response(null, { status: 401 });
-        const refreshSuccess = new Response(JSON.stringify({ accessToken: TEST_REFRESHED_TOKEN }), { status: 200 });
-        const csrfSuccess = new Response(null, { status: 200, headers: { 'X-CSRF-Token': 'csrf-after-refresh' } });
-        const retry1 = new Response(JSON.stringify({ data: 'req1' }), { status: 200 });
-        const retry2 = new Response(JSON.stringify({ data: 'req2' }), { status: 200 });
-
+        // Track per-URL call counts to return correct responses regardless
+        // of microtask ordering (Vitest v4 schedules differently from v2).
+        const calls: string[] = [];
+        const callCounts: Record<string, number> = {};
         const fetchMock = vi.spyOn(globalThis, 'fetch')
-          .mockResolvedValueOnce(first401)
-          .mockResolvedValueOnce(second401)
-          .mockResolvedValueOnce(refreshSuccess)
-          .mockResolvedValueOnce(csrfSuccess)
-          .mockResolvedValueOnce(retry1)
-          .mockResolvedValueOnce(retry2);
+          .mockImplementation((url: string | URL | Request) => {
+            const urlStr = String(url);
+            calls.push(urlStr);
+            callCounts[urlStr] = (callCounts[urlStr] || 0) + 1;
+            const count = callCounts[urlStr];
+
+            if (urlStr.includes('/auth/refresh')) {
+              return Promise.resolve(new Response(JSON.stringify({ accessToken: TEST_REFRESHED_TOKEN }), { status: 200 }));
+            }
+            if (urlStr.includes('/auth/me')) {
+              return Promise.resolve(new Response(null, { status: 200, headers: { 'X-CSRF-Token': 'csrf-after-refresh' } }));
+            }
+            // First call per data URL → 401, second call → 200
+            if (count === 1) {
+              return Promise.resolve(new Response(null, { status: 401 }));
+            }
+            return Promise.resolve(new Response(JSON.stringify({ data: urlStr }), { status: 200 }));
+          });
 
         // Start two requests concurrently
         const [result1, result2] = await Promise.all([
@@ -250,6 +259,7 @@ describe('httpInterceptor', () => {
 
         expect(result1.status).toBe(200);
         expect(result2.status).toBe(200);
+        // 2 initial 401s + 1 refresh + 1 CSRF + 2 retries = 6
         expect(fetchMock).toHaveBeenCalledTimes(6);
       });
     });
