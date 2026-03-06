@@ -59,6 +59,7 @@ logs/
 # Misc
 *.tgz
 *.gz
+.tmp/
 
 # Local docs (not tracked)
 /local-docs/
