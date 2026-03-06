@@ -6,6 +6,11 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ProcessesOverviewPage from '@src/features/mission-control/processes-overview/ProcessesOverviewPage';
 
+vi.mock('react-split-pane', () => ({
+  SplitPane: ({ children }: any) => <div>{children}</div>,
+  Pane: ({ children }: any) => <div>{children}</div>,
+}));
+
 vi.mock('@src/components/EngineSelector', () => ({
   useSelectedEngine: () => null,
 }));

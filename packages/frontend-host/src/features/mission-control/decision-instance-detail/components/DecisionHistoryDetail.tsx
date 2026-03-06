@@ -26,7 +26,7 @@ import { BreadcrumbBar } from '../../../shared/components/BreadcrumbBar'
 import { apiClient } from '../../../../shared/api/client'
 import { useSelectedEngine } from '../../../../components/EngineSelector'
 import styles from '../../process-instance-detail/styles/InstanceDetail.module.css'
-import SplitPane from 'react-split-pane'
+import { SplitPane, Pane } from 'react-split-pane'
 
 const DMNDrdMini = React.lazy(() => import('../../../starbase/components/DMNDrdMini'))
 
@@ -353,16 +353,11 @@ export default function DecisionHistoryDetail() {
       
       {/* SplitPane wrapper to fill remaining height */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-        {/* @ts-expect-error - react-split-pane has type incompatibility with React 19 */}
         <SplitPane
-          split="horizontal"
-          defaultSize="60%"
-          minSize={200}
-          maxSize={-150}
+          direction="vertical"
           className={styles.splitPane}
-          pane1Style={{ overflow: 'hidden' }}
-          pane2Style={{ overflow: 'auto' }}
         >
+        <Pane defaultSize="60%" minSize={200} style={{ overflow: 'hidden' }}>
           {/* Top pane - DMN viewer (match main Decisions page layout) */}
           <div
             style={{
@@ -427,8 +422,10 @@ export default function DecisionHistoryDetail() {
               </div>
             )}
           </div>
+        </Pane>
 
         {/* Bottom pane - Info bar + Inputs/Outputs and Result tabs */}
+        <Pane minSize={150} style={{ overflow: 'auto' }}>
         <div
           style={{
             height: '100%',
@@ -675,6 +672,7 @@ export default function DecisionHistoryDetail() {
             </Tile>
           </div>
         </div>
+        </Pane>
         </SplitPane>
       </div>
       {drdOpen && xmlQ.data && (

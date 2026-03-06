@@ -1,5 +1,5 @@
 import React from 'react'
-import SplitPane from 'react-split-pane'
+import { SplitPane, Pane } from 'react-split-pane'
 import { Button } from '@carbon/react'
 import styles from '../styles/InstanceDetail.module.css'
 import { InstanceInfoBar } from './InstanceInfoBar'
@@ -154,18 +154,17 @@ export function ProcessInstanceBottomPane({
       
 
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-        {/* @ts-expect-error - react-split-pane has type incompatibility with React 19 */}
         <SplitPane
-          split="vertical"
-          size={verticalSplitSize}
-          onChange={onVerticalSplitChange}
-          minSize={200}
-          maxSize={-200}
+          direction="horizontal"
+          onResize={(sizes) => onVerticalSplitChange(sizes[0])}
           className={styles.splitPane}
-          pane1Style={{ overflow: 'hidden' }}
-          pane2Style={{ overflow: 'auto' }}
         >
-          {ActivityDetailPanel(activityPanelProps)}
+          <Pane size={verticalSplitSize} minSize={200} style={{ overflow: 'hidden' }}>
+            {ActivityDetailPanel(activityPanelProps)[0]}
+          </Pane>
+          <Pane minSize={200} style={{ overflow: 'auto' }}>
+            {ActivityDetailPanel(activityPanelProps)[1]}
+          </Pane>
         </SplitPane>
       </div>
     </div>
