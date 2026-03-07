@@ -37,6 +37,13 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: "@enterpriseglue"
 
+      - name: Install workspace dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund
+        working-directory: .
+
+      - name: Build ESM output
+        run: npm run build
+
       - name: Read package version
         id: pkg
         run: |
@@ -76,7 +83,7 @@ jobs:
         if: >-
           !(github.event_name == 'workflow_dispatch' && inputs.dry_run == 'true')
           && steps.check.outcome != 'success'
-        run: npm publish
+        run: npm publish --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

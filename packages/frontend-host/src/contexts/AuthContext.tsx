@@ -9,7 +9,7 @@ import { USER_KEY } from '../constants/storageKeys';
  * Manages user authentication state and provides auth methods
  */
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
