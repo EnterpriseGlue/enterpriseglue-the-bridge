@@ -6,7 +6,7 @@ import {
   getChildren 
 } from '../config/featureFlags'
 
-interface FeatureFlagsContextValue {
+export interface FeatureFlagsContextValue {
   flags: FeatureFlags
   isLoading: boolean
   isEnabled: (key: keyof FeatureFlags) => boolean

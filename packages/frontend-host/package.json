@@ -1,6 +1,6 @@
 {
   "name": "@enterpriseglue/frontend-host",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OSS frontend host for EnterpriseGlue — routes, enterprise loader, extension registry, and feature components",
   "license": "AGPL-3.0-or-later",
   "repository": {
@@ -9,19 +9,43 @@
     "directory": "packages/frontend-host"
   },
   "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json; node scripts/copy-assets.mjs",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
   "files": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "dist/**/*.css",
+    "dist/**/*.svg",
+    "dist/**/*.png",
     "src/**/*.css",
     "src/**/*.svg",
     "src/**/*.png",
+    "src/**/*.d.ts",
     "assets/**/*"
   ],
+  "exports": {
+    "./*": "./src/*",
+    "./assets/*": "./assets/*"
+  },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
+    "access": "restricted",
+    "exports": {
+      "./*": {
+        "types": "./dist/*.d.ts",
+        "default": "./dist/*.js"
+      },
+      "./styles/*": "./dist/styles/*",
+      "./assets/*": "./assets/*"
+    }
   },
-  "exports": {
-    "./*": "./src/*"
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1"
   }
 }
