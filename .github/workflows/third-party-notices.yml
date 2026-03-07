@@ -50,7 +50,7 @@ jobs:
 
       - name: Upload verification log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: third-party-notices-${{ github.run_id }}
           path: third-party-notices.log
@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload refresh log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: third-party-notices-refresh-${{ github.run_id }}
           path: third-party-notices-refresh.log
@@ -99,7 +99,7 @@ jobs:
 
       - name: Create or update compliance alert issue
         if: steps.refresh.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const title = '⚠️ Third-party license compatibility alert';
@@ -162,7 +162,7 @@ jobs:
 
       - name: Close resolved compliance alert issue
         if: steps.refresh.outcome == 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const title = '⚠️ Third-party license compatibility alert';
@@ -192,7 +192,7 @@ jobs:
 
       - name: Create PR with refreshed notice artifacts
         if: steps.refresh.outcome == 'success'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore(compliance): refresh third-party license notices"

@@ -88,12 +88,12 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use((req, _res, next) => {
     const cookieHeader = req.headers.cookie;
-    const cookies: Record<string, string> = {};
+    const cookies: Record<string, string> = Object.create(null);
 
     if (typeof cookieHeader === 'string' && cookieHeader.length > 0) {
       for (const part of cookieHeader.split(';')) {
         const [nameRaw, ...rest] = part.trim().split('=');
-        if (!nameRaw) continue;
+        if (!nameRaw || nameRaw === '__proto__' || nameRaw === 'constructor' || nameRaw === 'prototype') continue;
 
         const valueRaw = rest.join('=') || '';
         try {
