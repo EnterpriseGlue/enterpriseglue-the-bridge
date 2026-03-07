@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.4.34](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.4.33...v0.4.34) (2026-03-07)
+
+
+### Bug Fixes
+
+* **ci:** make ci-core-reusable.yml compatible with EE repo structure ([#166](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/166)) ([5376769](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/5376769c79c6ddc3b422a0e579a31c3c8e50fcd5))
+
 ## [0.4.33](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.4.32...v0.4.33) (2026-03-06)
 
 
