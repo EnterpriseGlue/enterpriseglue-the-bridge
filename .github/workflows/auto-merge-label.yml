@@ -1,0 +1,44 @@
+name: Auto Merge (Label)
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - labeled
+      - synchronize
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  enable-automerge:
+    if: github.event.pull_request.state == 'open'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check auto-merge label
+        id: check
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const labels = (context.payload.pull_request.labels || []).map(label => label.name);
+            const hasLabel = labels.includes('auto-merge');
+            core.setOutput('should_enable', hasLabel ? 'true' : 'false');
+            if (!hasLabel) {
+              core.notice('auto-merge label not present; skipping.');
+            }
+
+      - name: Enable GitHub auto-merge
+        if: steps.check.outputs.should_enable == 'true'
+        continue-on-error: true
+        uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d # v3
+        with:
+          token: ${{ github.token }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
