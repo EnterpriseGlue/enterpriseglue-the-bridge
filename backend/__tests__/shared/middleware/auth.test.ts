@@ -15,8 +15,9 @@ vi.mock('@enterpriseglue/shared/db/data-source.js', () => ({
 }));
 
 // Test fixture tokens — not real secrets (CWE-547)
-const TEST_BEARER_TOKEN = `test-bearer-${Date.now()}`;
-const TEST_COOKIE_TOKEN = `test-cookie-${Date.now()}`;
+// Must look like valid JWTs (three base64url segments) to pass format validation
+const TEST_BEARER_TOKEN = `eyJhbGciOiJIUzI1NiJ9.eyJ0ZXN0IjoiYmVhcmVyIn0.${Date.now()}`;
+const TEST_COOKIE_TOKEN = `eyJhbGciOiJIUzI1NiJ9.eyJ0ZXN0IjoiY29va2llIn0.${Date.now()}`;
 
 describe('auth middleware', () => {
   let req: Partial<Request>;

@@ -33,7 +33,7 @@ jobs:
       - name: Run Release Please (automatic bump)
         id: release_auto
         if: ${{ inputs.release_as == '' }}
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@c3fc4de07084f75a2b61a5b933069bda6edf3d5c # v4
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN != '' && secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: .github/release-please-config.json
@@ -42,7 +42,7 @@ jobs:
       - name: Run Release Please (forced release-as)
         id: release_forced
         if: ${{ inputs.release_as != '' }}
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@c3fc4de07084f75a2b61a5b933069bda6edf3d5c # v4
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN != '' && secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: .github/release-please-config.json
@@ -51,7 +51,7 @@ jobs:
 
       - name: Resolve release outputs
         id: resolve
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           PRS_JSON: ${{ steps.release_auto.outputs.prs || steps.release_forced.outputs.prs || '[]' }}
           PR_JSON: ${{ steps.release_auto.outputs.pr || steps.release_forced.outputs.pr || '{}' }}
@@ -85,7 +85,7 @@ jobs:
 
       - name: Enable auto-merge on generated release PR
         if: ${{ inputs.enable_release_pr_automerge && steps.resolve.outputs.pull_number != '' }}
-        uses: peter-evans/enable-pull-request-automerge@v3
+        uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d # v3
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN != '' && secrets.RELEASE_PLEASE_TOKEN || github.token }}
           pull-request-number: ${{ steps.resolve.outputs.pull_number }}

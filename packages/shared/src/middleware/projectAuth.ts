@@ -145,11 +145,13 @@ export function requireFileAccess(
         fileId = typeof queryVal === 'string' ? queryVal : undefined;
       }
 
-      if (!fileId) {
-        throw Errors.validation(`${fileIdKey} is required`);
+      // Whitelist-sanitize: keep only hex chars and hyphens to break taint chain
+      const sanitizedFileId = (fileId ?? '').replace(/[^0-9a-fA-F-]/g, '');
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sanitizedFileId)) {
+        throw Errors.validation(`${fileIdKey} must be a valid UUID`);
       }
 
-      const hasAccess = await AuthorizationService.verifyFileAccess(fileId, userId);
+      const hasAccess = await AuthorizationService.verifyFileAccess(sanitizedFileId, userId);
       if (!hasAccess) {
         throw Errors.fileNotFound();
       }

@@ -79,6 +79,24 @@ function applyApiBaseUrl(url: string): string {
   return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
+function assertSafeRequestUrl(url: string): void {
+  if (url.startsWith('/')) return;
+  try {
+    const parsed = new URL(url);
+    const allowedOrigin = config.apiBaseUrl
+      ? new URL(config.apiBaseUrl).origin
+      : window.location.origin;
+    if (parsed.origin !== allowedOrigin) {
+      throw new Error(`Blocked request to disallowed origin: ${parsed.origin}`);
+    }
+  } catch (e) {
+    if (e instanceof TypeError) {
+      throw new Error(`Invalid request URL: ${url}`);
+    }
+    throw e;
+  }
+}
+
 function getTenantLoginPath(pathname: string): string {
   const tenantSlug = getTenantSlugFromPathname(pathname);
   return tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}/login` : '/login';
@@ -213,6 +231,9 @@ export async function interceptedFetch(
 
   // Ensure credentials are included so cookies are sent
   const fetchOptions: RequestInit = { ...options, credentials: 'include' };
+
+  // Validate URL origin before making request
+  assertSafeRequestUrl(requestUrl);
 
   // Make the original request with prefixed URL
   let response = await fetch(requestUrl, fetchOptions);

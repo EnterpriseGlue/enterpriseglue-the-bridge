@@ -64,12 +64,12 @@ function getSetCookieHeader(headers: Record<string, unknown>): string[] | undefi
 
 const testCookieParser: express.RequestHandler = (req, _res, next) => {
   const cookieHeader = req.headers.cookie;
-  const cookies: Record<string, string> = {};
+  const cookies: Record<string, string> = Object.create(null);
 
   if (cookieHeader) {
     for (const part of cookieHeader.split(';')) {
       const [nameRaw, ...rest] = part.trim().split('=');
-      if (!nameRaw) continue;
+      if (!nameRaw || nameRaw === '__proto__' || nameRaw === 'constructor' || nameRaw === 'prototype') continue;
       cookies[nameRaw] = decodeURIComponent(rest.join('=') || '');
     }
   }

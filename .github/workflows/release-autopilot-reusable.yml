@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Evaluate autopilot eligibility
         id: evaluate
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           AI_AUTOPILOT_ENABLED: ${{ inputs.ai_autopilot_enabled }}
           RELEASE_AUTOPILOT_ENABLED: ${{ inputs.release_autopilot_enabled }}
@@ -102,7 +102,7 @@ jobs:
       - name: Enable GitHub auto-merge
         if: steps.evaluate.outputs.should_enable == 'true'
         continue-on-error: true
-        uses: peter-evans/enable-pull-request-automerge@v3
+        uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d # v3
         with:
           token: ${{ secrets.release_please_token }}
           pull-request-number: ${{ steps.evaluate.outputs.pull_number }}
