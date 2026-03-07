@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.5.3](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.5.2...v0.5.3) (2026-03-07)
+
+
+### Bug Fixes
+
+* **frontend:** improve split pane visibility ([#191](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/191)) ([fa2315d](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/fa2315d042eee96743b803efe5b0345f408eaf31))
+
 ## [0.5.2](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.5.1...v0.5.2) (2026-03-07)
 
 
