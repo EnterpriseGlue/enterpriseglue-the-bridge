@@ -152,7 +152,13 @@ jobs:
 
       - name: Install DB driver for matrix database
         if: matrix.database == 'oracle'
-        run: npm -w backend install --no-save oracledb
+        run: |
+          # Use workspace flag if 'backend' workspace exists, otherwise install at root
+          if npm -w backend --version >/dev/null 2>&1; then
+            npm -w backend install --no-save oracledb
+          else
+            npm install --no-save oracledb
+          fi
 
       - name: Get Playwright version
         if: matrix.database == 'postgres'
@@ -177,8 +183,13 @@ jobs:
 
       - name: Build OSS packages
         run: |
-          npm --prefix packages/shared run build
-          npm --prefix packages/backend-host run build
+          # Conditionally build monorepo packages (OSS has these; EE does not)
+          if [ -f packages/shared/package.json ]; then
+            npm --prefix packages/shared run build
+          fi
+          if [ -f packages/backend-host/package.json ]; then
+            npm --prefix packages/backend-host run build
+          fi
 
       - name: Build backend
         run: npm --prefix backend run build:skip-generate
@@ -214,7 +225,12 @@ jobs:
       - name: Start Camunda mock server
         if: matrix.database == 'postgres'
         run: |
-          npx --yes @stoplight/prism-cli mock local-docs/ING/api-specs/Mission-Control-Camunda-API.postman_collection.json -p 9080 &
+          MOCK_SPEC="local-docs/ING/api-specs/Mission-Control-Camunda-API.postman_collection.json"
+          if [ -f "$MOCK_SPEC" ]; then
+            npx --yes @stoplight/prism-cli mock "$MOCK_SPEC" -p 9080 &
+          else
+            echo "Camunda mock spec not found — skipping (EE repo)"
+          fi
 
       - name: Start backend
         if: matrix.database == 'postgres'
