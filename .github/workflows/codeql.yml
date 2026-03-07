@@ -12,6 +12,7 @@ on:
 permissions:
   security-events: write
   contents: read
+  actions: read
 
 concurrency:
   group: codeql-${{ github.event.pull_request.number || github.ref }}
