@@ -212,6 +212,13 @@ export function ExecutionTrailPanel({
     if (onActivityHover) onActivityHover(activityId)
   }, [onActivityHover])
 
+  const onRowKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLDivElement>, onSelect: () => void, isDisabled: boolean) => {
+    if (isDisabled) return
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onSelect()
+  }, [])
+
   const renderActivityTitle = React.useCallback((activityName: string, activityId: string, isSelected: boolean) => {
     const loopMarker = resolveBpmnLoopMarkerVisual(activityId)
     return (
@@ -270,38 +277,55 @@ export function ExecutionTrailPanel({
                 borderBottom: '1px solid var(--cds-border-subtle)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, paddingLeft: `${group.depth * 14}px` }}>
-                {executionHasChildren ? (
-                  <button
-                    type="button"
-                    onClick={() => toggleExecution(instance.activityInstanceId)}
-                    aria-label={executionIsExpanded ? `Collapse nested trail for ${instance.activityName}` : `Expand nested trail for ${instance.activityName}`}
-                    style={{ border: 'none', background: 'transparent', padding: 0, width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--cds-icon-primary)' }}
-                  >
-                    {executionIsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                  </button>
-                ) : (
-                  <span style={{ width: 12, height: 16, display: 'inline-flex', flexShrink: 0 }} />
-                )}
+              <div
+                role={instance.isClickable ? 'button' : undefined}
+                tabIndex={instance.isClickable ? 0 : undefined}
+                aria-label={instance.isClickable ? `Select ${instance.activityName}` : undefined}
+                onClick={instance.isClickable ? () => selectExecution(instance) : undefined}
+                onKeyDown={instance.isClickable ? (event) => onRowKeyDown(event, () => selectExecution(instance), !instance.isClickable) : undefined}
+                style={{
+                  display: 'grid',
+                  gridColumn: '1 / 3',
+                  gridTemplateColumns: 'minmax(0,1fr) 8rem',
+                  alignItems: 'center',
+                  alignSelf: 'stretch',
+                  gap: '4px',
+                  minWidth: 0,
+                  cursor: instance.isClickable ? 'pointer' : 'default',
+                  outline: 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, paddingLeft: `${group.depth * 14}px` }}>
+                  {executionHasChildren ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        toggleExecution(instance.activityInstanceId)
+                      }}
+                      aria-label={executionIsExpanded ? `Collapse nested trail for ${instance.activityName}` : `Expand nested trail for ${instance.activityName}`}
+                      style={{ border: 'none', background: 'transparent', padding: 0, width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--cds-icon-primary)' }}
+                    >
+                      {executionIsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
+                  ) : (
+                    <span style={{ width: 12, height: 16, display: 'inline-flex', flexShrink: 0 }} />
+                  )}
 
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: getRowIndicatorColor(instance.hasIncident, instance.active), display: 'inline-flex', flexShrink: 0 }} />
+                  <span style={{ width: 8, height: 8, borderRadius: 999, background: getRowIndicatorColor(instance.hasIncident, instance.active), display: 'inline-flex', flexShrink: 0 }} />
 
-                <span style={{ width: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cds-icon-secondary)', flexShrink: 0 }}>
-                  <span className={executionIcon.iconClass} style={{ fontSize: executionIcon.kind === 'marker' ? 14 : 16, lineHeight: 1 }} aria-hidden="true" />
-                </span>
+                  <span style={{ width: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cds-icon-secondary)', flexShrink: 0 }}>
+                    <span className={executionIcon.iconClass} style={{ fontSize: executionIcon.kind === 'marker' ? 14 : 16, lineHeight: 1 }} aria-hidden="true" />
+                  </span>
 
-                <button
-                  type="button"
-                  disabled={!instance.isClickable}
-                  onClick={() => selectExecution(instance)}
-                  style={{ border: 'none', background: 'transparent', padding: 0, minWidth: 0, flex: 1, textAlign: 'left', cursor: instance.isClickable ? 'pointer' : 'default', color: 'var(--cds-text-primary)' }}
-                >
-                  {renderActivityTitle(instance.activityName, instance.activityId, executionIsSelected)}
-                </button>
-              </div>
+                  <div style={{ minWidth: 0, flex: 1, color: 'var(--cds-text-primary)' }}>
+                    {renderActivityTitle(instance.activityName, instance.activityId, executionIsSelected)}
+                  </div>
+                </div>
 
-              <div style={{ fontSize: 'var(--text-12)', color: 'var(--cds-text-primary)', whiteSpace: 'nowrap', justifySelf: 'end', textAlign: 'right' }}>
-                {formatDurationMs(instance.durationMs, instance.startTime, instance.endTime) || '—'}
+                <div style={{ fontSize: 'var(--text-12)', color: 'var(--cds-text-primary)', whiteSpace: 'nowrap', justifySelf: 'end', textAlign: 'right' }}>
+                  {formatDurationMs(instance.durationMs, instance.startTime, instance.endTime) || '—'}
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -358,38 +382,55 @@ export function ExecutionTrailPanel({
               borderBottom: '1px solid var(--cds-border-subtle)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)', minWidth: 0, paddingLeft: `${group.depth * 16}px` }}>
-              {group.isExpandable ? (
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.groupKey)}
-                  aria-label={groupIsExpanded ? `Collapse ${group.activityName}` : `Expand ${group.activityName}`}
-                  style={{ border: 'none', background: 'transparent', padding: 0, width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--cds-icon-primary)' }}
-                >
-                  {groupIsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                </button>
-              ) : (
-                <span style={{ width: 12, height: 16, display: 'inline-flex', flexShrink: 0 }} />
-              )}
+            <div
+              role={group.isClickable ? 'button' : undefined}
+              tabIndex={group.isClickable ? 0 : undefined}
+              aria-label={group.isClickable ? `Select ${group.activityName}` : undefined}
+              onClick={group.isClickable ? () => selectGroup(group) : undefined}
+              onKeyDown={group.isClickable ? (event) => onRowKeyDown(event, () => selectGroup(group), !group.isClickable) : undefined}
+              style={{
+                display: 'grid',
+                gridColumn: '1 / 3',
+                gridTemplateColumns: 'minmax(0,1fr) 8rem',
+                alignItems: 'center',
+                alignSelf: 'stretch',
+                gap: 'var(--spacing-1)',
+                minWidth: 0,
+                cursor: group.isClickable ? 'pointer' : 'default',
+                outline: 'none',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)', minWidth: 0, paddingLeft: `${group.depth * 16}px` }}>
+                {group.isExpandable ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      toggleGroup(group.groupKey)
+                    }}
+                    aria-label={groupIsExpanded ? `Collapse ${group.activityName}` : `Expand ${group.activityName}`}
+                    style={{ border: 'none', background: 'transparent', padding: 0, width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--cds-icon-primary)' }}
+                  >
+                    {groupIsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </button>
+                ) : (
+                  <span style={{ width: 12, height: 16, display: 'inline-flex', flexShrink: 0 }} />
+                )}
 
-              <span style={{ width: 8, height: 8, borderRadius: 999, background: getRowIndicatorColor(group.hasIncident, group.active), display: 'inline-flex', flexShrink: 0 }} />
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: getRowIndicatorColor(group.hasIncident, group.active), display: 'inline-flex', flexShrink: 0 }} />
 
-              <span style={{ width: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cds-icon-secondary)', flexShrink: 0 }}>
-                <span className={groupIcon.iconClass} style={{ fontSize: groupIcon.kind === 'marker' ? 14 : 16, lineHeight: 1 }} aria-hidden="true" />
-              </span>
+                <span style={{ width: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cds-icon-secondary)', flexShrink: 0 }}>
+                  <span className={groupIcon.iconClass} style={{ fontSize: groupIcon.kind === 'marker' ? 14 : 16, lineHeight: 1 }} aria-hidden="true" />
+                </span>
 
-              <button
-                type="button"
-                disabled={!group.isClickable}
-                onClick={() => selectGroup(group)}
-                style={{ border: 'none', background: 'transparent', padding: 0, minWidth: 0, flex: 1, textAlign: 'left', cursor: group.isClickable ? 'pointer' : 'default', color: 'var(--cds-text-primary)' }}
-              >
-                {renderActivityTitle(group.activityName, group.activityId, groupIsSelected)}
-              </button>
-            </div>
+                <div style={{ minWidth: 0, flex: 1, color: 'var(--cds-text-primary)' }}>
+                  {renderActivityTitle(group.activityName, group.activityId, groupIsSelected)}
+                </div>
+              </div>
 
-            <div style={{ fontSize: 'var(--text-12)', color: 'var(--cds-text-primary)', whiteSpace: 'nowrap', justifySelf: 'end', textAlign: 'right' }}>
-              {groupDuration || '—'}
+              <div style={{ fontSize: 'var(--text-12)', color: 'var(--cds-text-primary)', whiteSpace: 'nowrap', justifySelf: 'end', textAlign: 'right' }}>
+                {groupDuration || '—'}
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -438,38 +479,55 @@ export function ExecutionTrailPanel({
                     borderBottom: '1px solid var(--cds-border-subtle)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, paddingLeft: `${(group.depth + 1) * 14 + 12}px` }}>
-                    {executionHasChildren ? (
-                      <button
-                        type="button"
-                        onClick={() => toggleExecution(instance.activityInstanceId)}
-                        aria-label={executionIsExpanded ? `Collapse nested trail for ${instance.activityName}` : `Expand nested trail for ${instance.activityName}`}
-                        style={{ border: 'none', background: 'transparent', padding: 0, width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--cds-icon-primary)' }}
-                      >
-                        {executionIsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                      </button>
-                    ) : (
-                      <span style={{ width: 12, height: 16, display: 'inline-flex', flexShrink: 0 }} />
-                    )}
+                  <div
+                    role={instance.isClickable ? 'button' : undefined}
+                    tabIndex={instance.isClickable ? 0 : undefined}
+                    aria-label={instance.isClickable ? `Select ${instance.activityName}` : undefined}
+                    onClick={instance.isClickable ? () => selectExecution(instance) : undefined}
+                    onKeyDown={instance.isClickable ? (event) => onRowKeyDown(event, () => selectExecution(instance), !instance.isClickable) : undefined}
+                    style={{
+                      display: 'grid',
+                      gridColumn: '1 / 3',
+                      gridTemplateColumns: 'minmax(0,1fr) 8rem',
+                      alignItems: 'center',
+                      alignSelf: 'stretch',
+                      gap: '4px',
+                      minWidth: 0,
+                      cursor: instance.isClickable ? 'pointer' : 'default',
+                      outline: 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, paddingLeft: `${(group.depth + 1) * 14 + 12}px` }}>
+                      {executionHasChildren ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            toggleExecution(instance.activityInstanceId)
+                          }}
+                          aria-label={executionIsExpanded ? `Collapse nested trail for ${instance.activityName}` : `Expand nested trail for ${instance.activityName}`}
+                          style={{ border: 'none', background: 'transparent', padding: 0, width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--cds-icon-primary)' }}
+                        >
+                          {executionIsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        </button>
+                      ) : (
+                        <span style={{ width: 12, height: 16, display: 'inline-flex', flexShrink: 0 }} />
+                      )}
 
-                    <span style={{ width: 8, height: 8, borderRadius: 999, background: getRowIndicatorColor(instance.hasIncident, instance.active), display: 'inline-flex', flexShrink: 0 }} />
+                      <span style={{ width: 8, height: 8, borderRadius: 999, background: getRowIndicatorColor(instance.hasIncident, instance.active), display: 'inline-flex', flexShrink: 0 }} />
 
-                    <span style={{ width: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cds-icon-secondary)', flexShrink: 0 }}>
-                      <span className={executionIcon.iconClass} style={{ fontSize: executionIcon.kind === 'marker' ? 14 : 16, lineHeight: 1 }} aria-hidden="true" />
-                    </span>
+                      <span style={{ width: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cds-icon-secondary)', flexShrink: 0 }}>
+                        <span className={executionIcon.iconClass} style={{ fontSize: executionIcon.kind === 'marker' ? 14 : 16, lineHeight: 1 }} aria-hidden="true" />
+                      </span>
 
-                    <button
-                      type="button"
-                      disabled={!instance.isClickable}
-                      onClick={() => selectExecution(instance)}
-                      style={{ border: 'none', background: 'transparent', padding: 0, minWidth: 0, flex: 1, textAlign: 'left', cursor: instance.isClickable ? 'pointer' : 'default', color: 'var(--cds-text-primary)' }}
-                    >
-                      {renderActivityTitle(instance.activityName, instance.activityId, executionIsSelected)}
-                    </button>
-                  </div>
+                      <div style={{ minWidth: 0, flex: 1, color: 'var(--cds-text-primary)' }}>
+                        {renderActivityTitle(instance.activityName, instance.activityId, executionIsSelected)}
+                      </div>
+                    </div>
 
-                  <div style={{ fontSize: 'var(--text-12)', color: 'var(--cds-text-primary)', whiteSpace: 'nowrap', justifySelf: 'end', textAlign: 'right' }}>
-                    {formatDurationMs(instance.durationMs, instance.startTime, instance.endTime) || '—'}
+                    <div style={{ fontSize: 'var(--text-12)', color: 'var(--cds-text-primary)', whiteSpace: 'nowrap', justifySelf: 'end', textAlign: 'right' }}>
+                      {formatDurationMs(instance.durationMs, instance.startTime, instance.endTime) || '—'}
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -498,7 +556,7 @@ export function ExecutionTrailPanel({
         </div>
       )
     })
-  }, [copyText, getRowIndicatorColor, hoveredRowKey, isModMode, modPlan, moveSourceActivityId, onNavigateToProcessInstance, openExecutionDetails, openExecutionKeys, openGroupKeys, renderActivityTitle, resolveBpmnIconVisual, selectExecution, selectGroup, selectedActivityId, selectedActivityInstanceId, setHoverActivity, toggleExecution, toggleGroup])
+  }, [copyText, getRowIndicatorColor, hoveredRowKey, isModMode, modPlan, moveSourceActivityId, onNavigateToProcessInstance, onRowKeyDown, openExecutionDetails, openExecutionKeys, openGroupKeys, renderActivityTitle, resolveBpmnIconVisual, selectExecution, selectGroup, selectedActivityId, selectedActivityInstanceId, setHoverActivity, toggleExecution, toggleGroup])
 
   return (
     <section style={{ background: 'var(--color-bg-primary)', padding: 'var(--spacing-2)', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%', minHeight: 0 }}>
