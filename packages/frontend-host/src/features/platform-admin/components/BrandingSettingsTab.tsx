@@ -414,10 +414,10 @@ export default function BrandingSettingsTab() {
         <PlatformCol sm={4} md={4} lg={8} style={{ display: 'flex', flexDirection: 'column', marginInlineStart: 0 }}>
           <Tile style={{ flex: 1 }}>
             <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '16px', fontWeight: 600 }}>
-              Platform Logo
+              Header Branding
             </h3>
-            <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-              Upload a custom logo to replace the EnterpriseGlue logo in the header. This will apply across all tenants.
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+              These settings affect the platform header and top navigation across all tenants.
             </p>
 
             {error && (
@@ -426,355 +426,423 @@ export default function BrandingSettingsTab() {
                 title="Error"
                 subtitle={error}
                 onCloseButtonClick={() => setError(null)}
-                style={{ marginBottom: 'var(--spacing-4)' }}
+                style={{ marginTop: 'var(--spacing-4)' }}
               />
             )}
 
-            {/* Current/Preview Logo */}
-            <div style={{ 
-              marginBottom: 'var(--spacing-4)',
-              padding: 'var(--spacing-4)',
-              backgroundColor: 'var(--cds-layer-02, #393939)',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '80px',
-            }}>
-              {currentLogoUrl ? (
-                <img
-                  src={currentLogoUrl}
-                  alt="Custom Logo Preview"
-                  style={{ 
-                    height: '32px', 
-                    width: 'auto',
-                    maxWidth: '200px',
-                    objectFit: 'contain',
-                  }}
-                />
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-                  <img
-                    src={logoPng}
-                    alt="EnterpriseGlue Logo"
-                    style={{ height: '16px', width: 'auto' }}
-                  />
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'white' }}>
-                    EnterpriseGlue
-                  </span>
-                  <span style={{ fontSize: '12px', color: 'var(--cds-text-secondary)', marginLeft: 'var(--spacing-2)' }}>
-                    (default)
-                  </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)', marginTop: 'var(--spacing-5)' }}>
+              <div>
+                <p style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '14px', fontWeight: 600 }}>
+                  Header Logo
+                </p>
+                <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                  Upload a custom logo to replace the EnterpriseGlue logo in the header. This will apply across all tenants.
+                </p>
+
+                <div style={{ 
+                  marginBottom: 'var(--spacing-4)',
+                  padding: 'var(--spacing-4)',
+                  backgroundColor: 'var(--cds-layer-02, #393939)',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '80px',
+                }}>
+                  {currentLogoUrl ? (
+                    <img
+                      src={currentLogoUrl}
+                      alt="Custom Logo Preview"
+                      style={{ 
+                        height: '32px', 
+                        width: 'auto',
+                        maxWidth: '200px',
+                        objectFit: 'contain',
+                      }}
+                    />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                      <img
+                        src={logoPng}
+                        alt="EnterpriseGlue Logo"
+                        style={{ height: '16px', width: 'auto' }}
+                      />
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: 'white' }}>
+                        EnterpriseGlue
+                      </span>
+                      <span style={{ fontSize: '12px', color: 'var(--cds-text-secondary)', marginLeft: 'var(--spacing-2)' }}>
+                        (default)
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Upload Controls */}
-            <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-              />
-              <Button
-                kind="tertiary"
-                size="sm"
-                renderIcon={Upload}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Upload Logo
-              </Button>
-              {currentLogoUrl && (
-                <Button
-                  kind="ghost"
-                  size="sm"
-                  renderIcon={TrashCan}
-                  onClick={handleRemoveLogo}
-                >
-                  Remove
-                </Button>
-              )}
-            </div>
-
-            <p style={{ margin: 'var(--spacing-3) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-              Supported formats: PNG, JPG, SVG, WebP. Max size: 500KB.
-            </p>
-          </Tile>
-
-          <Tile style={{ flex: 1, marginTop: 'var(--spacing-5)' }}>
-            <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '16px', fontWeight: 600 }}>
-              Login Page Logo (Light Background)
-            </h3>
-            <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-              Optional: upload a separate logo for the login page (white/light background). If empty, the platform logo will be used.
-            </p>
-
-            <div style={{
-              marginBottom: 'var(--spacing-4)',
-              padding: 'var(--spacing-4)',
-              backgroundColor: 'white',
-              borderRadius: '4px',
-              border: '1px solid var(--cds-border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '80px',
-            }}>
-              {currentLoginLogoUrl ? (
-                <img
-                  src={currentLoginLogoUrl}
-                  alt="Login Logo Preview"
-                  style={{
-                    height: '32px',
-                    width: 'auto',
-                    maxWidth: '200px',
-                    objectFit: 'contain',
-                  }}
-                />
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-                  <img
-                    src={currentLogoUrl || logoPng}
-                    alt="Platform Logo"
-                    style={{ height: '16px', width: 'auto' }}
+                <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
                   />
-                  <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                    Using platform logo
-                  </span>
+                  <Button
+                    kind="tertiary"
+                    size="sm"
+                    renderIcon={Upload}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Upload Logo
+                  </Button>
+                  {currentLogoUrl && (
+                    <Button
+                      kind="ghost"
+                      size="sm"
+                      renderIcon={TrashCan}
+                      onClick={handleRemoveLogo}
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
-              <input
-                ref={loginLogoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLoginLogoFileChange}
-                style={{ display: 'none' }}
+                <p style={{ margin: 'var(--spacing-3) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Supported formats: PNG, JPG, SVG, WebP. Max size: 500KB.
+                </p>
+              </div>
+
+              <TextInput
+                id="logo-title"
+                labelText="Header Title Text"
+                placeholder="e.g., My Company"
+                value={logoTitle}
+                onChange={handleTitleChange}
+                helperText="This replaces 'EnterpriseGlue' in the header"
               />
-              <Button
-                kind="tertiary"
-                size="sm"
-                renderIcon={Upload}
-                onClick={() => loginLogoInputRef.current?.click()}
-              >
-                Upload Login Logo
-              </Button>
-              {currentLoginLogoUrl && (
-                <Button
-                  kind="ghost"
-                  size="sm"
-                  renderIcon={TrashCan}
-                  onClick={handleRemoveLoginLogo}
-                >
-                  Remove
-                </Button>
-              )}
-            </div>
 
-            <p style={{ margin: 'var(--spacing-3) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-              Supported formats: PNG, JPG, SVG, WebP. Max size: 500KB.
-            </p>
+              <div>
+                <Slider
+                  id="logo-scale"
+                  labelText={`Logo Size: ${logoScale}%`}
+                  min={50}
+                  max={200}
+                  step={10}
+                  value={logoScale}
+                  onChange={({ value }) => handleScaleChange(value)}
+                />
+                <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Adjust the logo size. 100% is the default size.
+                </p>
+              </div>
+
+              <div>
+                <Slider
+                  id="title-vertical-offset"
+                  labelText={`Header Title Vertical Offset: ${titleVerticalOffset}px`}
+                  min={-20}
+                  max={20}
+                  step={1}
+                  value={titleVerticalOffset}
+                  onChange={({ value }) => { setTitleVerticalOffset(value); setIsDirty(true); }}
+                />
+                <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Only affects the header title text.
+                </p>
+              </div>
+
+              <div>
+                <p style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '14px', fontWeight: 600 }}>
+                  Menu Accent Color
+                </p>
+                <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                  Customize the color of the active menu underline in the header navigation.
+                </p>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                    <input
+                      type="color"
+                      id="menu-accent-color"
+                      value={menuAccentColor || '#0f62fe'}
+                      onChange={(e) => { setMenuAccentColor(e.target.value); setIsDirty(true); }}
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        padding: 0,
+                        border: '2px solid var(--cds-border-subtle)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        backgroundColor: 'transparent',
+                      }}
+                    />
+                    <TextInput
+                      id="menu-accent-color-hex"
+                      labelText="Hex Color"
+                      placeholder="#FF6200"
+                      value={menuAccentColor || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                          setMenuAccentColor(val || null);
+                          setIsDirty(true);
+                        }
+                      }}
+                      style={{ width: '140px' }}
+                    />
+                  </div>
+                  {menuAccentColor && (
+                    <Button
+                      kind="ghost"
+                      size="sm"
+                      onClick={() => { setMenuAccentColor(null); setIsDirty(true); }}
+                    >
+                      Reset to Default
+                    </Button>
+                  )}
+                </div>
+                <p style={{ margin: 'var(--spacing-3) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Default: #0f62fe (Carbon blue). ING Orange: #FF6200
+                </p>
+              </div>
+            </div>
           </Tile>
         </PlatformCol>
 
-        <PlatformCol sm={4} md={4} lg={8} style={{ display: 'flex', flexDirection: 'column', marginInlineEnd: 0 }}>
+        <PlatformCol
+          sm={4}
+          md={4}
+          lg={8}
+          style={{ display: 'flex', flexDirection: 'column', marginInlineEnd: 0 }}
+        >
           <Tile style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '16px', fontWeight: 600 }}>
-              Logo Title
+            <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '18px', fontWeight: 600 }}>
+              Login Page Branding
             </h3>
-            <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-              Optionally provide a text title to display alongside or instead of the logo. Leave empty to use the logo only.
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+              These settings affect the login screen only.
             </p>
 
-            <TextInput
-              id="logo-title"
-              labelText="Title Text"
-              placeholder="e.g., My Company"
-              value={logoTitle}
-              onChange={handleTitleChange}
-              helperText="This replaces 'EnterpriseGlue' in the header"
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)', marginTop: 'var(--spacing-5)' }}>
+              <div>
+                <p style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '14px', fontWeight: 600 }}>
+                  Login Page Logo
+                </p>
+                <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                  Optional: upload a separate logo for the login page on light backgrounds. If empty, the header logo will be used.
+                </p>
 
-            <div style={{ marginTop: 'var(--spacing-5)' }}>
-              <Slider
-                id="logo-scale"
-                labelText={`Logo Size: ${logoScale}%`}
-                min={50}
-                max={200}
-                step={10}
-                value={logoScale}
-                onChange={({ value }) => handleScaleChange(value)}
-              />
-              <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                Adjust the logo size. 100% is the default size.
-              </p>
-            </div>
-
-            <div style={{ marginTop: 'var(--spacing-6)' }}>
-              <Slider
-                id="login-title-vertical-offset"
-                labelText={`Login Title Vertical Offset: ${loginTitleVerticalOffset}px`}
-                min={-50}
-                max={50}
-                step={1}
-                value={loginTitleVerticalOffset}
-                onChange={({ value }) => {
-                  setLoginTitleVerticalOffset(value);
-                  setIsDirty(true);
-                }}
-              />
-              <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                Only affects the login page title text.
-              </p>
-            </div>
-
-            <div style={{ marginTop: 'var(--spacing-6)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
-                  <input
-                    type="color"
-                    id="login-title-color"
-                    value={loginTitleColor || '#000000'}
-                    onChange={(e) => {
-                      setLoginTitleColor(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      padding: 0,
-                      border: '2px solid var(--cds-border-subtle)',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      backgroundColor: 'transparent',
-                    }}
-                  />
-                  <TextInput
-                    id="login-title-color-hex"
-                    labelText="Login Title Color (Hex)"
-                    placeholder="#000000"
-                    value={loginTitleColor || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) {
-                        setLoginTitleColor(val || null);
-                        setIsDirty(true);
-                      }
-                    }}
-                    style={{ width: '160px' }}
-                  />
+                <div style={{
+                  marginBottom: 'var(--spacing-4)',
+                  padding: 'var(--spacing-4)',
+                  backgroundColor: 'white',
+                  borderRadius: '4px',
+                  border: '1px solid var(--cds-border-subtle)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '80px',
+                }}>
+                  {currentLoginLogoUrl ? (
+                    <img
+                      src={currentLoginLogoUrl}
+                      alt="Login Logo Preview"
+                      style={{
+                        height: '32px',
+                        width: 'auto',
+                        maxWidth: '200px',
+                        objectFit: 'contain',
+                      }}
+                    />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                      <img
+                        src={currentLogoUrl || logoPng}
+                        alt="Platform Logo"
+                        style={{ height: '16px', width: 'auto' }}
+                      />
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                        Using header logo
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {loginTitleColor && (
+
+                <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+                  <input
+                    ref={loginLogoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLoginLogoFileChange}
+                    style={{ display: 'none' }}
+                  />
                   <Button
-                    kind="ghost"
+                    kind="tertiary"
                     size="sm"
-                    onClick={() => {
-                      setLoginTitleColor(null);
-                      setIsDirty(true);
-                    }}
+                    renderIcon={Upload}
+                    onClick={() => loginLogoInputRef.current?.click()}
                   >
-                    Reset to Default
+                    Upload Login Logo
                   </Button>
-                )}
+                  {currentLoginLogoUrl && (
+                    <Button
+                      kind="ghost"
+                      size="sm"
+                      renderIcon={TrashCan}
+                      onClick={handleRemoveLoginLogo}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+
+                <p style={{ margin: 'var(--spacing-3) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Supported formats: PNG, JPG, SVG, WebP. Max size: 500KB.
+                </p>
               </div>
-              <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                Only affects the login page title text.
-              </p>
+
+              <div>
+                <Slider
+                  id="login-title-vertical-offset"
+                  labelText={`Login Title Vertical Offset: ${loginTitleVerticalOffset}px`}
+                  min={-50}
+                  max={50}
+                  step={1}
+                  value={loginTitleVerticalOffset}
+                  onChange={({ value }) => {
+                    setLoginTitleVerticalOffset(value);
+                    setIsDirty(true);
+                  }}
+                />
+                <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Only affects the login page title text.
+                </p>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                    <input
+                      type="color"
+                      id="login-title-color"
+                      value={loginTitleColor || '#000000'}
+                      onChange={(e) => {
+                        setLoginTitleColor(e.target.value);
+                        setIsDirty(true);
+                      }}
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        padding: 0,
+                        border: '2px solid var(--cds-border-subtle)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        backgroundColor: 'transparent',
+                      }}
+                    />
+                    <TextInput
+                      id="login-title-color-hex"
+                      labelText="Login Title Color (Hex)"
+                      placeholder="#000000"
+                      value={loginTitleColor || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                          setLoginTitleColor(val || null);
+                          setIsDirty(true);
+                        }
+                      }}
+                      style={{ width: '160px' }}
+                    />
+                  </div>
+                  {loginTitleColor && (
+                    <Button
+                      kind="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setLoginTitleColor(null);
+                        setIsDirty(true);
+                      }}
+                    >
+                      Reset to Default
+                    </Button>
+                  )}
+                </div>
+                <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Only affects the login page title text.
+                </p>
+              </div>
             </div>
           </Tile>
         </PlatformCol>
       </PlatformRow>
 
-      {/* Title Font Settings Row */}
       <PlatformRow>
         <PlatformCol
           sm={4}
           md={4}
           lg={8}
-          style={{ display: 'flex', flexDirection: 'column', marginInlineStart: 0, marginTop: 'var(--spacing-5)' }}
+          style={{ display: 'flex', flexDirection: 'column', marginInlineStart: 0, marginTop: 'var(--spacing-7)' }}
         >
           <Tile style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '16px', fontWeight: 600 }}>
-              Title Font
-            </h3>
-            <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-              Upload a custom webfont for the title text (WOFF, WOFF2, TTF, OTF).
+            <h2 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '18px', fontWeight: 600 }}>
+              Brand Font
+            </h2>
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+              These settings apply to both the header title and the login page title.
             </p>
 
-            <div style={{ 
-              marginBottom: 'var(--spacing-4)',
-              padding: 'var(--spacing-3)',
-              backgroundColor: 'var(--cds-layer-02, #393939)',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '48px',
-            }}>
-              {titleFontUrl ? (
-                <span style={{ fontSize: '14px', color: 'var(--cds-text-primary)' }}>
-                  Custom font loaded
-                </span>
-              ) : (
-                <span style={{ fontSize: '14px', color: 'var(--cds-text-secondary)' }}>
-                  Using default system font
-                </span>
-              )}
-            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)', marginTop: 'var(--spacing-5)' }}>
+              <div style={{ 
+                padding: 'var(--spacing-3)',
+                backgroundColor: 'var(--cds-layer-02, #393939)',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '48px',
+              }}>
+                {titleFontUrl ? (
+                  <span style={{ fontSize: '14px', color: 'var(--cds-text-primary)' }}>
+                    Custom font loaded
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '14px', color: 'var(--cds-text-secondary)' }}>
+                    Using default system font
+                  </span>
+                )}
+              </div>
 
-            <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
-              <input
-                ref={fontInputRef}
-                type="file"
-                accept=".woff,.woff2,.ttf,.otf"
-                onChange={handleFontFileChange}
-                style={{ display: 'none' }}
-              />
-              <Button
-                kind="tertiary"
-                size="sm"
-                renderIcon={Upload}
-                onClick={() => fontInputRef.current?.click()}
-              >
-                Upload Font
-              </Button>
-              {titleFontUrl && (
+              <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+                <input
+                  ref={fontInputRef}
+                  type="file"
+                  accept=".woff,.woff2,.ttf,.otf"
+                  onChange={handleFontFileChange}
+                  style={{ display: 'none' }}
+                />
                 <Button
-                  kind="ghost"
+                  kind="tertiary"
                   size="sm"
-                  renderIcon={TrashCan}
-                  onClick={handleRemoveFont}
+                  renderIcon={Upload}
+                  onClick={() => fontInputRef.current?.click()}
                 >
-                  Remove
+                  Upload Font
                 </Button>
-              )}
-            </div>
+                {titleFontUrl && (
+                  <Button
+                    kind="ghost"
+                    size="sm"
+                    renderIcon={TrashCan}
+                    onClick={handleRemoveFont}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
 
-            <p style={{ margin: 'var(--spacing-3) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-              Max size: 500KB. Tip: Use WOFF2 for best compression.
-            </p>
-          </Tile>
-        </PlatformCol>
+              <p style={{ margin: '-8px 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                Max size: 500KB. Tip: Use WOFF2 for best compression.
+              </p>
 
-        <PlatformCol
-          sm={4}
-          md={4}
-          lg={8}
-          style={{ display: 'flex', flexDirection: 'column', marginInlineEnd: 0, marginTop: 'var(--spacing-5)' }}
-        >
-          <Tile style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '16px', fontWeight: 600 }}>
-              Title Style
-            </h3>
-            <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-              Adjust the title text appearance.
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
               <Select
                 id="title-font-weight"
                 labelText="Font Weight"
@@ -796,35 +864,19 @@ export default function BrandingSettingsTab() {
                 step={1}
                 value={titleFontSize}
                 onChange={(_e, { value }) => { setTitleFontSize(value as number); setIsDirty(true); }}
-                helperText="Default: 14px"
+                helperText="Used as the base size for header and login page title text"
               />
-
-              <Slider
-                id="title-vertical-offset"
-                labelText={`Vertical Offset: ${titleVerticalOffset}px`}
-                min={-20}
-                max={20}
-                step={1}
-                value={titleVerticalOffset}
-                onChange={({ value }) => { setTitleVerticalOffset(value); setIsDirty(true); }}
-              />
-              <p style={{ margin: 'var(--spacing-2) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                Negative moves up, positive moves down
-              </p>
             </div>
           </Tile>
         </PlatformCol>
-      </PlatformRow>
 
-      {/* Favicon Row */}
-      <PlatformRow>
         <PlatformCol
           sm={4}
-          md={8}
-          lg={16}
-          style={{ display: 'flex', flexDirection: 'column', marginInlineStart: 0, marginInlineEnd: 0, marginTop: 'var(--spacing-6)' }}
+          md={4}
+          lg={8}
+          style={{ display: 'flex', flexDirection: 'column', marginInlineEnd: 0, marginTop: 'var(--spacing-7)' }}
         >
-          <Tile>
+          <Tile style={{ flex: 1 }}>
             <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '16px', fontWeight: 600 }}>
               Favicon
             </h3>
@@ -878,71 +930,6 @@ export default function BrandingSettingsTab() {
 
             <p style={{ margin: 'var(--spacing-3) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
               Recommended: ICO or PNG (32x32). Max size: 200KB.
-            </p>
-          </Tile>
-        </PlatformCol>
-      </PlatformRow>
-
-      {/* Menu Accent Color Row */}
-      <PlatformRow>
-        <PlatformCol
-          sm={4}
-          md={8}
-          lg={16}
-          style={{ display: 'flex', flexDirection: 'column', marginInlineStart: 0, marginInlineEnd: 0, marginTop: 'var(--spacing-6)' }}
-        >
-          <Tile>
-            <h3 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '16px', fontWeight: 600 }}>
-              Menu Accent Color
-            </h3>
-            <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-              Customize the color of the active menu underline in the header navigation.
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
-                <input
-                  type="color"
-                  id="menu-accent-color"
-                  value={menuAccentColor || '#0f62fe'}
-                  onChange={(e) => { setMenuAccentColor(e.target.value); setIsDirty(true); }}
-                  style={{ 
-                    width: '48px', 
-                    height: '48px', 
-                    padding: 0,
-                    border: '2px solid var(--cds-border-subtle)',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    backgroundColor: 'transparent',
-                  }}
-                />
-                <TextInput
-                  id="menu-accent-color-hex"
-                  labelText="Hex Color"
-                  placeholder="#FF6200"
-                  value={menuAccentColor || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) {
-                      setMenuAccentColor(val || null);
-                      setIsDirty(true);
-                    }
-                  }}
-                  style={{ width: '140px' }}
-                />
-              </div>
-              {menuAccentColor && (
-                <Button
-                  kind="ghost"
-                  size="sm"
-                  onClick={() => { setMenuAccentColor(null); setIsDirty(true); }}
-                >
-                  Reset to Default
-                </Button>
-              )}
-            </div>
-            <p style={{ margin: 'var(--spacing-3) 0 0 0', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-              Default: #0f62fe (Carbon blue). ING Orange: #FF6200
             </p>
           </Tile>
         </PlatformCol>

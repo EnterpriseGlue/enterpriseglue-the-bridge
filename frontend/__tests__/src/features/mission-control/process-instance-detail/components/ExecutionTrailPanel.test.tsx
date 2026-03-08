@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -8,7 +8,7 @@ import { server } from '@test/mocks/server';
 import { ExecutionTrailPanel } from '@src/features/mission-control/process-instance-detail/components/ExecutionTrailPanel';
 import { buildActivityGroups, buildHistoryContext } from '@src/features/mission-control/process-instance-detail/components/activityDetailUtils';
 
-function renderExecutionTrail() {
+function renderExecutionTrail({ onActivityClick = () => {} }: { onActivityClick?: (activityId: string) => void } = {}) {
   const sortedActs = [
     {
       id: 'hist-1',
@@ -60,6 +60,7 @@ function renderExecutionTrail() {
         resolveBpmnIconVisual={() => ({ iconClass: '', kind: 'shape' })}
         resolveBpmnLoopMarkerVisual={() => null}
         buildHistoryContext={buildHistoryContext}
+        onActivityClick={onActivityClick}
       />
     </QueryClientProvider>
   );
@@ -121,5 +122,18 @@ describe('ExecutionTrailPanel', () => {
     expect(await screen.findByText('approvalReason')).toBeInTheDocument();
     expect(screen.getByText('Need manager sign-off')).toBeInTheDocument();
     expect(screen.getAllByText('Historic tasks').length).toBeGreaterThan(0);
+  });
+
+  it('selects an execution when clicking the row body up to the kebab menu', async () => {
+    const user = userEvent.setup();
+    const onActivityClick = vi.fn();
+
+    renderExecutionTrail({ onActivityClick });
+
+    expect(screen.getByRole('button', { name: 'Select Approve request' })).toHaveStyle({ alignSelf: 'stretch' });
+
+    await user.click(screen.getByText('5 sec'));
+
+    expect(onActivityClick).toHaveBeenCalledWith('approveTask');
   });
 });

@@ -30,7 +30,9 @@ interface PublicBranding {
   loginTitleColor: string | null;
   logoTitle: string | null;
   logoScale: number;
+  titleFontUrl: string | null;
   titleFontWeight: string;
+  titleFontSize: number;
   faviconUrl: string | null;
   ssoAutoRedirectSingleProvider: boolean;
 }
@@ -47,7 +49,9 @@ function normalizeBranding(raw: any): PublicBranding {
     loginTitleColor: typeof r.loginTitleColor === 'string' ? r.loginTitleColor : null,
     logoTitle: typeof r.logoTitle === 'string' ? r.logoTitle : null,
     logoScale: typeof r.logoScale === 'number' ? r.logoScale : 100,
+    titleFontUrl: typeof r.titleFontUrl === 'string' ? r.titleFontUrl : null,
     titleFontWeight: typeof r.titleFontWeight === 'string' ? r.titleFontWeight : '600',
+    titleFontSize: typeof r.titleFontSize === 'number' ? r.titleFontSize : 14,
     faviconUrl: typeof r.faviconUrl === 'string' ? r.faviconUrl : null,
     ssoAutoRedirectSingleProvider: Boolean(r.ssoAutoRedirectSingleProvider),
   };
@@ -207,6 +211,32 @@ export default function Login() {
       }
     }
   }, [branding?.faviconUrl]);
+
+  useEffect(() => {
+    const styleId = 'public-branding-font';
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+
+    if (!branding?.titleFontUrl) {
+      if (styleEl) styleEl.remove();
+      return;
+    }
+
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+
+    styleEl.textContent = `
+      @font-face {
+        font-family: 'PublicBrandingFont';
+        src: url('${branding.titleFontUrl}') format('woff2'), url('${branding.titleFontUrl}') format('woff'), url('${branding.titleFontUrl}') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+    `;
+  }, [branding?.titleFontUrl]);
 
   // Fetch platform branding for the login page (public endpoint)
   useEffect(() => {
@@ -369,9 +399,11 @@ export default function Login() {
   const safeBrandLogoSrc = logoObjectUrl;
   const loginLogoHeightPx = Math.round(28 * ((branding?.logoScale ?? 100) / 100));
   const brandTitle = typeof branding?.logoTitle === 'string' && branding.logoTitle.trim() ? branding.logoTitle.trim() : 'EnterpriseGlue';
+  const customBrandFontFamily = branding?.titleFontUrl ? 'PublicBrandingFont' : undefined;
   const brandTitleWeight = typeof branding?.titleFontWeight === 'string' && branding.titleFontWeight.trim()
     ? branding.titleFontWeight.trim()
     : 'var(--font-weight-semibold)';
+  const loginTitleFontSizePx = Math.round(Math.max(branding?.titleFontSize ?? 14, 10) * 2);
 
   const loginTitleOffsetPx = (() => {
     const raw = branding?.loginTitleVerticalOffset;
@@ -419,9 +451,9 @@ export default function Login() {
             style={{ height: `${loginLogoHeightPx}px`, width: 'auto', visibility: hideDefaultBranding ? 'hidden' : 'visible' }}
           />
           <span style={{ 
-            fontSize: '1.75rem',
+            fontSize: `${loginTitleFontSizePx}px`,
             fontWeight: brandTitleWeight,
-            fontFamily: 'var(--font-primary)',
+            fontFamily: customBrandFontFamily || 'var(--font-primary)',
             color: loginTitleColor || 'var(--color-text-primary)',
             display: 'inline-block',
             transform: loginTitleOffsetPx ? `translateY(${loginTitleOffsetPx}px)` : undefined,

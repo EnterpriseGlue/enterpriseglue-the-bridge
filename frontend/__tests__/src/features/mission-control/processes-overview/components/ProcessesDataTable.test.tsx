@@ -1,17 +1,20 @@
 import React from 'react';
+import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { ProcessesDataTable } from '@src/features/mission-control/processes-overview/components/ProcessesDataTable';
+import { ProcessesDataTable } from '../../../../../../../packages/frontend-host/src/features/mission-control/processes-overview/components/ProcessesDataTable';
 
-function renderTable(searchValue: string) {
+type ProcessesDataTableData = React.ComponentProps<typeof ProcessesDataTable>['data'];
+
+function renderTable(searchValue: string, data?: ProcessesDataTableData) {
   const onActivate = vi.fn(async () => undefined);
   const onSuspend = vi.fn(async () => undefined);
 
   render(
     <MemoryRouter>
       <ProcessesDataTable
-        data={[
+        data={data || [
           {
             id: 'pi-1',
             processDefinitionKey: 'invoice-receipt',
@@ -57,5 +60,20 @@ describe('ProcessesDataTable', () => {
 
     expect(screen.getByText('parent-123')).toBeInTheDocument();
     expect(screen.queryByText('Order Process')).not.toBeInTheDocument();
+  });
+
+  it('renders duration using the shared execution-trail format', () => {
+    renderTable('', [
+      {
+        id: 'pi-1',
+        processDefinitionKey: 'invoice-receipt',
+        superProcessInstanceId: 'parent-123',
+        state: 'COMPLETED',
+        startTime: '2026-03-08T10:00:00.000Z',
+        endTime: '2026-03-08T10:01:01.000Z',
+      },
+    ]);
+
+    expect(screen.getByText('1 min 1 sec')).toBeInTheDocument();
   });
 });
