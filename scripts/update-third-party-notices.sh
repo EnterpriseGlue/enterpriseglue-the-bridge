@@ -47,51 +47,22 @@ if [[ "$CHECK_MODE" == "true" && -f THIRD_PARTY_NOTICES.md ]]; then
   fi
 fi
 
-sanitize_license_json() {
-  local json_path="$1"
-  node - "$json_path" <<'NODE'
-const fs = require('node:fs');
-
-const jsonPath = process.argv[2];
-const raw = fs.readFileSync(jsonPath, 'utf8');
-const data = JSON.parse(raw);
-
-const entries = Object.entries(data)
-  .map(([pkg, meta]) => {
-    const next = { ...meta };
-    delete next.path;
-    delete next.licenseFile;
-    return [pkg, next];
-  })
-  .sort((a, b) => a[0].localeCompare(b[0]));
-
-const normalized = Object.fromEntries(entries);
-fs.writeFileSync(jsonPath, `${JSON.stringify(normalized, null, 2)}\n`, 'utf8');
-NODE
-}
-
-npx --yes license-checker --production --json --out third_party_licenses.json
-sanitize_license_json third_party_licenses.json
-
-(
-  cd backend
-  npx --yes license-checker --production --json --out third_party_licenses.json
-  sanitize_license_json third_party_licenses.json
-)
-
-(
-  cd frontend
-  npx --yes license-checker --production --json --out third_party_licenses.json
-  sanitize_license_json third_party_licenses.json
-)
-
 node scripts/generate-third-party-notices.mjs
 
+generated_files=(
+  THIRD_PARTY_NOTICES.md
+  third_party_licenses.json
+)
+
+while IFS= read -r generated_file; do
+  generated_files+=("$generated_file")
+done < <(find backend frontend packages -mindepth 1 -maxdepth 2 -name third_party_licenses.json -print 2>/dev/null | LC_ALL=C sort)
+
 if [[ "$CHECK_MODE" == "true" ]]; then
-  if ! git diff --quiet -- third_party_licenses.json backend/third_party_licenses.json frontend/third_party_licenses.json THIRD_PARTY_NOTICES.md; then
+  if [[ -n "$(git status --porcelain -- "${generated_files[@]}")" ]]; then
     echo "❌ Third-party notice artifacts are out of date. Re-run:" >&2
     echo "   bash ./scripts/update-third-party-notices.sh" >&2
-    git --no-pager diff -- third_party_licenses.json backend/third_party_licenses.json frontend/third_party_licenses.json THIRD_PARTY_NOTICES.md || true
+    git --no-pager diff -- "${generated_files[@]}" || true
     exit 1
   fi
   echo "✅ Third-party notice artifacts are up to date."
