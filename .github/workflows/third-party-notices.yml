@@ -9,11 +9,13 @@ on:
       - backend/package-lock.json
       - frontend/package.json
       - frontend/package-lock.json
+      - packages/*/package.json
       - scripts/generate-third-party-notices.mjs
       - scripts/update-third-party-notices.sh
       - third_party_licenses.json
       - backend/third_party_licenses.json
       - frontend/third_party_licenses.json
+      - packages/*/third_party_licenses.json
       - THIRD_PARTY_NOTICES.md
       - .github/workflows/third-party-notices.yml
   schedule:
@@ -211,6 +213,7 @@ jobs:
             third_party_licenses.json
             backend/third_party_licenses.json
             frontend/third_party_licenses.json
+            packages/*/third_party_licenses.json
             THIRD_PARTY_NOTICES.md
 
       - name: Fail if refresh failed

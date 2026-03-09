@@ -5,20 +5,6 @@
     "publisher": "Astea Solutions",
     "email": "info@asteasolutions.com"
   },
-  "@azure/msal-common@16.2.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/AzureAD/microsoft-authentication-library-for-js.git",
-    "publisher": "Microsoft",
-    "email": "nugetaad@microsoft.com",
-    "url": "https://www.microsoft.com"
-  },
-  "@azure/msal-node@5.0.6": {
-    "licenses": "MIT",
-    "repository": "https://github.com/AzureAD/microsoft-authentication-library-for-js.git",
-    "publisher": "Microsoft",
-    "email": "nugetaad@microsoft.com",
-    "url": "https://www.microsoft.com"
-  },
   "@babel/code-frame@7.29.0": {
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel.git",
@@ -57,25 +43,6 @@
     "repository": "yargs/cliui",
     "publisher": "Ben Coe",
     "email": "ben@npmjs.com"
-  },
-  "@kwsites/file-exists@1.1.1": {
-    "licenses": "MIT",
-    "repository": "git@github.com:kwsites/file-exists.git",
-    "publisher": "Steve King",
-    "email": "steve@mydev.co"
-  },
-  "@kwsites/promise-deferred@1.1.1": {
-    "licenses": "MIT",
-    "repository": "git://github.com/kwsites/promise-deferred.git",
-    "publisher": "Steve King",
-    "email": "steve@mydev.co"
-  },
-  "@node-saml/node-saml@5.1.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/node-saml/node-saml.git",
-    "publisher": "Henri Bergius",
-    "email": "henri.bergius@iki.fi",
-    "url": "http://bergie.iki.fi"
   },
   "@octokit/app@16.1.2": {
     "licenses": "MIT",
@@ -227,11 +194,6 @@
     "licenses": "MIT",
     "repository": "git@github.com:pkgjs/parseargs.git"
   },
-  "@scarf/scarf@1.4.0": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/scarf-sh/scarf-js.git",
-    "publisher": "Scarf Systems"
-  },
   "@sqltools/formatter@1.2.5": {
     "licenses": "MIT",
     "repository": "https://github.com/mtxr/vscode-sqltools.git"
@@ -245,49 +207,9 @@
     "licenses": "MIT",
     "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
   },
-  "@types/debug@4.1.12": {
-    "licenses": "MIT",
-    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
-  },
-  "@types/ms@2.1.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
-  },
-  "@types/node@25.3.5": {
-    "licenses": "MIT",
-    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
-  },
   "@types/parse-json@4.0.2": {
     "licenses": "MIT",
     "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
-  },
-  "@types/qs@6.15.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
-  },
-  "@types/xml-encryption@1.2.4": {
-    "licenses": "MIT",
-    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
-  },
-  "@types/xml2js@0.4.14": {
-    "licenses": "MIT",
-    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
-  },
-  "@xmldom/is-dom-node@1.0.1": {
-    "licenses": "MIT",
-    "repository": "git+https://github.com/xmldom/is-dom-node.git",
-    "publisher": "Chris Barth",
-    "email": "chrisjbarth@hotmail.com"
-  },
-  "@xmldom/xmldom@0.8.11": {
-    "licenses": "MIT",
-    "repository": "git://github.com/xmldom/xmldom.git"
-  },
-  "abort-controller@3.0.0": {
-    "licenses": "MIT",
-    "repository": "git+https://github.com/mysticatea/abort-controller.git",
-    "publisher": "Toru Nagashima",
-    "url": "https://github.com/mysticatea"
   },
   "accepts@2.0.0": {
     "licenses": "MIT",
@@ -339,23 +261,6 @@
     "publisher": "Chris Morrell",
     "email": "http://cmorrell.com"
   },
-  "archiver-utils@5.0.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/archiverjs/archiver-utils.git",
-    "publisher": "Chris Talkington",
-    "url": "http://christalkington.com/"
-  },
-  "archiver@7.0.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/archiverjs/node-archiver.git",
-    "publisher": "Chris Talkington",
-    "url": "http://christalkington.com/"
-  },
-  "async@3.2.6": {
-    "licenses": "MIT",
-    "repository": "https://github.com/caolan/async.git",
-    "publisher": "Caolan McMahon"
-  },
   "available-typed-arrays@1.0.7": {
     "licenses": "MIT",
     "repository": "git+https://github.com/inspect-js/available-typed-arrays.git",
@@ -366,11 +271,6 @@
     "licenses": "MIT",
     "repository": "https://github.com/Microsoft/azure-devops-node-api",
     "publisher": "Microsoft Corporation"
-  },
-  "b4a@1.8.0": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/b4a.git",
-    "publisher": "Holepunch"
   },
   "babel-plugin-macros@3.1.0": {
     "licenses": "MIT",
@@ -386,45 +286,11 @@
     "email": "mail@juliangruber.com",
     "url": "http://juliangruber.com"
   },
-  "bare-events@2.8.2": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/bare-events.git",
-    "publisher": "Holepunch"
-  },
-  "bare-fs@4.5.5": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/bare-fs.git",
-    "publisher": "Holepunch"
-  },
-  "bare-os@3.7.1": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/bare-os.git",
-    "publisher": "Holepunch"
-  },
-  "bare-path@3.0.0": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/bare-path.git",
-    "publisher": "Holepunch"
-  },
-  "bare-stream@2.8.0": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/bare-stream.git",
-    "publisher": "Holepunch"
-  },
-  "bare-url@2.3.2": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/bare-url.git",
-    "publisher": "Holepunch"
-  },
   "base64-js@1.5.1": {
     "licenses": "MIT",
     "repository": "git://github.com/beatgammit/base64-js.git",
     "publisher": "T. Jameson Little",
     "email": "t.jameson.little@gmail.com"
-  },
-  "basic-auth@2.0.1": {
-    "licenses": "MIT",
-    "repository": "jshttp/basic-auth"
   },
   "bcryptjs@3.0.3": {
     "licenses": "BSD-3-Clause",
@@ -469,12 +335,6 @@
     "publisher": "Julian Gruber",
     "email": "mail@juliangruber.com",
     "url": "http://juliangruber.com"
-  },
-  "buffer-crc32@1.0.0": {
-    "licenses": "MIT",
-    "repository": "git://github.com/brianloveswords/buffer-crc32.git",
-    "publisher": "Brian J. Brennan",
-    "email": "brianloveswords@gmail.com"
   },
   "buffer-equal-constant-time@1.0.1": {
     "licenses": "BSD-3-Clause",
@@ -538,12 +398,6 @@
     "publisher": "DY",
     "email": "dfcreative@gmail.com"
   },
-  "compress-commons@6.0.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/archiverjs/node-compress-commons.git",
-    "publisher": "Chris Talkington",
-    "url": "http://christalkington.com/"
-  },
   "content-disposition@1.0.1": {
     "licenses": "MIT",
     "repository": "jshttp/content-disposition",
@@ -581,13 +435,6 @@
     "publisher": "Roman Shtylman",
     "email": "shtylman@gmail.com"
   },
-  "core-util-is@1.0.3": {
-    "licenses": "MIT",
-    "repository": "git://github.com/isaacs/core-util-is",
-    "publisher": "Isaac Z. Schlueter",
-    "email": "i@izs.me",
-    "url": "http://blog.izs.me/"
-  },
   "cors@2.8.6": {
     "licenses": "MIT",
     "repository": "expressjs/cors",
@@ -601,27 +448,11 @@
     "publisher": "David Clark",
     "email": "david.dave.clark@gmail.com"
   },
-  "crc-32@1.2.2": {
-    "licenses": "Apache-2.0",
-    "repository": "git://github.com/SheetJS/js-crc32.git",
-    "publisher": "sheetjs"
-  },
-  "crc32-stream@6.0.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/archiverjs/node-crc32-stream.git",
-    "publisher": "Chris Talkington",
-    "url": "http://christalkington.com/"
-  },
   "cross-spawn@7.0.6": {
     "licenses": "MIT",
     "repository": "git@github.com:moxystudio/node-cross-spawn.git",
     "publisher": "André Cruz",
     "email": "andre@moxy.studio"
-  },
-  "csrf-csrf@4.0.3": {
-    "licenses": "ISC",
-    "repository": "https://github.com/Psifi-Solutions/csrf-csrf",
-    "publisher": "psibean"
   },
   "data-uri-to-buffer@4.0.1": {
     "licenses": "MIT",
@@ -634,12 +465,6 @@
     "licenses": "MIT",
     "repository": "https://github.com/iamkun/dayjs.git",
     "publisher": "iamkun"
-  },
-  "debug@2.6.9": {
-    "licenses": "MIT",
-    "repository": "git://github.com/visionmedia/debug.git",
-    "publisher": "TJ Holowaychuk",
-    "email": "tj@vision-media.ca"
   },
   "debug@4.4.3": {
     "licenses": "MIT",
@@ -760,23 +585,6 @@
     "licenses": "MIT",
     "repository": "jshttp/etag"
   },
-  "event-target-shim@5.0.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/mysticatea/event-target-shim.git",
-    "publisher": "Toru Nagashima"
-  },
-  "events-universal@1.0.1": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/events-universal.git",
-    "publisher": "Holepunch"
-  },
-  "events@3.3.0": {
-    "licenses": "MIT",
-    "repository": "git://github.com/Gozala/events.git",
-    "publisher": "Irakli Gozalishvili",
-    "email": "rfobic@gmail.com",
-    "url": "http://jeditoolkit.com"
-  },
   "express-rate-limit@8.3.0": {
     "licenses": "MIT",
     "repository": "git+https://github.com/express-rate-limit/express-rate-limit.git",
@@ -801,12 +609,6 @@
     "repository": "git+https://github.com/fastify/fast-content-type-parse.git",
     "publisher": "Aras Abbasi",
     "email": "aras.abbasi@gmail.com"
-  },
-  "fast-fifo@1.3.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/mafintosh/fast-fifo.git",
-    "publisher": "Mathias Buus",
-    "url": "@mafintosh"
   },
   "fast-sha256@1.3.0": {
     "licenses": "Unlicense",
@@ -910,10 +712,6 @@
     "repository": "git+https://github.com/ljharb/gopd.git",
     "publisher": "Jordan Harband",
     "email": "ljharb@gmail.com"
-  },
-  "graceful-fs@4.2.11": {
-    "licenses": "ISC",
-    "repository": "https://github.com/isaacs/node-graceful-fs"
   },
   "has-property-descriptors@1.0.2": {
     "licenses": "MIT",
@@ -1036,26 +834,12 @@
     "repository": "https://github.com/then/is-promise.git",
     "publisher": "ForbesLindesay"
   },
-  "is-stream@2.0.1": {
-    "licenses": "MIT",
-    "repository": "sindresorhus/is-stream",
-    "publisher": "Sindre Sorhus",
-    "email": "sindresorhus@gmail.com",
-    "url": "https://sindresorhus.com"
-  },
   "is-typed-array@1.1.15": {
     "licenses": "MIT",
     "repository": "git://github.com/inspect-js/is-typed-array.git",
     "publisher": "Jordan Harband",
     "email": "ljharb@gmail.com",
     "url": "http://ljharb.codes"
-  },
-  "isarray@1.0.0": {
-    "licenses": "MIT",
-    "repository": "git://github.com/juliangruber/isarray.git",
-    "publisher": "Julian Gruber",
-    "email": "mail@juliangruber.com",
-    "url": "http://juliangruber.com"
   },
   "isarray@2.0.5": {
     "licenses": "MIT",
@@ -1122,13 +906,6 @@
     "repository": "git://github.com/brianloveswords/node-jws.git",
     "publisher": "Brian J Brennan"
   },
-  "lazystream@1.0.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/jpommerening/node-lazystream.git",
-    "publisher": "Jonas Pommerening",
-    "email": "jonas.pommerening@gmail.com",
-    "url": "https://npmjs.org/~jpommerening"
-  },
   "lines-and-columns@1.2.4": {
     "licenses": "MIT",
     "repository": "https://github.com/eventualbuddha/lines-and-columns.git",
@@ -1184,12 +961,6 @@
     "email": "john.david.dalton@gmail.com",
     "url": "http://allyoucanleet.com/"
   },
-  "lodash@4.17.23": {
-    "licenses": "MIT",
-    "repository": "lodash/lodash",
-    "publisher": "John-David Dalton",
-    "email": "john.david.dalton@gmail.com"
-  },
   "lru-cache@10.4.3": {
     "licenses": "ISC",
     "repository": "git://github.com/isaacs/node-lru-cache.git",
@@ -1238,14 +1009,6 @@
     "email": "i@izs.me",
     "url": "http://blog.izs.me/"
   },
-  "morgan@1.10.1": {
-    "licenses": "MIT",
-    "repository": "expressjs/morgan"
-  },
-  "ms@2.0.0": {
-    "licenses": "MIT",
-    "repository": "zeit/ms"
-  },
   "ms@2.1.3": {
     "licenses": "MIT",
     "repository": "vercel/ms"
@@ -1274,12 +1037,6 @@
     "repository": "https://github.com/nodemailer/nodemailer.git",
     "publisher": "Andris Reinman"
   },
-  "normalize-path@3.0.0": {
-    "licenses": "MIT",
-    "repository": "jonschlinkert/normalize-path",
-    "publisher": "Jon Schlinkert",
-    "url": "https://github.com/jonschlinkert"
-  },
   "object-assign@4.1.1": {
     "licenses": "MIT",
     "repository": "sindresorhus/object-assign",
@@ -1300,19 +1057,9 @@
     "publisher": "Gregor Martynus",
     "url": "https://github.com/gr2m"
   },
-  "on-finished@2.3.0": {
-    "licenses": "MIT",
-    "repository": "jshttp/on-finished"
-  },
   "on-finished@2.4.1": {
     "licenses": "MIT",
     "repository": "jshttp/on-finished"
-  },
-  "on-headers@1.1.0": {
-    "licenses": "MIT",
-    "repository": "jshttp/on-headers",
-    "publisher": "Douglas Christopher Wilson",
-    "email": "doug@somethingdoug.com"
   },
   "once@1.4.0": {
     "licenses": "ISC",
@@ -1477,16 +1224,6 @@
     "email": "bvdrucker@gmail.com",
     "url": "bendrucker.me"
   },
-  "process-nextick-args@2.0.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/calvinmetcalf/process-nextick-args.git"
-  },
-  "process@0.11.10": {
-    "licenses": "MIT",
-    "repository": "git://github.com/shtylman/node-process.git",
-    "publisher": "Roman Shtylman",
-    "email": "shtylman@gmail.com"
-  },
   "proxy-addr@2.0.7": {
     "licenses": "MIT",
     "repository": "jshttp/proxy-addr",
@@ -1516,19 +1253,6 @@
     "publisher": "Jonathan Ong",
     "email": "me@jongleberry.com",
     "url": "http://jongleberry.com"
-  },
-  "readable-stream@2.3.8": {
-    "licenses": "MIT",
-    "repository": "git://github.com/nodejs/readable-stream"
-  },
-  "readable-stream@4.7.0": {
-    "licenses": "MIT",
-    "repository": "git://github.com/nodejs/readable-stream"
-  },
-  "readdir-glob@1.1.3": {
-    "licenses": "Apache-2.0",
-    "repository": "git://github.com/Yqnn/node-readdir-glob.git",
-    "publisher": "Yann Armelin"
   },
   "reflect-metadata@0.2.2": {
     "licenses": "Apache-2.0",
@@ -1575,13 +1299,6 @@
     "publisher": "Douglas Christopher Wilson",
     "email": "doug@somethingdoug.com"
   },
-  "safe-buffer@5.1.2": {
-    "licenses": "MIT",
-    "repository": "git://github.com/feross/safe-buffer.git",
-    "publisher": "Feross Aboukhadijeh",
-    "email": "feross@feross.org",
-    "url": "http://feross.org"
-  },
   "safe-buffer@5.2.1": {
     "licenses": "MIT",
     "repository": "git://github.com/feross/safe-buffer.git",
@@ -1595,13 +1312,6 @@
     "publisher": "Nikita Skovoroda",
     "email": "chalkerx@gmail.com",
     "url": "https://github.com/ChALkeR"
-  },
-  "sax@1.5.0": {
-    "licenses": "BlueOak-1.0.0",
-    "repository": "git://github.com/isaacs/sax-js.git",
-    "publisher": "Isaac Z. Schlueter",
-    "email": "i@izs.me",
-    "url": "http://blog.izs.me/"
   },
   "semver@7.7.4": {
     "licenses": "ISC",
@@ -1682,12 +1392,6 @@
     "publisher": "Ben Coe",
     "email": "ben@npmjs.com"
   },
-  "simple-git@3.32.3": {
-    "licenses": "MIT",
-    "repository": "https://github.com/steveukx/git-js.git",
-    "publisher": "Steve King",
-    "email": "steve@mydev.co"
-  },
   "split2@4.2.0": {
     "licenses": "ISC",
     "repository": "https://github.com/mcollina/split2.git",
@@ -1712,20 +1416,6 @@
   "statuses@2.0.2": {
     "licenses": "MIT",
     "repository": "jshttp/statuses"
-  },
-  "streamx@2.23.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/mafintosh/streamx.git",
-    "publisher": "Mathias Buus",
-    "url": "@mafintosh"
-  },
-  "string_decoder@1.1.1": {
-    "licenses": "MIT",
-    "repository": "git://github.com/nodejs/string_decoder.git"
-  },
-  "string_decoder@1.3.0": {
-    "licenses": "MIT",
-    "repository": "git://github.com/nodejs/string_decoder.git"
   },
   "string-width-cjs@4.2.3": {
     "licenses": "MIT",
@@ -1779,33 +1469,6 @@
     "licenses": "MIT",
     "repository": "https://github.com/svix/svix-webhooks",
     "publisher": "svix"
-  },
-  "swagger-ui-dist@5.32.0": {
-    "licenses": "Apache-2.0",
-    "repository": "git@github.com:swagger-api/swagger-ui.git"
-  },
-  "swagger-ui-express@5.0.1": {
-    "licenses": "MIT",
-    "repository": "git@github.com:scottie1984/swagger-ui-express.git",
-    "publisher": "Stephen Scott",
-    "email": "scottie1984@gmail.com"
-  },
-  "tar-stream@3.1.8": {
-    "licenses": "MIT",
-    "repository": "git+https://github.com/mafintosh/tar-stream.git",
-    "publisher": "Mathias Buus",
-    "email": "mathiasbuus@gmail.com"
-  },
-  "teex@1.0.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/mafintosh/teex.git",
-    "publisher": "Mathias Buus",
-    "url": "@mafintosh"
-  },
-  "text-decoder@1.2.7": {
-    "licenses": "Apache-2.0",
-    "repository": "git+https://github.com/holepunchto/text-decoder.git",
-    "publisher": "Holepunch"
   },
   "to-buffer@1.2.2": {
     "licenses": "MIT",
@@ -1869,10 +1532,6 @@
     "publisher": "Jeremy Ashkenas",
     "email": "jeremy@documentcloud.org"
   },
-  "undici-types@7.18.2": {
-    "licenses": "MIT",
-    "repository": "git+https://github.com/nodejs/undici.git"
-  },
   "undici@7.22.0": {
     "licenses": "MIT",
     "repository": "git+https://github.com/nodejs/undici.git"
@@ -1902,13 +1561,6 @@
     "email": "b.l.stein@gmail.com",
     "url": "http://www.bramstein.com"
   },
-  "util-deprecate@1.0.2": {
-    "licenses": "MIT",
-    "repository": "git://github.com/TooTallNate/util-deprecate.git",
-    "publisher": "Nathan Rajlich",
-    "email": "nathan@tootallnate.net",
-    "url": "http://n8.io/"
-  },
   "uuid@10.0.0": {
     "licenses": "MIT",
     "repository": "git+https://github.com/uuidjs/uuid.git"
@@ -1918,10 +1570,6 @@
     "repository": "https://github.com/uuidjs/uuid.git"
   },
   "uuid@13.0.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/uuidjs/uuid.git"
-  },
-  "uuid@8.3.2": {
     "licenses": "MIT",
     "repository": "https://github.com/uuidjs/uuid.git"
   },
@@ -1998,53 +1646,6 @@
     "publisher": "Damian Kaczmarek",
     "email": "damian@codecharm.co.uk"
   },
-  "xml-crypto@6.1.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/node-saml/xml-crypto.git",
-    "publisher": "Yaron Naveh",
-    "email": "yaronn01@gmail.com",
-    "url": "http://webservices20.blogspot.com/"
-  },
-  "xml-encryption@3.1.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/auth0/node-xml-encryption",
-    "publisher": "Matias Woloski",
-    "url": "Auth0"
-  },
-  "xml2js@0.6.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/Leonidas-from-XIV/node-xml2js.git",
-    "publisher": "Marek Kubica",
-    "email": "marek@xivilization.net",
-    "url": "https://xivilization.net"
-  },
-  "xmlbuilder@11.0.1": {
-    "licenses": "MIT",
-    "repository": "git://github.com/oozcitak/xmlbuilder-js.git",
-    "publisher": "Ozgur Ozcitak",
-    "email": "oozcitak@gmail.com"
-  },
-  "xmlbuilder@15.1.1": {
-    "licenses": "MIT",
-    "repository": "git://github.com/oozcitak/xmlbuilder-js.git",
-    "publisher": "Ozgur Ozcitak",
-    "email": "oozcitak@gmail.com"
-  },
-  "xpath@0.0.32": {
-    "licenses": "MIT",
-    "repository": "https://github.com/goto100/xpath.git",
-    "publisher": "Cameron McCormack"
-  },
-  "xpath@0.0.33": {
-    "licenses": "MIT",
-    "repository": "https://github.com/goto100/xpath.git",
-    "publisher": "Cameron McCormack"
-  },
-  "xpath@0.0.34": {
-    "licenses": "MIT",
-    "repository": "https://github.com/goto100/xpath.git",
-    "publisher": "Cameron McCormack"
-  },
   "xtend@4.0.2": {
     "licenses": "MIT",
     "repository": "git://github.com/Raynos/xtend.git",
@@ -2078,12 +1679,6 @@
   "yargs@17.7.2": {
     "licenses": "MIT",
     "repository": "https://github.com/yargs/yargs.git"
-  },
-  "zip-stream@6.0.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/archiverjs/node-zip-stream.git",
-    "publisher": "Chris Talkington",
-    "url": "http://christalkington.com/"
   },
   "zod@4.3.6": {
     "licenses": "MIT",

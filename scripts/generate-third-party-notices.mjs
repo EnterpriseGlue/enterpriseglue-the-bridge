@@ -1,4 +1,5 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +13,49 @@ function splitNameAndVersion(packageKey) {
 function normalizeLicense(license) {
   const v = String(license ?? '').trim();
   return v || 'UNKNOWN';
+}
+
+function normalizeLicenseField(license) {
+  if (Array.isArray(license)) {
+    const values = license
+      .map((entry) => normalizeLicenseField(entry))
+      .flatMap((entry) => String(entry).split(/\s+OR\s+/))
+      .map((entry) => normalizeLicense(entry))
+      .filter(Boolean);
+    return Array.from(new Set(values)).join(' OR ') || 'UNKNOWN';
+  }
+
+  if (license && typeof license === 'object') {
+    return normalizeLicenseField(license.type || license.name || license.url || 'UNKNOWN');
+  }
+
+  return normalizeLicense(license);
+}
+
+function normalizeRepository(repository) {
+  if (!repository) return '';
+  if (typeof repository === 'string') return repository;
+  if (typeof repository === 'object') return String(repository.url || repository.repository || '').trim();
+  return '';
+}
+
+function normalizePerson(person) {
+  if (!person) return { name: '', email: '', url: '' };
+
+  if (typeof person === 'string') {
+    const match = person.match(/^([^<(]+?)\s*(?:<([^>]+)>)?\s*(?:\(([^)]+)\))?$/);
+    return {
+      name: String(match?.[1] || person).trim(),
+      email: String(match?.[2] || '').trim(),
+      url: String(match?.[3] || '').trim(),
+    };
+  }
+
+  return {
+    name: String(person.name || '').trim(),
+    email: String(person.email || '').trim(),
+    url: String(person.url || '').trim(),
+  };
 }
 
 function toArray(v) {
@@ -46,32 +90,396 @@ async function loadJsonIfExists(jsonPath) {
   return JSON.parse(raw);
 }
 
+async function readTextIfExists(filePath) {
+  if (!existsSync(filePath)) return '';
+  return readFile(filePath, 'utf8');
+}
+
+async function loadPackageJson(packageDir) {
+  const pkgJsonPath = path.join(packageDir, 'package.json');
+  const pkg = await loadJsonIfExists(pkgJsonPath);
+  if (!pkg) {
+    throw new Error(`Missing package.json at ${pkgJsonPath}`);
+  }
+  return pkg;
+}
+
+async function expandWorkspaceDirs(repoRoot, workspaces) {
+  const patterns = Array.isArray(workspaces)
+    ? workspaces
+    : Array.isArray(workspaces?.packages)
+      ? workspaces.packages
+      : [];
+
+  const dirs = new Map();
+
+  for (const pattern of patterns) {
+    if (!pattern.includes('*')) {
+      const resolvedDir = path.join(repoRoot, pattern);
+      if (existsSync(path.join(resolvedDir, 'package.json'))) {
+        dirs.set(path.relative(repoRoot, resolvedDir), resolvedDir);
+      }
+      continue;
+    }
+
+    if (!pattern.endsWith('/*')) continue;
+
+    const baseDir = path.join(repoRoot, pattern.slice(0, -2));
+    if (!existsSync(baseDir)) continue;
+
+    const entries = await (await import('node:fs/promises')).readdir(baseDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const resolvedDir = path.join(baseDir, entry.name);
+      if (!existsSync(path.join(resolvedDir, 'package.json'))) continue;
+      dirs.set(path.relative(repoRoot, resolvedDir), resolvedDir);
+    }
+  }
+
+  return Array.from(dirs.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([, resolvedDir]) => resolvedDir);
+}
+
+function getDirectRuntimeDependencyNames(pkg) {
+  return Array.from(
+    new Set([
+      ...Object.keys(pkg.dependencies || {}),
+      ...Object.keys(pkg.optionalDependencies || {}),
+    ]),
+  ).sort();
+}
+
+function getInternalWorkspaceRefs(pkg, workspacePackageNames) {
+  const refs = new Set();
+
+  for (const field of ['dependencies', 'optionalDependencies', 'devDependencies', 'peerDependencies']) {
+    for (const name of Object.keys(pkg[field] || {})) {
+      if (workspacePackageNames.has(name)) {
+        refs.add(name);
+      }
+    }
+  }
+
+  return Array.from(refs).sort();
+}
+
+function sortObjectEntries(data) {
+  return Object.fromEntries(
+    Object.entries(data).sort((a, b) => a[0].localeCompare(b[0])),
+  );
+}
+
+function normalizeNoticeTimestamp(content) {
+  return String(content || '').replace(/^Generated at: .*$/m, 'Generated at: __TIMESTAMP__');
+}
+
+async function writeNormalizedJson(jsonPath, data) {
+  const normalized = sortObjectEntries(data);
+  await writeFile(jsonPath, `${JSON.stringify(normalized, null, 2)}\n`, 'utf8');
+}
+
+function runNpmLs(repoRoot, workspace) {
+  const args = ['ls', '--omit=dev', '--all', '--json'];
+  if (workspace) {
+    args.push('--workspace', workspace);
+  }
+
+  const result = spawnSync('npm', args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+
+  const output = String(result.stdout || '').trim();
+  if (!output) {
+    throw new Error(`npm ls returned no JSON for ${workspace || 'root'}: ${String(result.stderr || '').trim()}`);
+  }
+
+  return JSON.parse(output);
+}
+
+function findInstalledPackageDir(packageName, startDir, repoRoot) {
+  let currentDir = startDir;
+
+  while (true) {
+    const candidateDir = path.join(currentDir, 'node_modules', packageName);
+    if (existsSync(path.join(candidateDir, 'package.json'))) {
+      return candidateDir;
+    }
+
+    if (path.resolve(currentDir) === path.resolve(repoRoot)) {
+      break;
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      break;
+    }
+
+    currentDir = parentDir;
+  }
+
+  return null;
+}
+
+function inferLicenseFromText(text) {
+  const normalizedText = String(text || '').replace(/\r/g, '');
+
+  if (/mit license/i.test(normalizedText)) return 'MIT';
+  if (/apache license/i.test(normalizedText) && /version 2(?:\.0)?/i.test(normalizedText)) return 'Apache-2.0';
+  if (/the isc license/i.test(normalizedText)) return 'ISC';
+  if (/permission to use, copy, modify, and\/or distribute this software for any purpose with or without fee is hereby granted/i.test(normalizedText)) return 'ISC';
+  if (/redistribution and use in source and binary forms/i.test(normalizedText)) {
+    if (/neither the name/i.test(normalizedText)) return 'BSD-3-Clause';
+    return 'BSD-2-Clause';
+  }
+  if (/this is free and unencumbered software released into the public domain/i.test(normalizedText)) return 'Unlicense';
+
+  return '';
+}
+
+async function inferLicenseFromPackageDir(packageDir) {
+  for (const manifestName of ['component.json', 'bower.json']) {
+    const manifest = await loadJsonIfExists(path.join(packageDir, manifestName));
+    const manifestLicense = normalizeLicenseField(manifest?.license || manifest?.licenses || '');
+    if (manifestLicense && manifestLicense !== 'UNKNOWN') {
+      return manifestLicense;
+    }
+  }
+
+  const entries = await readdir(packageDir, { withFileTypes: true });
+  const licenseEntry = entries.find((entry) => entry.isFile() && /^(license|licence|copying)(\.|$)/i.test(entry.name));
+  if (!licenseEntry) {
+    return 'UNKNOWN';
+  }
+
+  const licenseText = await readFile(path.join(packageDir, licenseEntry.name), 'utf8');
+  return inferLicenseFromText(licenseText) || 'UNKNOWN';
+}
+
+async function readInstalledPackageMetadata(packageDir, metadataCache) {
+  if (metadataCache.has(packageDir)) {
+    return metadataCache.get(packageDir);
+  }
+
+  const pkg = await loadPackageJson(packageDir);
+  const author = normalizePerson(pkg.author);
+  const inferredLicense = await inferLicenseFromPackageDir(packageDir);
+  const metadata = Object.fromEntries(
+    Object.entries({
+      licenses: normalizeLicenseField(pkg.license || pkg.licenses || inferredLicense || 'UNKNOWN'),
+      repository: normalizeRepository(pkg.repository || pkg.homepage || ''),
+      publisher: author.name || undefined,
+      email: author.email || undefined,
+      url: author.url || undefined,
+    }).filter(([, value]) => value !== undefined && value !== ''),
+  );
+
+  metadataCache.set(packageDir, metadata);
+  return metadata;
+}
+
+function mergeEntry(target, pkgKey, metadata) {
+  const existing = target[pkgKey];
+  if (!existing) {
+    target[pkgKey] = { ...metadata };
+    return;
+  }
+
+  if ((existing.licenses === 'UNKNOWN' || !existing.licenses) && metadata.licenses) {
+    existing.licenses = metadata.licenses;
+  }
+
+  if (!existing.repository && metadata.repository) {
+    existing.repository = metadata.repository;
+  }
+
+  if (!existing.publisher && metadata.publisher) {
+    existing.publisher = metadata.publisher;
+  }
+
+  if (!existing.email && metadata.email) {
+    existing.email = metadata.email;
+  }
+
+  if (!existing.url && metadata.url) {
+    existing.url = metadata.url;
+  }
+}
+
+async function walkResolvedDependencies({ entries, dependencies, parentDir, repoRoot, workspacePackageNames, metadataCache }) {
+  for (const [packageName, node] of Object.entries(dependencies || {})) {
+    if (!node || typeof node !== 'object') continue;
+
+    const packageDir = findInstalledPackageDir(packageName, parentDir, repoRoot);
+    if (!packageDir) continue;
+
+    if (!workspacePackageNames.has(packageName)) {
+      const version = typeof node.version === 'string' ? node.version : '';
+      if (version) {
+        const metadata = await readInstalledPackageMetadata(packageDir, metadataCache);
+        mergeEntry(entries, `${packageName}@${version}`, metadata);
+      }
+    }
+
+    await walkResolvedDependencies({
+      entries,
+      dependencies: node.dependencies,
+      parentDir: packageDir,
+      repoRoot,
+      workspacePackageNames,
+      metadataCache,
+    });
+  }
+}
+
+async function buildSourceEntries(source, context, seenInternalPackages = new Set()) {
+  if (context.sourceEntriesCache.has(source.name)) {
+    return context.sourceEntriesCache.get(source.name);
+  }
+
+  const entries = {};
+  const runtimeDependencyNames = new Set(getDirectRuntimeDependencyNames(source.packageJson));
+  const tree = source.isRoot
+    ? context.rootTree || (context.rootTree = runNpmLs(context.repoRoot))
+    : context.workspaceTreeCache.get(source.name) || (() => {
+        const nextTree = runNpmLs(context.repoRoot, source.workspace);
+        context.workspaceTreeCache.set(source.name, nextTree);
+        return nextTree;
+      })();
+
+  const rootNode = source.isRoot ? tree : tree.dependencies?.[source.packageName];
+  const dependencyNodes = source.isRoot ? tree.dependencies || {} : rootNode?.dependencies || {};
+
+  for (const dependencyName of runtimeDependencyNames) {
+    const node = dependencyNodes[dependencyName];
+    if (!node || typeof node !== 'object') continue;
+
+    const dependencyDir = findInstalledPackageDir(dependencyName, source.packageDir, context.repoRoot);
+    if (!dependencyDir) continue;
+
+    if (!context.workspacePackageNames.has(dependencyName)) {
+      const version = typeof node.version === 'string' ? node.version : '';
+      if (version) {
+        const metadata = await readInstalledPackageMetadata(dependencyDir, context.metadataCache);
+        mergeEntry(entries, `${dependencyName}@${version}`, metadata);
+      }
+    }
+
+    await walkResolvedDependencies({
+      entries,
+      dependencies: node.dependencies,
+      parentDir: dependencyDir,
+      repoRoot: context.repoRoot,
+      workspacePackageNames: context.workspacePackageNames,
+      metadataCache: context.metadataCache,
+    });
+  }
+
+  const nextSeen = new Set(seenInternalPackages);
+  if (source.packageName) {
+    nextSeen.add(source.packageName);
+  }
+
+  for (const internalPackageName of getInternalWorkspaceRefs(source.packageJson, context.workspacePackageNames)) {
+    if (runtimeDependencyNames.has(internalPackageName)) continue;
+    if (nextSeen.has(internalPackageName)) continue;
+
+    const internalSource = context.workspaceSourcesByPackage.get(internalPackageName);
+    if (!internalSource) continue;
+
+    const nestedEntries = await buildSourceEntries(internalSource, context, new Set([...nextSeen, internalPackageName]));
+    for (const [pkgKey, metadata] of Object.entries(nestedEntries)) {
+      mergeEntry(entries, pkgKey, metadata);
+    }
+  }
+
+  context.sourceEntriesCache.set(source.name, entries);
+  return entries;
+}
+
+async function resolveSources(repoRoot) {
+  const rootPackageJson = await loadPackageJson(repoRoot);
+  const workspaceDirs = await expandWorkspaceDirs(repoRoot, rootPackageJson.workspaces || []);
+  const workspaceSources = [];
+
+  for (const workspaceDir of workspaceDirs) {
+    const packageJson = await loadPackageJson(workspaceDir);
+    workspaceSources.push({
+      name: path.relative(repoRoot, workspaceDir),
+      packageName: packageJson.name,
+      packageDir: workspaceDir,
+      packageJson,
+      workspace: path.relative(repoRoot, workspaceDir),
+      outputFile: path.join(workspaceDir, 'third_party_licenses.json'),
+      isRoot: false,
+    });
+  }
+
+  return {
+    rootSource: {
+      name: 'root',
+      packageName: rootPackageJson.name || '',
+      packageDir: repoRoot,
+      packageJson: rootPackageJson,
+      workspace: null,
+      outputFile: path.join(repoRoot, 'third_party_licenses.json'),
+      isRoot: true,
+    },
+    workspaceSources,
+  };
+}
+
 async function main() {
   const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
   const repoRoot = path.resolve(scriptsDir, '..');
   const failOnIncompatible = String(process.env.EG_FAIL_ON_LICENSE_INCOMPATIBLE || 'false').toLowerCase() === 'true';
 
-  const sources = [
-    { name: 'root', file: path.join(repoRoot, 'third_party_licenses.json') },
-    { name: 'backend', file: path.join(repoRoot, 'backend', 'third_party_licenses.json') },
-    { name: 'frontend', file: path.join(repoRoot, 'frontend', 'third_party_licenses.json') },
-  ];
+  const { rootSource, workspaceSources } = await resolveSources(repoRoot);
+  const sources = [rootSource, ...workspaceSources];
+  const generatedFiles = [rootSource.outputFile, ...workspaceSources.map((source) => source.outputFile)];
+
+  const context = {
+    repoRoot,
+    rootTree: null,
+    workspaceTreeCache: new Map(),
+    metadataCache: new Map(),
+    sourceEntriesCache: new Map(),
+    workspaceSourcesByPackage: new Map(workspaceSources.map((source) => [source.packageName, source])),
+    workspacePackageNames: new Set(workspaceSources.map((source) => source.packageName).filter(Boolean)),
+  };
+
+  const sourceEntries = new Map();
+  for (const source of sources) {
+    const entries = await buildSourceEntries(source, context);
+    sourceEntries.set(source.name, entries);
+    if (!source.isRoot) {
+      await writeNormalizedJson(source.outputFile, entries);
+    }
+  }
+
+  const aggregateEntries = {};
+  for (const source of sources) {
+    for (const [pkgKey, metadata] of Object.entries(sourceEntries.get(source.name) || {})) {
+      mergeEntry(aggregateEntries, pkgKey, metadata);
+    }
+  }
+
+  await writeNormalizedJson(rootSource.outputFile, aggregateEntries);
 
   const merged = new Map();
 
   // Exclude the workspace root packages themselves (we only want third-party dependencies).
   const excludedPackageKeys = new Set();
   for (const src of sources) {
-    const pkgJsonPath = path.join(path.dirname(src.file), 'package.json');
-    const pkg = await loadJsonIfExists(pkgJsonPath);
+    const pkg = src.packageJson;
     if (pkg?.name && pkg?.version) {
       excludedPackageKeys.add(`${pkg.name}@${pkg.version}`);
     }
   }
 
   for (const src of sources) {
-    if (!existsSync(src.file)) continue;
-    const data = await loadLicenseJson(src.file);
+    const data = sourceEntries.get(src.name) || {};
     for (const [pkgKey, meta] of Object.entries(data)) {
       if (excludedPackageKeys.has(pkgKey)) continue;
       const existing = merged.get(pkgKey);
@@ -136,8 +544,8 @@ async function main() {
   lines.push(`Generated at: ${generatedAt}`);
   lines.push('');
   lines.push('Generated from:');
-  for (const src of sources) {
-    lines.push(`- ${path.relative(repoRoot, src.file)}`);
+  for (const generatedFile of generatedFiles) {
+    lines.push(`- ${path.relative(repoRoot, generatedFile)}`);
   }
   lines.push('');
   lines.push('## License summary');
@@ -208,7 +616,25 @@ async function main() {
   lines.push('');
 
   const outputPath = path.join(repoRoot, 'THIRD_PARTY_NOTICES.md');
-  await writeFile(outputPath, lines.join('\n'), 'utf8');
+  const nextContent = `${lines.join('\n')}`;
+  const existingContent = await readTextIfExists(outputPath);
+  if (existingContent) {
+    const normalizedExisting = normalizeNoticeTimestamp(existingContent);
+    const normalizedNext = normalizeNoticeTimestamp(nextContent);
+    if (normalizedExisting === normalizedNext) {
+      const existingGeneratedAt = existingContent.match(/^Generated at: (.*)$/m)?.[1]?.trim();
+      if (existingGeneratedAt) {
+        const stabilizedContent = nextContent.replace(/^Generated at: .*$/m, `Generated at: ${existingGeneratedAt}`);
+        await writeFile(outputPath, stabilizedContent, 'utf8');
+      } else {
+        await writeFile(outputPath, nextContent, 'utf8');
+      }
+    } else {
+      await writeFile(outputPath, nextContent, 'utf8');
+    }
+  } else {
+    await writeFile(outputPath, nextContent, 'utf8');
+  }
 
   // Console output for CI / local usage
   console.log(`Wrote ${path.relative(repoRoot, outputPath)} with ${rows.length} entries.`);
@@ -232,7 +658,24 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
-});
+const currentFilePath = fileURLToPath(import.meta.url);
+const invokedFilePath = process.argv[1] ? path.resolve(process.argv[1]) : '';
+
+if (invokedFilePath === currentFilePath) {
+  main().catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  });
+}
+
+export {
+  expandWorkspaceDirs,
+  getDirectRuntimeDependencyNames,
+  getInternalWorkspaceRefs,
+  inferLicenseFromPackageDir,
+  inferLicenseFromText,
+  main,
+  normalizeNoticeTimestamp,
+  normalizeLicenseField,
+  splitNameAndVersion,
+};
