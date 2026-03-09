@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { InlineNotification, Modal, OverflowMenu, OverflowMenuItem, Toggle } from '@carbon/react'
 import { ChevronDown, ChevronRight } from '@carbon/icons-react'
 import type { ExecutionTrailGroup, ExecutionTrailInstance } from './activityDetailUtils'
-import { formatDurationMs } from './activityDetailUtils'
+import { formatCompactDurationMs, formatDurationMs } from './activityDetailUtils'
 import { getProcessInstanceExecutionDetails } from '../api/processInstances'
 import type { ExecutionDetails, HistoricDecisionInstanceLite, HistoricTaskInstanceLite, HistoricVariableInstanceLite, UserOperationLogEntryLite } from './types'
 
@@ -363,7 +363,12 @@ export function ExecutionTrailPanel({
           : 'transparent'
       const groupDuration = group.totalExecCount === 1
         ? formatDurationMs(group._summary.durationMs, group.instances[0]?.startTime, group.instances[0]?.endTime)
-        : ''
+        : formatCompactDurationMs(group._summary.durationMs)
+      const groupMeta = group.totalExecCount > 1
+        ? groupDuration
+          ? `×${group.totalExecCount} · ${groupDuration} total`
+          : `×${group.totalExecCount}`
+        : groupDuration
 
       return (
         <div key={group.groupKey} style={{ display: 'grid', gap: 0 }}>
@@ -429,7 +434,7 @@ export function ExecutionTrailPanel({
               </div>
 
               <div style={{ fontSize: 'var(--text-12)', color: 'var(--cds-text-primary)', whiteSpace: 'nowrap', justifySelf: 'end', textAlign: 'right' }}>
-                {groupDuration || '—'}
+                {groupMeta || '—'}
               </div>
             </div>
 

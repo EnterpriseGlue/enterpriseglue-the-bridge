@@ -63,4 +63,3 @@ volumes:
 networks:
   enterpriseglue-network:
     driver: bridge
-    name: enterpriseglue-network

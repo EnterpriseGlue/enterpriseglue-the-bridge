@@ -26,12 +26,6 @@ import { useElementLinkPillOverlay } from './components/hooks/useElementLinkPill
 import { useProcessesFilterStore } from '../shared/stores/processesFilterStore'
 import { getUiErrorMessage } from '../../../shared/api/apiErrorUtils'
 import { apiClient } from '../../../shared/api/client'
-import {
-  SPLIT_PANE_STORAGE_KEY,
-  SPLIT_PANE_VERTICAL_STORAGE_KEY,
-  DEFAULT_SPLIT_SIZE,
-  DEFAULT_VERTICAL_SPLIT_SIZE,
-} from './components/utils'
 import { getProcessInstanceVariableHistory } from './api/processInstances'
 import type { DecisionIo, HistoricDecisionInstanceLite, VariableHistoryTarget } from './components/types'
 import { ProcessInstanceDiagramPane } from './components/ProcessInstanceDiagramPane'
@@ -39,6 +33,14 @@ import { ProcessInstanceBottomPane } from './components/ProcessInstanceBottomPan
 import { ProcessInstanceModals } from './components/ProcessInstanceModals'
 import { EngineAccessError, isEngineAccessError } from '../shared/components/EngineAccessError'
 import { ApplyModificationsModal } from './components/modals/ApplyModificationsModal'
+import {
+  SPLIT_PANE_STORAGE_KEY,
+  SPLIT_PANE_VERTICAL_STORAGE_KEY,
+  DEFAULT_SPLIT_SIZE,
+  DEFAULT_VERTICAL_SPLIT_SIZE,
+} from './components/utils'
+
+const INSTANCE_COUNTS_STORAGE_KEY = 'mission-control-show-instance-counts'
 
 type ProcessEditTarget = {
   canShowEditButton: boolean
@@ -154,7 +156,20 @@ export default function ProcessInstanceDetailPage() {
   // 2. Diagram Overlays Hook
   // Check if process instance is suspended (from runtime data)
   const isSuspended = !!(runtimeQ.data as any)?.suspended
-  const [showTokenPassCounts, setShowTokenPassCounts] = React.useState(false)
+  const [showTokenPassCounts, setShowTokenPassCounts] = React.useState(() => {
+    try {
+      if (typeof window === 'undefined') return false
+      return window.localStorage.getItem(INSTANCE_COUNTS_STORAGE_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  React.useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return
+      window.localStorage.setItem(INSTANCE_COUNTS_STORAGE_KEY, showTokenPassCounts ? '1' : '0')
+    } catch {}
+  }, [showTokenPassCounts])
   const { viewerApi, setViewerApi, bpmnRef, applyOverlays } = useDiagramOverlays(actQ, incidentsQ, { isSuspended, showTokenPassCounts })
 
   // 3. Variable Editor Hook

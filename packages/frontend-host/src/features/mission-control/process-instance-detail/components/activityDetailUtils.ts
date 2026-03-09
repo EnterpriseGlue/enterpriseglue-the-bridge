@@ -161,6 +161,31 @@ export function formatDurationMs(durationMs?: number | null, startTime?: string 
   return days === 1 ? '1 day' : `${days} days`
 }
 
+export function formatCompactDurationMs(durationMs?: number | null, startTime?: string | null, endTime?: string | null) {
+  const resolved = getDurationMs(durationMs, startTime, endTime)
+  if (resolved === null || !Number.isFinite(resolved) || resolved < 0) return ''
+  if (resolved < 1000) return `${Math.floor(resolved)}ms`
+
+  const totalSeconds = Math.floor(resolved / 1000)
+  if (totalSeconds < 60) return `${totalSeconds}s`
+
+  const totalMinutes = Math.floor(totalSeconds / 60)
+  if (totalMinutes < 60) {
+    const seconds = totalSeconds % 60
+    return seconds > 0 ? `${totalMinutes}m ${seconds}s` : `${totalMinutes}m`
+  }
+
+  const totalHours = Math.floor(totalMinutes / 60)
+  if (totalHours < 24) {
+    const minutes = totalMinutes % 60
+    return minutes > 0 ? `${totalHours}h ${String(minutes).padStart(2, '0')}m` : `${totalHours}h`
+  }
+
+  const days = Math.floor(totalHours / 24)
+  const hours = totalHours % 24
+  return hours > 0 ? `${days}d ${hours}h` : `${days}d`
+}
+
 function getTypeRank(activityId: string, activityType?: string, bpmnRef?: React.MutableRefObject<any>) {
   const reg = bpmnRef?.current?.get?.('elementRegistry')
   const el = reg?.get?.(activityId)
@@ -316,6 +341,12 @@ export function buildActivityGroups({
         .map((instance) => instance._summary.endTs)
         .filter((value): value is number => value !== null)
       const endKey = completedEndTimes.length > 0 ? Math.max(...completedEndTimes) : null
+      const knownDurations = instances
+        .map((instance) => instance._summary.durationMs)
+        .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0)
+      const aggregateDurationMs = knownDurations.length > 0
+        ? knownDurations.reduce((total, value) => total + value, 0)
+        : null
 
       return {
         kind: 'group' as const,
@@ -343,7 +374,7 @@ export function buildActivityGroups({
         _summary: {
           startTs: Number.isFinite(startKey) ? startKey : null,
           endTs: active ? null : endKey,
-          durationMs: instances.length === 1 ? instances[0].durationMs : null,
+          durationMs: aggregateDurationMs,
         },
       }
     })

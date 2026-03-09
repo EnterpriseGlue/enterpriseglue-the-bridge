@@ -236,6 +236,7 @@ test.describe('Mission Control execution trail', () => {
 
     await page.evaluate(({ selectedEngineId }) => {
       window.localStorage.setItem('engine-selector', JSON.stringify({ state: { selectedEngineId }, version: 0 }));
+      window.localStorage.setItem('mission-control-show-instance-counts', '1');
     }, { selectedEngineId: engineId });
 
     await page.goto(`/mission-control/processes/instances/${instanceId}`);
