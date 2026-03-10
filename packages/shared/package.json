@@ -2,7 +2,7 @@
   "name": "@enterpriseglue/shared",
   "version": "0.2.0",
   "description": "Shared utilities, contracts, and services for EnterpriseGlue",
-  "license": "AGPL-3.0-or-later",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/nicholasgriffintn/enterpriseglue-the-bridge-oss.git",
