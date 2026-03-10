@@ -47,9 +47,9 @@ flowchart TD
     direction TB
     Workflow1[Process Visibility]
     Workflow2[Process Instance Analysis]
-    Workflow3[Task and Job Operations]
+    Workflow3[Task Job and Modify Operations]
     Workflow4[Decision Visibility]
-    Workflow5[Batch and Migration Operations]
+    Workflow5[Batch Processing and Migration Assistant]
     Workflow6[Operational Metrics and History]
   end
 
@@ -130,9 +130,9 @@ Capabilities that expose process, task, decision, and operational insight throug
 **Sub-capabilities**
 - process visibility
 - process instance analysis
-- task and job operations
+- task, job, and process modification operations
 - decision visibility
-- batch and migration operations
+- batch processing and migration assistant operations
 - operational metrics and history
 
 ### 4. Engine Connectivity and Management

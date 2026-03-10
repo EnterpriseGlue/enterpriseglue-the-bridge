@@ -52,7 +52,7 @@ flowchart TB
 | Experience Shell | User journey composition, route orchestration, navigation structure | Supports all user-facing domains by exposing capabilities through the UI |
 | Identity and Access | Authentication and session management, SSO integration, authorization enforcement, account lifecycle | Supports Platform Governance, Engine Management, and all protected user-facing flows |
 | Starbase | Project management, file and folder management, comments, project membership and deployment support | Supports Repository and Version Control Integration |
-| Mission Control | Process visibility, process instance analysis, task and job operations, decision visibility, batch and migration operations, operational metrics and history | Depends on Engine Management and Identity and Access |
+| Mission Control | Process visibility, process instance analysis, task/job/process modification operations, decision visibility, batch processing, migration assistant operations, operational metrics and history | Depends on Engine Management and Identity and Access |
 | Engine Management | Engine registration, engine connectivity, deployment targeting, engine access governance | Supports Mission Control and selected admin flows |
 | Git and Versioning | Git provider connectivity, repository clone/sync/create, versioning support | Supports Starbase collaboration and deployment-oriented workflows |
 | Platform Administration | Platform settings, SSO provider administration, authorization policy administration, email and setup administration | Supports Access and Security and overall platform governance |
