@@ -65,7 +65,7 @@ EnterpriseGlue OSS is a self-hostable platform that combines:
   - The platform is designed for multiple database backends, with Postgres as the default and adapters for Oracle, MSSQL, MySQL, and Spanner.
 
 - **Camunda Engine**
-  - External workflow/decision engine used by Mission Control for process, task, decision, batch, and migration operations.
+  - External workflow/decision engine used by Mission Control for process visibility, process modification, task, decision, batch processing, and migration assistant operations.
 
 - **Git Provider / Git Repositories**
   - Used for repository connectivity, synchronization, and versioning-related operations.

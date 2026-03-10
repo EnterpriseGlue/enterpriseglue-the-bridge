@@ -116,10 +116,10 @@ Mission Control is the workflow and decision operations domain.
 
 **Responsibilities**
 - process definition visibility
-- process instance inspection
+- process instance inspection and modification
 - task, external task, message, and job operations
 - decision visibility
-- batches and migrations
+- batch processing and migration assistant operations
 - operational metrics and historical detail
 
 **Codebase anchors**

@@ -62,7 +62,7 @@ flowchart TB
 
 ### 2. Camunda Integration
 **Purpose**
-- Provide process, task, decision, batch, and migration visibility and operations in Mission Control.
+- Provide process visibility, process modification, task, decision, batch processing, and migration assistant operations in Mission Control.
 
 **Architectural location**
 - `packages/backend-host/src/modules/mission-control/`

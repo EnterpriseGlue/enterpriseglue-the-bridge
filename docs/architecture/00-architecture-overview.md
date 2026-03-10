@@ -1,7 +1,7 @@
 # EnterpriseGlue OSS Architecture Overview
 
 ## Purpose
-This index provides the recommended reading order for the EnterpriseGlue OSS architecture document set in `local-docs/architecture`.
+This index provides the recommended reading order for the EnterpriseGlue OSS architecture document set in `docs/architecture`.
 
 ## Recommended Reading Order
 
@@ -16,6 +16,7 @@ This index provides the recommended reading order for the EnterpriseGlue OSS arc
 | 7 | `06-oss-integration-architecture.md` | Understand external integration boundaries |
 | 8 | `07-oss-security-and-trust-boundaries.md` | Understand trust boundaries, protection layers, and sensitive flows |
 | 9 | `08-oss-information-data-architecture.md` | Understand key information domains and persistence boundaries |
+| 10 | `10-oss-license-compliance-and-third-party-management.md` | Understand first-party Apache-2.0 alignment, third-party notice generation, and compliance controls |
 
 ## Document Relationship Diagram
 ```mermaid
@@ -37,6 +38,7 @@ flowchart TD
     Integration[Integration Architecture]
     Security[Security and Trust Boundaries]
     Data[Information and Data Architecture]
+    License[License Compliance and Third-Party Management]
   end
 
   Overview --> Core
@@ -49,7 +51,9 @@ flowchart TD
   Runtime --> Integration
   Runtime --> Security
   Runtime --> Data
+  Runtime --> License
   Authz --> Security
+  Security --> License
 ```
 
 ## Suggested Review Paths
@@ -66,12 +70,14 @@ flowchart TD
 - `09-oss-authorization-access-control-model.md`
 - `07-oss-security-and-trust-boundaries.md`
 - `06-oss-integration-architecture.md`
+- `10-oss-license-compliance-and-third-party-management.md`
 
 ### Platform / Runtime Review Path
 - `05-oss-application-container-architecture.md`
 - `06-oss-integration-architecture.md`
 - `08-oss-information-data-architecture.md`
 - `07-oss-security-and-trust-boundaries.md`
+- `10-oss-license-compliance-and-third-party-management.md`
 
 ## Core Architectural Themes
 - **Host-based composition**
