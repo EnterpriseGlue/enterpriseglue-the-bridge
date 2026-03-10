@@ -128,31 +128,34 @@ jobs:
             echo "API_BASE_URL="
           } > .env.images.ci
 
-      - name: Start image deployment stack
-        run: |
-          COMPOSE_DIR="infra/docker/compose"
-          docker compose --project-directory . --env-file .env.images.ci -f "$COMPOSE_DIR/docker-compose.prod.yml" -f "$COMPOSE_DIR/docker-compose.images.yml" up -d
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 24
+          cache: npm
 
-      - name: Wait for frontend and backend health
-        shell: bash
-        run: |
-          set -euo pipefail
-          COMPOSE_DIR="infra/docker/compose"
-          for i in {1..45}; do
-            if curl -sf http://localhost:8080/login >/dev/null && curl -sf http://localhost:8080/health >/dev/null; then
-              break
-            fi
-            sleep 2
-          done
-          curl -sf http://localhost:8080/login >/dev/null
-          curl -sf http://localhost:8080/health >/dev/null
-          docker compose --project-directory . --env-file .env.images.ci -f "$COMPOSE_DIR/docker-compose.prod.yml" -f "$COMPOSE_DIR/docker-compose.images.yml" exec -T backend node -e "require('http').get('http://127.0.0.1:'+(process.env.API_PORT||'8787')+'/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1));"
+      - name: Install dependencies
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm ci
 
-      - name: Stop image deployment stack
-        if: always()
-        run: |
-          COMPOSE_DIR="infra/docker/compose"
-          docker compose --project-directory . --env-file .env.images.ci -f "$COMPOSE_DIR/docker-compose.prod.yml" -f "$COMPOSE_DIR/docker-compose.images.yml" down -v
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Mission Control Playwright smoke on Postgres images
+        env:
+          EG_POSTGRES_IMAGE_ENV_FILE: ./.env.images.ci
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run test:e2e:smoke:postgres:images -- --env-file ./.env.images.ci --project-name enterpriseglue-postgres-image-smoke
+
+      - name: Upload Mission Control smoke failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mission-control-smoke-failure-${{ github.run_id }}
+          path: |
+            test/results/
+          if-no-files-found: warn
 
   smoke-postgres-image-deploy-exposed:
     needs: publish

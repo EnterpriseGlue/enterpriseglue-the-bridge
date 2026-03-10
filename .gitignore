@@ -31,6 +31,7 @@ coverage/
 
 # Test results (Playwright)
 /test/results/
+/test/e2e/mock-camunda/.generated/
 
 # Env & secrets
 .env

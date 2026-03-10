@@ -1,0 +1,29 @@
+services:
+  db:
+    ports:
+      - "${POSTGRES_HOST_PORT:-55432}:5432"
+
+  camunda-mock:
+    image: node:24-alpine
+    working_dir: /mock
+    command: ["node", "server.mjs"]
+    environment:
+      MOCK_CAMUNDA_USE_ADAPTED_BUNDLE: ${MOCK_CAMUNDA_USE_ADAPTED_BUNDLE:-}
+    volumes:
+      - ./test/e2e/mock-camunda:/mock:ro
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:9080/health').then((r)=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - enterpriseglue-network
+
+  backend:
+    environment:
+      CAMUNDA_BASE_URL: ${CAMUNDA_BASE_URL:-http://camunda-mock:9080/engine-rest}
+    depends_on:
+      db:
+        condition: service_healthy
+      camunda-mock:
+        condition: service_healthy

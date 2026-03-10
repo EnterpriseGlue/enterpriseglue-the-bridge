@@ -1,6 +1,13 @@
 {
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
-    "noEmit": true
-  }
+    "noEmit": true,
+    "rootDir": "..",
+    "baseUrl": ".",
+    "paths": {
+      "@enterpriseglue/shared/contracts": ["../shared/src/contracts/index.ts"],
+      "@enterpriseglue/shared/contracts/*": ["../shared/src/contracts/*"]
+    }
+  },
+  "include": ["src", "../shared/src/contracts/**/*.ts", "../shared/src/contracts/**/*.d.ts"]
 }
