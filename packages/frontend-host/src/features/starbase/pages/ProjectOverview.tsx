@@ -19,7 +19,7 @@ import { usePlatformSyncSettings } from '../../platform-admin/hooks/usePlatformS
 import { ProjectOverviewTable } from './components/ProjectOverviewTable'
 import { ProjectOverviewBulkSyncModal } from './components/ProjectOverviewBulkSyncModal'
 import { ProjectOverviewModals } from './components/ProjectOverviewModals'
-import { DeployDialog } from '../../git/components'
+import DeployDialog from '../../git/components/DeployDialog'
 import { ProjectGitSettings } from '../../git/components/ProjectGitSettings'
 import type { Project, ProjectMember, EngineAccessData, SyncDirection, BulkSyncResult } from './projectOverviewTypes'
 import { canDeployProject } from '../utils/deployEligibility'

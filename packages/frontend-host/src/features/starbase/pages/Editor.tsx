@@ -16,14 +16,16 @@ import { apiClient } from '../../../shared/api/client'
 import { parseApiError } from '../../../shared/api/apiErrorUtils'
 import type { File as StarbaseFile } from '../../../shared/api/types'
 import { buildProjectFileIndex, resolveLinkedFile, type ProjectFileMeta } from '../utils/linkResolution'
-import { FolderLoader, CurrentPath, TreePicker, type FolderSummary, type ProjectMember } from '../components/project-detail'
+import type { FolderSummary, ProjectMember } from '../components/project-detail/project-detail-utils'
+import { FolderLoader, CurrentPath, TreePicker } from '../components/project-detail/FolderTreeHelpers'
 import { useElementLinkOverlay } from '../hooks/useElementLinkOverlay'
 import { getElementLinkInfo, updateElementLink, clearElementLink } from '../utils/bpmnLinking'
 const DMNCanvas = React.lazy(() => import('../components/DMNCanvas'))
 const DMNDrdMini = React.lazy(() => import('../components/DMNDrdMini'))
 const DMNEvaluatePanel = React.lazy(() => import('../components/DMNEvaluatePanel'))
 // Properties panel is provided by camunda-bpmn-js and mounted by Canvas
-import { DeployButton, GitVersionsPanel } from '../../git/components'
+import DeployButton from '../../git/components/DeployButton'
+import GitVersionsPanel from '../../git/components/GitVersionsPanel'
 import { usePlatformSyncSettings } from '../../platform-admin/hooks/usePlatformSyncSettings'
 import { ProjectAccessError, isProjectAccessError } from '../components/ProjectAccessError'
 import { useSelectedEngine } from '../../../components/EngineSelector'
@@ -727,18 +729,8 @@ export default function Editor() {
     if (match?.content) {
       viewModeImportedRef.current = true
       isRestoringRef.current = true
-      modelerRef.current.importXML(match.content).then(async () => {
+      modelerRef.current.importXML(match.content).then(() => {
         isRestoringRef.current = false
-        // DMN: auto-open decision table / literal expression view (mirrors DMNCanvas logic)
-        try {
-          const m = modelerRef.current
-          const views = m?.getViews?.() || []
-          if (views.length > 0) {
-            const table = views.find((v: any) => v.type === 'decisionTable' || v.type === 'literalExpression')
-            if (table) await m.open(table)
-            else if (views[0]) await m.open(views[0])
-          }
-        } catch {}
         try { fitViewport(modelerRef.current) } catch {}
       }).catch(() => {
         isRestoringRef.current = false
@@ -1122,18 +1114,8 @@ export default function Editor() {
     // Reimport the file's current XML
     if (modelerRef.current && fileQ.data?.xml) {
       isRestoringRef.current = true
-      modelerRef.current.importXML(fileQ.data.xml).then(async () => {
+      modelerRef.current.importXML(fileQ.data.xml).then(() => {
         isRestoringRef.current = false
-        // DMN: re-open decision table / literal expression view
-        try {
-          const m = modelerRef.current
-          const views = m?.getViews?.() || []
-          if (views.length > 0) {
-            const table = views.find((v: any) => v.type === 'decisionTable' || v.type === 'literalExpression')
-            if (table) await m.open(table)
-            else if (views[0]) await m.open(views[0])
-          }
-        } catch {}
         try { fitViewport(modelerRef.current) } catch {}
       }).catch(() => { isRestoringRef.current = false })
     }
