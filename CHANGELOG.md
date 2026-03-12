@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.7.9](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.7.8...v0.7.9) (2026-03-12)
+
+
+### Bug Fixes
+
+* **backend:** handle mixed postgres schemas during schema migration ([#224](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/224)) ([9435671](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/94356716bf41f3c98da4053d2ac51aae1d0f42cb))
+
 ## [0.7.8](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.7.7...v0.7.8) (2026-03-12)
 
 
