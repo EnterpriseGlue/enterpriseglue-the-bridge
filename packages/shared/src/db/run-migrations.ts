@@ -34,6 +34,18 @@ export async function ensureSchemaExists(schemaName: string): Promise<void> {
 
 const quoteIdentifier = (value: string): string => `"${value.replace(/"/g, '""')}"`;
 
+function findSchemaObjectConflicts(sourceNames: string[], targetNames: string[]): string[] {
+  const targetNameSet = new Set(targetNames);
+  return sourceNames.filter((name) => targetNameSet.has(name)).sort((left, right) => left.localeCompare(right));
+}
+
+function formatSchemaObjectConflicts(kind: string, names: string[]): string | null {
+  if (names.length === 0) {
+    return null;
+  }
+  return `${kind}: ${names.join(', ')}`;
+}
+
 async function listSchemaTables(queryRunner: QueryRunner, schemaName: string): Promise<string[]> {
   const rows: Array<{ table_name: string }> = await queryRunner.query(
     "SELECT table_name FROM information_schema.tables WHERE table_schema = $1 AND table_type = 'BASE TABLE'",
@@ -44,7 +56,13 @@ async function listSchemaTables(queryRunner: QueryRunner, schemaName: string): P
 
 async function listSchemaSequences(queryRunner: QueryRunner, schemaName: string): Promise<string[]> {
   const rows: Array<{ sequence_name: string }> = await queryRunner.query(
-    'SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = $1',
+    "SELECT c.relname AS sequence_name " +
+      "FROM pg_class c " +
+      "JOIN pg_namespace n ON n.oid = c.relnamespace " +
+      "LEFT JOIN pg_depend d ON d.objid = c.oid AND d.classid = 'pg_class'::regclass " +
+      "  AND d.refclassid = 'pg_class'::regclass AND d.deptype IN ('a', 'i') " +
+      "LEFT JOIN pg_class t ON t.oid = d.refobjid AND t.relkind IN ('r', 'p') " +
+      "WHERE c.relkind = 'S' AND n.nspname = $1 AND t.oid IS NULL",
     [schemaName]
   );
   return rows.map((row) => row.sequence_name);
@@ -66,45 +84,67 @@ async function autoMigratePostgresSchema(queryRunner: QueryRunner, schemaName: s
     return;
   }
 
+  await ensureSchemaExistsWithRunner(queryRunner, targetSchema);
+
   const sourceTables = await listSchemaTables(queryRunner, sourceSchema);
-  if (sourceTables.length === 0) {
+  const sourceEnums = await listSchemaEnums(queryRunner, sourceSchema);
+  const sourceSequences = await listSchemaSequences(queryRunner, sourceSchema);
+
+  if (sourceTables.length === 0 && sourceEnums.length === 0 && sourceSequences.length === 0) {
     return;
   }
 
   const targetTables = await listSchemaTables(queryRunner, targetSchema);
-  if (targetTables.length > 0) {
+  const targetEnums = await listSchemaEnums(queryRunner, targetSchema);
+  const targetSequences = await listSchemaSequences(queryRunner, targetSchema);
+
+  const tableConflicts = findSchemaObjectConflicts(sourceTables, targetTables);
+  const enumConflicts = findSchemaObjectConflicts(sourceEnums, targetEnums);
+  const sequenceConflicts = findSchemaObjectConflicts(sourceSequences, targetSequences);
+  const conflictSummary = [
+    formatSchemaObjectConflicts('tables', tableConflicts),
+    formatSchemaObjectConflicts('enum types', enumConflicts),
+    formatSchemaObjectConflicts('sequences', sequenceConflicts),
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join('; ');
+
+  if (conflictSummary) {
     throw new Error(
-      `Detected tables in both "${sourceSchema}" and "${targetSchema}" schemas. ` +
+      `Detected conflicting objects in both "${sourceSchema}" and "${targetSchema}" schemas (${conflictSummary}). ` +
       'Manual cleanup is required before automatic migration can run.'
     );
   }
 
-  await ensureSchemaExistsWithRunner(queryRunner, targetSchema);
+  if (targetTables.length > 0 || targetEnums.length > 0 || targetSequences.length > 0) {
+    console.log(
+      `  ℹ️  Detected mixed schema state between "${sourceSchema}" and "${targetSchema}". ` +
+        'Moving remaining objects to the configured schema.'
+    );
+  }
 
   console.log(
-    `  🔁 Migrating ${sourceTables.length} table(s) from "${sourceSchema}" to "${targetSchema}"...`
+    `  🔁 Migrating ${sourceTables.length} table(s), ${sourceEnums.length} enum type(s), and ${sourceSequences.length} sequence(s) ` +
+      `from "${sourceSchema}" to "${targetSchema}"...`
   );
-
-  const enums = await listSchemaEnums(queryRunner, sourceSchema);
 
   await queryRunner.startTransaction();
   try {
-    for (const typeName of enums) {
+    for (const typeName of sourceEnums) {
       await queryRunner.query(
         `ALTER TYPE ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(typeName)} SET SCHEMA ${quoteIdentifier(targetSchema)}`
+      );
+    }
+
+    for (const sequenceName of sourceSequences) {
+      await queryRunner.query(
+        `ALTER SEQUENCE ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(sequenceName)} SET SCHEMA ${quoteIdentifier(targetSchema)}`
       );
     }
 
     for (const tableName of sourceTables) {
       await queryRunner.query(
         `ALTER TABLE ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(tableName)} SET SCHEMA ${quoteIdentifier(targetSchema)}`
-      );
-    }
-
-    const sequences = await listSchemaSequences(queryRunner, sourceSchema);
-    for (const sequenceName of sequences) {
-      await queryRunner.query(
-        `ALTER SEQUENCE ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(sequenceName)} SET SCHEMA ${quoteIdentifier(targetSchema)}`
       );
     }
 

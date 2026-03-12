@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const baseEnv = {
   DATABASE_TYPE: 'postgres',
@@ -40,10 +40,12 @@ function applyBaseEnv(schema: string) {
   process.env.POSTGRES_SCHEMA = schema;
 }
 
-async function cleanupSchemas(targetSchema: string) {
+async function cleanupSchemas(...targetSchemas: string[]) {
   const pool = await createPool();
   try {
-    await pool.query(`DROP SCHEMA IF EXISTS ${quoteIdentifier(targetSchema)} CASCADE`);
+    for (const targetSchema of targetSchemas) {
+      await pool.query(`DROP SCHEMA IF EXISTS ${quoteIdentifier(targetSchema)} CASCADE`);
+    }
     await pool.query('DROP SCHEMA IF EXISTS main CASCADE');
   } finally {
     await pool.end();
@@ -52,23 +54,28 @@ async function cleanupSchemas(targetSchema: string) {
 
 describe('Postgres schema auto-migration', () => {
   const targetSchema = `schema_migrate_${Date.now()}`;
+  const mixedTargetSchema = `schema_mixed_${Date.now()}`;
   const seedPrefix = `schema_migrate_${Math.random().toString(36).slice(2, 8)}`;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     applyBaseEnv('main');
-    await cleanupSchemas(targetSchema);
+    vi.resetModules();
+    await cleanupSchemas(targetSchema, mixedTargetSchema);
   });
 
   afterAll(async () => {
-    await cleanupSchemas(targetSchema);
+    await cleanupSchemas(targetSchema, mixedTargetSchema);
 
     // Restore main schema so other integration tests still find main.users
     applyBaseEnv('main');
     vi.resetModules();
     const { runMigrations } = await import('@enterpriseglue/shared/db/run-migrations.js');
     const { closeDataSource } = await import('@enterpriseglue/shared/db/data-source.js');
-    await runMigrations();
-    await closeDataSource();
+    try {
+      await runMigrations();
+    } finally {
+      await closeDataSource();
+    }
   });
 
   it('moves existing tables/data from main to configured schema', async () => {
@@ -79,9 +86,13 @@ describe('Postgres schema auto-migration', () => {
     const { closeDataSource } = await import('@enterpriseglue/shared/db/data-source.js');
     const { seedUser } = await import('../utils/seed.js');
 
-    await runMigrations();
-    const seededUser = await seedUser(seedPrefix);
-    await closeDataSource();
+    let seededUser;
+    try {
+      await runMigrations();
+      seededUser = await seedUser(seedPrefix);
+    } finally {
+      await closeDataSource();
+    }
 
     applyBaseEnv(targetSchema);
     vi.resetModules();
@@ -89,8 +100,11 @@ describe('Postgres schema auto-migration', () => {
     const { runMigrations: runMigrationsNext } = await import('@enterpriseglue/shared/db/run-migrations.js');
     const { closeDataSource: closeDataSourceNext } = await import('@enterpriseglue/shared/db/data-source.js');
 
-    await runMigrationsNext();
-    await closeDataSourceNext();
+    try {
+      await runMigrationsNext();
+    } finally {
+      await closeDataSourceNext();
+    }
 
     const pool = await createPool();
     try {
@@ -106,6 +120,76 @@ describe('Postgres schema auto-migration', () => {
       expect(mainTables.rows.length).toBe(0);
     } finally {
       await pool.end();
+    }
+  });
+
+  it('reconciles a mixed state where some tables already live in the configured schema', async () => {
+    applyBaseEnv('main');
+    vi.resetModules();
+
+    const { runMigrations } = await import('@enterpriseglue/shared/db/run-migrations.js');
+    const { closeDataSource } = await import('@enterpriseglue/shared/db/data-source.js');
+    const { seedUser } = await import('../utils/seed.js');
+
+    let seededUser;
+    try {
+      await runMigrations();
+      seededUser = await seedUser(`${seedPrefix}-mixed`);
+    } finally {
+      await closeDataSource();
+    }
+
+    const pool = await createPool();
+    const environmentTagId = `${seedPrefix}-env-tag`;
+    const environmentTagName = `${seedPrefix}-env-name`;
+    const now = Date.now();
+    try {
+      await pool.query(
+        `INSERT INTO ${quoteIdentifier('main')}.${quoteIdentifier('environment_tags')}
+          (id, name, color, manual_deploy_allowed, sort_order, is_default, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [environmentTagId, environmentTagName, '#123456', true, 0, false, now, now]
+      );
+      await pool.query(`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(mixedTargetSchema)}`);
+      await pool.query(
+        `ALTER TABLE ${quoteIdentifier('main')}.${quoteIdentifier('environment_tags')} SET SCHEMA ${quoteIdentifier(mixedTargetSchema)}`
+      );
+    } finally {
+      await pool.end();
+    }
+
+    applyBaseEnv(mixedTargetSchema);
+    vi.resetModules();
+
+    const { runMigrations: runMigrationsNext } = await import('@enterpriseglue/shared/db/run-migrations.js');
+    const { closeDataSource: closeDataSourceNext } = await import('@enterpriseglue/shared/db/data-source.js');
+
+    try {
+      await runMigrationsNext();
+    } finally {
+      await closeDataSourceNext();
+    }
+
+    const verifyPool = await createPool();
+    try {
+      const usersResult = await verifyPool.query(
+        `SELECT count(*)::int AS count FROM ${quoteIdentifier(mixedTargetSchema)}.users WHERE email = $1`,
+        [seededUser.email]
+      );
+      expect(usersResult.rows[0]?.count).toBe(1);
+
+      const environmentTagsResult = await verifyPool.query(
+        `SELECT count(*)::int AS count FROM ${quoteIdentifier(mixedTargetSchema)}.environment_tags WHERE id = $1 AND name = $2`,
+        [environmentTagId, environmentTagName]
+      );
+      expect(environmentTagsResult.rows[0]?.count).toBe(1);
+
+      const mainTables = await verifyPool.query(
+        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' AND table_type = 'BASE TABLE'"
+      );
+      expect(mainTables.rows.length).toBe(0);
+    } finally {
+      await verifyPool.end();
     }
   });
 });
