@@ -5,6 +5,81 @@ import { createRequire } from 'node:module'
 
 export default defineConfig(({ mode }) => {
   const proxyTarget = (globalThis as any).process?.env?.DEV_PROXY_TARGET || 'http://localhost:8787'
+  const manualChunks = (id: string) => {
+    if (!id.includes('node_modules') || id.endsWith('.css')) {
+      return undefined
+    }
+
+    const packagePath = id.split('node_modules/')[1]
+    if (!packagePath) {
+      return undefined
+    }
+
+    const packageName = packagePath.startsWith('@')
+      ? packagePath.split('/').slice(0, 2).join('/')
+      : packagePath.split('/')[0]
+    const normalizedName = packageName.replace(/^@/, '').replace(/\//g, '-')
+
+    if (
+      packageName === '@bpmn-io/properties-panel' ||
+      packageName.startsWith('bpmn-') ||
+      packageName.startsWith('camunda-bpmn-') ||
+      packageName === 'camunda-bpmn-js' ||
+      packageName === 'camunda-bpmn-moddle' ||
+      packageName === 'diagram-js' ||
+      packageName.startsWith('moddle') ||
+      packageName === 'ids' ||
+      packageName === 'min-dash' ||
+      packageName === 'min-dom' ||
+      packageName === 'saxen' ||
+      packageName === 'tiny-svg'
+    ) {
+      return 'bpmn-vendor'
+    }
+
+    if (
+      packageName.startsWith('dmn-') ||
+      packageName === 'camunda-dmn-js' ||
+      packageName === 'table-js' ||
+      packageName === 'feelers' ||
+      packageName.startsWith('lezer-feel')
+    ) {
+      return 'dmn-vendor'
+    }
+
+    if (
+      packageName.startsWith('@carbon/') ||
+      packageName.startsWith('@floating-ui/') ||
+      packageName.startsWith('d3-') ||
+      packageName === 'd3' ||
+      packageName === 'inferno'
+    ) {
+      return 'carbon-vendor'
+    }
+
+    if (packageName.startsWith('@tanstack/')) {
+      return 'tanstack-vendor'
+    }
+
+    if (
+      packageName === 'react' ||
+      packageName === 'react-dom' ||
+      packageName === 'react-router' ||
+      packageName === 'react-router-dom' ||
+      packageName === 'scheduler'
+    ) {
+      return 'react-vendor'
+    }
+
+    if (
+      packageName === 'lucide-react' ||
+      packageName === 'react-icons'
+    ) {
+      return 'icons-vendor'
+    }
+
+    return `vendor-${normalizedName}`
+  }
 
   const require = createRequire(import.meta.url)
   let proxyPatterns = [
@@ -52,6 +127,14 @@ export default defineConfig(({ mode }) => {
     },
     esbuild: {
       jsxDev: mode !== 'production',
+    },
+    build: {
+      chunkSizeWarningLimit: 1500,
+      rollupOptions: {
+        output: {
+          manualChunks,
+        },
+      },
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),

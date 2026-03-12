@@ -56,7 +56,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
     "@vitest/coverage-v8": "^4.0.18",
-    "c8": "^11.0.0",
     "jsdom": "^28.1.0",
     "msw": "^2.10.0",
     "typescript": "~5.9.3",

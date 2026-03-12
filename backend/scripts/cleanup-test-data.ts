@@ -8,36 +8,43 @@
  * Usage: npx tsx scripts/cleanup-test-data.ts
  */
 
-import 'reflect-metadata';
-import { getDataSource } from '../../packages/shared/src/db/data-source.js';
-import { Brackets } from 'typeorm';
-import { Engine } from '../../packages/shared/src/db/entities/Engine.js';
-import { User } from '../../packages/shared/src/db/entities/User.js';
-import { Project } from '../../packages/shared/src/db/entities/Project.js';
-import { EngineHealth } from '../../packages/shared/src/db/entities/EngineHealth.js';
-import { EngineMember } from '../../packages/shared/src/db/entities/EngineMember.js';
-import { RefreshToken } from '../../packages/shared/src/db/entities/RefreshToken.js';
-import { AuditLog } from '../../packages/shared/src/db/entities/AuditLog.js';
-import { ProjectMemberRole } from '../../packages/shared/src/db/entities/ProjectMemberRole.js';
-import { ProjectMember } from '../../packages/shared/src/db/entities/ProjectMember.js';
-import { File } from '../../packages/shared/src/db/entities/File.js';
-import { Folder } from '../../packages/shared/src/db/entities/Folder.js';
+import 'dotenv/config';
+import { Pool, PoolClient } from 'pg';
+
+const quoteIdentifier = (value: string): string => `"${value.replace(/"/g, '""')}"`;
+
+function getPool(): Pool {
+  return new Pool({
+    host: process.env.POSTGRES_HOST ?? 'localhost',
+    port: process.env.POSTGRES_PORT ? Number(process.env.POSTGRES_PORT) : 5432,
+    user: process.env.POSTGRES_USER ?? 'postgres',
+    password: process.env.POSTGRES_PASSWORD ?? 'postgres',
+    database: process.env.POSTGRES_DATABASE ?? 'postgres',
+    ssl:
+      process.env.POSTGRES_SSL === 'true'
+        ? {
+            rejectUnauthorized: process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED === 'true',
+          }
+        : false,
+  });
+}
+
+async function selectIds(client: PoolClient, sql: string, params: unknown[]): Promise<string[]> {
+  const result = await client.query<{ id: string }>(sql, params);
+  return result.rows.map((row) => row.id);
+}
 
 async function cleanupTestData() {
   console.log('🧹 Starting test data cleanup...\n');
-  
-  const dataSource = await getDataSource();
-  const engineRepo = dataSource.getRepository(Engine);
-  const userRepo = dataSource.getRepository(User);
-  const projectRepo = dataSource.getRepository(Project);
-  const engineHealthRepo = dataSource.getRepository(EngineHealth);
-  const engineMemberRepo = dataSource.getRepository(EngineMember);
-  const refreshTokenRepo = dataSource.getRepository(RefreshToken);
-  const auditLogRepo = dataSource.getRepository(AuditLog);
-  const projectMemberRoleRepo = dataSource.getRepository(ProjectMemberRole);
-  const projectMemberRepo = dataSource.getRepository(ProjectMember);
-  const fileRepo = dataSource.getRepository(File);
-  const folderRepo = dataSource.getRepository(Folder);
+
+  if ((process.env.DATABASE_TYPE ?? 'postgres') !== 'postgres') {
+    console.log('Skipping cleanup because DATABASE_TYPE is not postgres.');
+    return;
+  }
+
+  const schema = quoteIdentifier(process.env.POSTGRES_SCHEMA ?? 'main');
+  const pool = getPool();
+  const client = await pool.connect();
 
   const engineNamePatterns = ['test_camunda_%', 'test_%engine%', 'test_%', 'e2e-%'];
   const userEmailPatterns = ['e2e-%@example.com', 'test_%@example.com', 'test_%'];
@@ -45,164 +52,100 @@ async function cleanupTestData() {
 
   let totalDeleted = 0;
 
-  // First, show counts and collect IDs
-  const testEngines = await engineRepo
-    .createQueryBuilder('e')
-    .select(['e.id', 'e.name'])
-    .where(new Brackets((qb) => {
-      engineNamePatterns.forEach((pattern, index) => {
-        const paramName = `enginePattern${index}`;
-        if (index === 0) qb.where(`e.name LIKE :${paramName}`, { [paramName]: pattern });
-        else qb.orWhere(`e.name LIKE :${paramName}`, { [paramName]: pattern });
-      });
-    }))
-    .getMany();
+  try {
+    await client.query('BEGIN');
 
-  const testUsers = await userRepo
-    .createQueryBuilder('u')
-    .select(['u.id', 'u.email'])
-    .where(new Brackets((qb) => {
-      userEmailPatterns.forEach((pattern, index) => {
-        const paramName = `userPattern${index}`;
-        if (index === 0) qb.where(`u.email LIKE :${paramName}`, { [paramName]: pattern });
-        else qb.orWhere(`u.email LIKE :${paramName}`, { [paramName]: pattern });
-      });
-    }))
-    .getMany();
+    const userIds = await selectIds(
+      client,
+      `SELECT id FROM ${schema}.users WHERE email LIKE ANY($1::text[])`,
+      [userEmailPatterns]
+    );
 
-  const testProjects = await projectRepo
-    .createQueryBuilder('p')
-    .select(['p.id', 'p.name'])
-    .where(new Brackets((qb) => {
-      projectNamePatterns.forEach((pattern, index) => {
-        const paramName = `projectPattern${index}`;
-        if (index === 0) qb.where(`p.name LIKE :${paramName}`, { [paramName]: pattern });
-        else qb.orWhere(`p.name LIKE :${paramName}`, { [paramName]: pattern });
-      });
-    }))
-    .getMany();
+    const projectIds = await selectIds(
+      client,
+      `SELECT id FROM ${schema}.projects WHERE name LIKE ANY($1::text[])`,
+      [projectNamePatterns]
+    );
 
-  const engineIds = testEngines.map((e) => e.id);
-  const userIds = testUsers.map((u) => u.id);
-  const projectIds = testProjects.map((p) => p.id);
+    const engineIds = await selectIds(
+      client,
+      userIds.length > 0
+        ? `SELECT id FROM ${schema}.engines WHERE name LIKE ANY($1::text[]) OR owner_id = ANY($2::text[])`
+        : `SELECT id FROM ${schema}.engines WHERE name LIKE ANY($1::text[])`,
+      userIds.length > 0 ? [engineNamePatterns, userIds] : [engineNamePatterns]
+    );
 
-  console.log(`Found: ${engineIds.length} test engines, ${userIds.length} test users\n`);
+    console.log(`Found: ${engineIds.length} test engines, ${userIds.length} test users\n`);
 
-  // Clean up refresh tokens and audit logs BEFORE deleting users/projects/engines
-  console.log('Cleaning up test refresh tokens and audit logs...');
-  if (userIds.length > 0) {
-    await refreshTokenRepo
-      .createQueryBuilder()
-      .delete()
-      .where('userId IN (:...userIds)', { userIds })
-      .execute();
-  }
-
-  await auditLogRepo
-    .createQueryBuilder()
-    .delete()
-    .where(new Brackets((qb) => {
-      if (userIds.length > 0) {
-        qb.where('userId IN (:...userIds)', { userIds });
-      }
-      if (projectIds.length > 0) {
-        qb.orWhere('resourceId IN (:...projectIds)', { projectIds });
-      }
-      if (engineIds.length > 0) {
-        qb.orWhere('resourceId IN (:...engineIds)', { engineIds });
-      }
-      qb.orWhere('details LIKE :detailPattern0', { detailPattern0: '%e2e-%@example.com%' });
-      qb.orWhere('details LIKE :detailPattern1', { detailPattern1: '%test_%@example.com%' });
-    }))
-    .execute();
-
-  // Clean up test projects (before users, since projects reference owner_id)
-  console.log('Cleaning up test projects...');
-  if (projectIds.length > 0) {
-    await projectMemberRoleRepo
-      .createQueryBuilder()
-      .delete()
-      .where('projectId IN (:...projectIds)', { projectIds })
-      .execute();
-
-    await projectMemberRepo
-      .createQueryBuilder()
-      .delete()
-      .where('projectId IN (:...projectIds)', { projectIds })
-      .execute();
-
-    await fileRepo
-      .createQueryBuilder()
-      .delete()
-      .where('projectId IN (:...projectIds)', { projectIds })
-      .execute();
-
-    await folderRepo
-      .createQueryBuilder()
-      .delete()
-      .where('projectId IN (:...projectIds)', { projectIds })
-      .execute();
-
-    const projectDeleteResult = await projectRepo
-      .createQueryBuilder()
-      .delete()
-      .where('id IN (:...projectIds)', { projectIds })
-      .execute();
-
-    const projectCount = Number(projectDeleteResult.affected || 0);
-    if (projectCount > 0) {
-      console.log(`  - Deleted ${projectCount} test projects`);
-      totalDeleted += projectCount;
+    console.log('Cleaning up test refresh tokens and audit logs...');
+    if (userIds.length > 0) {
+      await client.query(`DELETE FROM ${schema}.refresh_tokens WHERE user_id = ANY($1::text[])`, [userIds]);
     }
-  }
 
-  // Clean up test engines
-  console.log('Cleaning up test engines...');
-  if (engineIds.length > 0) {
-    await engineHealthRepo
-      .createQueryBuilder()
-      .delete()
-      .where('engineId IN (:...engineIds)', { engineIds })
-      .execute();
+    await client.query(
+      `DELETE FROM ${schema}.audit_logs
+       WHERE user_id = ANY($1::text[])
+          OR resource_id = ANY($2::text[])
+          OR resource_id = ANY($3::text[])
+          OR details LIKE $4
+          OR details LIKE $5`,
+      [userIds, projectIds, engineIds, '%e2e-%@example.com%', '%test_%@example.com%']
+    );
 
-    await engineMemberRepo
-      .createQueryBuilder()
-      .delete()
-      .where('engineId IN (:...engineIds)', { engineIds })
-      .execute();
+    console.log('Cleaning up test projects...');
+    if (projectIds.length > 0) {
+      await client.query(`DELETE FROM ${schema}.project_member_roles WHERE project_id = ANY($1::text[])`, [projectIds]);
+      await client.query(`DELETE FROM ${schema}.project_members WHERE project_id = ANY($1::text[])`, [projectIds]);
+      await client.query(`DELETE FROM ${schema}.files WHERE project_id = ANY($1::text[])`, [projectIds]);
+      await client.query(`DELETE FROM ${schema}.folders WHERE project_id = ANY($1::text[])`, [projectIds]);
 
-    const engineDeleteResult = await engineRepo
-      .createQueryBuilder()
-      .delete()
-      .where('id IN (:...engineIds)', { engineIds })
-      .execute();
+      const projectDeleteResult = await client.query(`DELETE FROM ${schema}.projects WHERE id = ANY($1::text[])`, [
+        projectIds,
+      ]);
 
-    const engineCount = Number(engineDeleteResult.affected || 0);
-    if (engineCount > 0) {
-      console.log(`  - Deleted ${engineCount} test engines`);
-      totalDeleted += engineCount;
+      const projectCount = Number(projectDeleteResult.rowCount || 0);
+      if (projectCount > 0) {
+        console.log(`  - Deleted ${projectCount} test projects`);
+        totalDeleted += projectCount;
+      }
     }
-  }
 
-  // Clean up test users (after projects and tokens are removed)
-  console.log('Cleaning up test users...');
-  if (userIds.length > 0) {
-    const userDeleteResult = await userRepo
-      .createQueryBuilder()
-      .delete()
-      .where('id IN (:...userIds)', { userIds })
-      .execute();
+    console.log('Cleaning up test engines...');
+    if (engineIds.length > 0) {
+      await client.query(`DELETE FROM ${schema}.engine_health WHERE engine_id = ANY($1::text[])`, [engineIds]);
+      await client.query(`DELETE FROM ${schema}.engine_members WHERE engine_id = ANY($1::text[])`, [engineIds]);
 
-    const userCount = Number(userDeleteResult.affected || 0);
-    if (userCount > 0) {
-      console.log(`  - Deleted ${userCount} test users`);
-      totalDeleted += userCount;
+      const engineDeleteResult = await client.query(`DELETE FROM ${schema}.engines WHERE id = ANY($1::text[])`, [
+        engineIds,
+      ]);
+
+      const engineCount = Number(engineDeleteResult.rowCount || 0);
+      if (engineCount > 0) {
+        console.log(`  - Deleted ${engineCount} test engines`);
+        totalDeleted += engineCount;
+      }
     }
+
+    console.log('Cleaning up test users...');
+    if (userIds.length > 0) {
+      const userDeleteResult = await client.query(`DELETE FROM ${schema}.users WHERE id = ANY($1::text[])`, [userIds]);
+
+      const userCount = Number(userDeleteResult.rowCount || 0);
+      if (userCount > 0) {
+        console.log(`  - Deleted ${userCount} test users`);
+        totalDeleted += userCount;
+      }
+    }
+
+    await client.query('COMMIT');
+    console.log(`\n✅ Cleanup complete! Removed ${totalDeleted} test records.`);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
   }
-  
-  console.log(`\n✅ Cleanup complete! Removed ${totalDeleted} test records.`);
-  
-  await dataSource.destroy();
 }
 
 cleanupTestData().catch((err) => {
