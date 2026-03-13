@@ -22,11 +22,15 @@ export default defineConfig(({ mode }) => {
 
     if (
       packageName === '@bpmn-io/properties-panel' ||
+      packageName.startsWith('@bpmn-io/') ||
       packageName.startsWith('bpmn-') ||
+      packageName === 'bpmnlint' ||
+      packageName.startsWith('bpmnlint-') ||
       packageName.startsWith('camunda-bpmn-') ||
       packageName === 'camunda-bpmn-js' ||
       packageName === 'camunda-bpmn-moddle' ||
       packageName === 'diagram-js' ||
+      packageName.startsWith('diagram-js-') ||
       packageName.startsWith('moddle') ||
       packageName === 'ids' ||
       packageName === 'min-dash' ||
@@ -44,7 +48,7 @@ export default defineConfig(({ mode }) => {
       packageName === 'feelers' ||
       packageName.startsWith('lezer-feel')
     ) {
-      return 'dmn-vendor'
+      return 'bpmn-vendor'
     }
 
     if (

@@ -36,7 +36,8 @@ import { ErrorState } from '../../shared/components'
 import { ProjectAccessError, isProjectAccessError } from '../components/ProjectAccessError'
 import { validateAndUploadFile } from '../utils/uploadValidation'
 import { useInlineRename } from '../hooks/useInlineRename'
-import { DeployDialog, SyncModal } from '../../git/components'
+import DeployDialog from '../../git/components/DeployDialog'
+import SyncModal from '../../git/components/SyncModal'
 import { ProjectGitSettings } from '../../git/components/ProjectGitSettings'
 import { usePlatformSyncSettings } from '../../platform-admin/hooks/usePlatformSyncSettings'
 import { apiClient } from '../../../shared/api/client'
@@ -68,13 +69,9 @@ import {
   tableHeaders,
   isValidEmail,
   getFileIcon,
-} from '../components/project-detail'
-import {
-  EngineAccessModal,
-  FolderLoader,
-  CurrentPath,
-  TreePicker,
-} from '../components/project-detail'
+} from '../components/project-detail/project-detail-utils'
+import { EngineAccessModal } from '../components/project-detail/EngineAccessModal'
+import { FolderLoader, CurrentPath, TreePicker } from '../components/project-detail/FolderTreeHelpers'
 
 export default function ProjectDetail() {
   const { projectId } = useParams()

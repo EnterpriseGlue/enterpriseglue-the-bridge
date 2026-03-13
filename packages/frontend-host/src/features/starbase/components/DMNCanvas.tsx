@@ -82,13 +82,8 @@ export default function DMNCanvas({ xml, onModelerReady, onDirty }: { xml: strin
     if (!modeler || !xml) return
     ignoreChangesRef.current = true
     modeler.importXML(xml)
-      .then(async () => {
+      .then(() => {
         try {
-          const views = (modeler as any).getViews?.() || []
-          const table = views.find((v: any) => v.type === 'decisionTable' || v.type === 'literalExpression')
-          if (table) await (modeler as any).open(table)
-          else if (views[0]) await (modeler as any).open(views[0])
-          // after opening, bind decision table events
           attachViewBusListeners()
         } catch {}
         setTimeout(() => { ignoreChangesRef.current = false }, 0)

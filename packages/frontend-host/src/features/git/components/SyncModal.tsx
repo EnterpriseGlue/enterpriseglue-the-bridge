@@ -61,7 +61,8 @@ export default function SyncModal({
 }: SyncModalProps) {
   const queryClient = useQueryClient();
   const nav = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const pathname = location?.pathname ?? '';
 
   const tenantSlugMatch = pathname.match(/^\/t\/([^/]+)(?:\/|$)/);
   const rawTenantSlug = tenantSlugMatch?.[1] ? decodeURIComponent(tenantSlugMatch[1]) : null;
