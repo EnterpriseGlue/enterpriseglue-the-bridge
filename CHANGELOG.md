@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.7.10](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.7.9...v0.7.10) (2026-03-13)
+
+
+### Bug Fixes
+
+* **frontend:** stabilize lazy-loaded BPMN and DMN routes ([#229](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/229)) ([b513d3d](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/b513d3d5c49900871f6328cb19288025b63317ba))
+
 ## [0.7.9](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.7.8...v0.7.9) (2026-03-12)
 
 
