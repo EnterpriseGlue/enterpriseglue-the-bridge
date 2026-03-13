@@ -20,7 +20,7 @@ RUN apk upgrade --no-cache zlib \
 
 COPY frontend frontend
 COPY packages packages
-RUN npm run --prefix packages/frontend-host build \
+RUN npm run build:frontend-host \
     && npm -w frontend run build \
     && mkdir -p /tmp/busybox-bin \
     && cp /bin/busybox.static /tmp/busybox-bin/busybox \

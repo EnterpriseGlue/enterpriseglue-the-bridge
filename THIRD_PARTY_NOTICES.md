@@ -39,8 +39,8 @@ Generated from:
 | Package | Version | License | Repository | Source(s) |
 |---|---|---|---|---|
 | @asteasolutions/zod-to-openapi | 8.4.3 | MIT | https://github.com/asteasolutions/zod-to-openapi | backend, frontend, packages/frontend-host, packages/shared, root |
-| @azure/msal-common | 16.2.0 | MIT | https://github.com/AzureAD/microsoft-authentication-library-for-js.git | backend |
-| @azure/msal-node | 5.0.6 | MIT | https://github.com/AzureAD/microsoft-authentication-library-for-js.git | backend |
+| @azure/msal-common | 16.2.0 | MIT | https://github.com/AzureAD/microsoft-authentication-library-for-js.git | backend, frontend, packages/frontend-host, packages/shared |
+| @azure/msal-node | 5.0.6 | MIT | https://github.com/AzureAD/microsoft-authentication-library-for-js.git | backend, frontend, packages/frontend-host, packages/shared |
 | @babel/code-frame | 7.29.0 | MIT | https://github.com/babel/babel.git | backend, frontend, packages/frontend-host, packages/shared |
 | @babel/generator | 7.29.1 | MIT | https://github.com/babel/babel.git | frontend |
 | @babel/helper-globals | 7.28.0 | MIT | https://github.com/babel/babel.git | frontend |
@@ -681,7 +681,7 @@ Generated from:
 | uuid | 10.0.0 | MIT | git+https://github.com/uuidjs/uuid.git | backend, frontend, packages/frontend-host, packages/shared |
 | uuid | 11.1.0 | MIT | https://github.com/uuidjs/uuid.git | backend, frontend, packages/frontend-host, packages/shared |
 | uuid | 13.0.0 | MIT | https://github.com/uuidjs/uuid.git | backend, frontend, packages/frontend-host, packages/shared |
-| uuid | 8.3.2 | MIT | https://github.com/uuidjs/uuid.git | backend |
+| uuid | 8.3.2 | MIT | https://github.com/uuidjs/uuid.git | backend, frontend, packages/frontend-host, packages/shared |
 | vary | 1.1.2 | MIT | jshttp/vary | backend, frontend, packages/frontend-host, packages/shared |
 | w3c-keyname | 2.2.8 | MIT | git+https://github.com/marijnh/w3c-keyname.git | frontend |
 | web-streams-polyfill | 3.3.3 | MIT | git+https://github.com/MattiasBuelens/web-streams-polyfill.git | backend, frontend, packages/frontend-host, packages/shared |

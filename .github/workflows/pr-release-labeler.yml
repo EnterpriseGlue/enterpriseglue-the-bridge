@@ -46,8 +46,10 @@ jobs:
               pull_number: pr.number,
             });
 
+            const isReleasePleaseBranch = String(freshPR.head?.ref || '').startsWith('release-please--branches--');
             const labels = (freshPR.labels || []).map((l) => l.name);
             const existingReleaseLabels = labels.filter((label) => releaseLabels.has(label));
+            const autoReleasePendingLabel = 'autorelease: pending';
 
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner: context.repo.owner,
@@ -92,25 +94,41 @@ jobs:
               'release:docs': { color: '5319E7', description: 'Documentation change' },
               'release:internal': { color: '6B7280', description: 'Internal/infra change' },
               'release:deprecation': { color: 'FBCA04', description: 'Deprecation change' },
-              'release:compat': { color: '0E8A16', description: 'Compatibility change' }
+              'release:compat': { color: '0E8A16', description: 'Compatibility change' },
+              'autorelease: pending': { color: 'FBCA04', description: 'Release Please PR awaiting merge/tagging' }
             };
 
-            try {
-              await github.rest.issues.getLabel({
+            async function ensureLabelExists(name) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name,
+                });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                const defaults = labelDefaults[name] || { color: '6B7280', description: 'Release label' };
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name,
+                  color: defaults.color,
+                  description: defaults.description,
+                });
+              }
+            }
+
+            await ensureLabelExists(defaultLabel);
+
+            if (isReleasePleaseBranch && !labels.includes(autoReleasePendingLabel)) {
+              await ensureLabelExists(autoReleasePendingLabel);
+              await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                name: defaultLabel,
+                issue_number: pr.number,
+                labels: [autoReleasePendingLabel],
               });
-            } catch (error) {
-              if (error.status !== 404) throw error;
-              const defaults = labelDefaults[defaultLabel] || { color: '6B7280', description: 'Release label' };
-              await github.rest.issues.createLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: defaultLabel,
-                color: defaults.color,
-                description: defaults.description,
-              });
+              core.notice(`Ensured autorelease label: ${autoReleasePendingLabel}`);
             }
 
             for (const label of existingReleaseLabels) {
