@@ -5,6 +5,20 @@
     "publisher": "Astea Solutions",
     "email": "info@asteasolutions.com"
   },
+  "@azure/msal-common@16.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/AzureAD/microsoft-authentication-library-for-js.git",
+    "publisher": "Microsoft",
+    "email": "nugetaad@microsoft.com",
+    "url": "https://www.microsoft.com"
+  },
+  "@azure/msal-node@5.0.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/AzureAD/microsoft-authentication-library-for-js.git",
+    "publisher": "Microsoft",
+    "email": "nugetaad@microsoft.com",
+    "url": "https://www.microsoft.com"
+  },
   "@babel/code-frame@7.29.0": {
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel.git",
@@ -1570,6 +1584,10 @@
     "repository": "https://github.com/uuidjs/uuid.git"
   },
   "uuid@13.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/uuidjs/uuid.git"
+  },
+  "uuid@8.3.2": {
     "licenses": "MIT",
     "repository": "https://github.com/uuidjs/uuid.git"
   },

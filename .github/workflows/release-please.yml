@@ -30,6 +30,71 @@ jobs:
           manifest-file: .github/.release-please-manifest.json
 
       - name: Release Please result
+        if: ${{ always() }}
         run: |
           echo "prs_created=${{ steps.release.outputs.prs_created }}"
           echo "releases_created=${{ steps.release.outputs.releases_created }}"
+
+      - name: Verify release exists for merged release commit
+        if: ${{ always() && github.event_name == 'push' }}
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          github-token: ${{ secrets.RELEASE_PLEASE_TOKEN != '' && secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          script: |
+            const headCommitMessage = String(context.payload.head_commit?.message || '').trim();
+            const match = headCommitMessage.match(/^chore\(main\): release (\d+\.\d+\.\d+)\b/);
+            if (!match) {
+              core.notice('Head commit is not a merged release commit. Skipping release existence verification.');
+              return;
+            }
+
+            const version = match[1];
+            const tagName = `v${version}`;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            async function hasTag() {
+              try {
+                await github.rest.git.getRef({
+                  owner,
+                  repo,
+                  ref: `tags/${tagName}`,
+                });
+                return true;
+              } catch (error) {
+                if (error.status === 404) return false;
+                throw error;
+              }
+            }
+
+            async function hasRelease() {
+              try {
+                await github.rest.repos.getReleaseByTag({
+                  owner,
+                  repo,
+                  tag: tagName,
+                });
+                return true;
+              } catch (error) {
+                if (error.status === 404) return false;
+                throw error;
+              }
+            }
+
+            for (let attempt = 1; attempt <= 6; attempt += 1) {
+              const [tagExists, releaseExists] = await Promise.all([hasTag(), hasRelease()]);
+              if (tagExists && releaseExists) {
+                core.notice(`Verified release ${tagName} exists.`);
+                return;
+              }
+              if (attempt < 6) {
+                core.notice(`Waiting for release publication for ${tagName} (attempt ${attempt}/6).`);
+                await new Promise((resolve) => setTimeout(resolve, 10000));
+              }
+            }
+
+            const [tagExists, releaseExists] = await Promise.all([hasTag(), hasRelease()]);
+            core.setFailed(
+              `Expected merged release commit "${headCommitMessage}" to publish ${tagName}, but verification failed. ` +
+              `tagExists=${tagExists} releaseExists=${releaseExists}.`
+            );

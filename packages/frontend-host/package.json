@@ -10,7 +10,7 @@
   },
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json; node scripts/copy-assets.mjs",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build"
   },
@@ -43,6 +43,7 @@
     "access": "restricted"
   },
   "dependencies": {
+    "@enterpriseglue/enterprise-plugin-api": "*",
     "@enterpriseglue/shared": "*"
   },
   "devDependencies": {
