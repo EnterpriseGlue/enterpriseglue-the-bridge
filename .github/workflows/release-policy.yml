@@ -59,6 +59,16 @@ jobs:
               return;
             }
 
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+            const changedPaths = files.map((file) => file.filename);
+            const internalAutomationPrefixes = ['.github/', '.sync/', '.windsurf/', '.vscode/'];
+            const automationOnly = changedPaths.length > 0 && changedPaths.every((p) => internalAutomationPrefixes.some((prefix) => p.startsWith(prefix)));
+
             // --- Conventional PR title lint (merged from pr-title-lint.yml) ---
             const title = String(pr.title || '').trim();
             const conventionalPattern = /^([a-z]+)(\([a-z0-9._/-]+\))?(!)?:\s.+$/;
@@ -72,6 +82,7 @@ jobs:
             const titleTypeMatch = title.match(/^([a-z]+)/);
             const titleType = titleTypeMatch ? titleTypeMatch[1] : '';
             const allowedTypes = new Set(['feat', 'fix', 'docs', 'refactor', 'test', 'chore', 'ci', 'build', 'perf', 'revert', 'style']);
+            const internalOnlyTypes = new Set(['ci', 'chore', 'build', 'test']);
             if (!allowedTypes.has(titleType)) {
               core.setFailed(
                 `Unsupported conventional type "${titleType}". Allowed types: ${Array.from(allowedTypes).join(', ')}`
@@ -99,6 +110,23 @@ jobs:
 
             if (selectedReleaseLabels.length > 1) {
               core.setFailed(`Multiple release labels found (${selectedReleaseLabels.join(', ')}). Keep exactly one release:* label.`);
+              return;
+            }
+            const selectedReleaseLabel = selectedReleaseLabels[0];
+
+            if (automationOnly && selectedReleaseLabel !== 'release:internal') {
+              core.setFailed(
+                `Automation-only PRs (${changedPaths.join(', ')}) must use the release:internal label. ` +
+                `Received: ${selectedReleaseLabel}`
+              );
+              return;
+            }
+
+            if (automationOnly && !internalOnlyTypes.has(titleType)) {
+              core.setFailed(
+                `Automation-only PRs (${changedPaths.join(', ')}) must use an internal title type ` +
+                `(ci, chore, build, or test). Received: "${title}".`
+              );
               return;
             }
 

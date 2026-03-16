@@ -59,6 +59,8 @@ jobs:
             });
 
             const changedPaths = files.map((f) => f.filename);
+            const internalAutomationPrefixes = ['.github/', '.sync/', '.windsurf/', '.vscode/'];
+            const automationOnly = changedPaths.length > 0 && changedPaths.every((p) => internalAutomationPrefixes.some((prefix) => p.startsWith(prefix)));
             const docsOnly = changedPaths.length > 0 && changedPaths.every((p) => p.startsWith('docs/') || p.endsWith('.md'));
             const normalizedTitle = String(freshPR.title || '');
             const title = normalizedTitle.toLowerCase();
@@ -73,7 +75,8 @@ jobs:
             const isFix = /^fix(\(|:)|\bbug\b|\bhotfix\b|\bregress/.test(title);
 
             let defaultLabel = 'release:internal';
-            if (isBreaking) defaultLabel = 'release:breaking';
+            if (automationOnly) defaultLabel = 'release:internal';
+            else if (isBreaking) defaultLabel = 'release:breaking';
             else if (isSecurity) defaultLabel = 'release:security';
             else if (isDeprecation) defaultLabel = 'release:deprecation';
             else if (isCompatibility) defaultLabel = 'release:compat';
