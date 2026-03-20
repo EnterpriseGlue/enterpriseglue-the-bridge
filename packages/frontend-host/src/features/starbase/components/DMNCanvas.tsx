@@ -2,13 +2,15 @@ import React from 'react'
 import { CamundaPlatformModeler as DmnModeler } from 'camunda-dmn-js'
 import 'camunda-dmn-js/dist/assets/camunda-platform-modeler.css'
 
-export default function DMNCanvas({ xml, onModelerReady, onDirty }: { xml: string; onModelerReady?: (modeler: any) => void; onDirty?: () => void }) {
+export default function DMNCanvas({ xml, onModelerReady, onPendingDirty, onDirty }: { xml: string; onModelerReady?: (modeler: any) => void; onPendingDirty?: () => void; onDirty?: () => void }) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   const wrapperRef = React.useRef<HTMLDivElement | null>(null)
   const modelerRef = React.useRef<any | null>(null)
   const ignoreChangesRef = React.useRef(false)
   // Keep onDirty in a ref so event listeners always call the current callback
+  const onPendingDirtyRef = React.useRef(onPendingDirty)
   const onDirtyRef = React.useRef(onDirty)
+  React.useEffect(() => { onPendingDirtyRef.current = onPendingDirty }, [onPendingDirty])
   React.useEffect(() => { onDirtyRef.current = onDirty }, [onDirty])
   // Track pending changes
   const hasPendingChangesRef = React.useRef(false)
@@ -17,6 +19,7 @@ export default function DMNCanvas({ xml, onModelerReady, onDirty }: { xml: strin
   const markDirty = React.useCallback(() => {
     if (ignoreChangesRef.current) return
     hasPendingChangesRef.current = true
+    onPendingDirtyRef.current?.()
   }, [])
 
   // Save if there are pending changes (for blur/focus loss)
@@ -82,8 +85,12 @@ export default function DMNCanvas({ xml, onModelerReady, onDirty }: { xml: strin
     if (!modeler || !xml) return
     ignoreChangesRef.current = true
     modeler.importXML(xml)
-      .then(() => {
+      .then(async () => {
         try {
+          const views = (modeler as any).getViews?.() || []
+          const table = views.find((v: any) => v.type === 'decisionTable' || v.type === 'literalExpression')
+          if (table) await (modeler as any).open(table)
+          else if (views[0]) await (modeler as any).open(views[0])
           attachViewBusListeners()
         } catch {}
         setTimeout(() => { ignoreChangesRef.current = false }, 0)
