@@ -127,6 +127,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@src': path.resolve(__dirname, '../packages/frontend-host/src'),
+        inferno: path.resolve(__dirname, '../node_modules/dmn-js-shared/node_modules/inferno'),
+        'inferno-vnode-flags': path.resolve(__dirname, '../node_modules/dmn-js-shared/node_modules/inferno-vnode-flags'),
       },
     },
     esbuild: {

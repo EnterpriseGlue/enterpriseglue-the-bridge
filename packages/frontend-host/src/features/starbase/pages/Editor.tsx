@@ -1695,6 +1695,14 @@ export default function Editor() {
                   modelerRef.current = m
                   setModelerReady(true)
                 }}
+                onPendingDirty={() => {
+                  if (isRestoringRef.current) return
+                  if (Date.now() < ignoreDirtyUntilRef.current) return
+                  if (editorModeRef.current === 'view') return
+
+                  setLastEditedAt(Date.now())
+                  setLocalDirty(true)
+                }}
                 onDirty={() => {
                   // Skip if we're restoring from history
                   if (isRestoringRef.current) return
