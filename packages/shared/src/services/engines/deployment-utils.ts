@@ -76,6 +76,60 @@ export function normalizeBpmnProcessHistoryTtl(xml: string): string {
   })
 }
 
+function normalizeOperatonBpmnToCamunda(xml: string): string {
+  let out = String(xml || '')
+  if (!out) return out
+
+  const hasOperatonNamespace = /\bxmlns:operaton\s*=\s*["'][^"']+["']/i.test(out)
+  const hasOperatonPrefix = /(?:<\/?|\s|["'])operaton:/i.test(out)
+  if (!hasOperatonNamespace && !hasOperatonPrefix) return out
+
+  if (hasOperatonNamespace) {
+    if (/\bxmlns:camunda\s*=\s*["']/i.test(out)) {
+      out = out.replace(/\s+xmlns:operaton\s*=\s*["'][^"']+["']/i, '')
+    } else {
+      out = out
+        .replace(/\bxmlns:operaton\b/i, 'xmlns:camunda')
+        .replace(/http:\/\/operaton\.org\/schema\/1\.0\/bpmn/gi, 'http://camunda.org/schema/1.0/bpmn')
+    }
+  }
+
+  out = out.replace(/(<\/?)(?:operaton:)/gi, '$1camunda:')
+  out = out.replace(/(\s)(?:operaton:)([A-Za-z0-9_.-]+)(\s*=)/gi, '$1camunda:$2$3')
+  out = out.replace(/(["'])operaton:([A-Za-z0-9_.-]+)(["'])/gi, '$1camunda:$2$3')
+
+  return out
+}
+
+function repairMalformedSelfClosingProcessTags(xml: string): string {
+  return String(xml || '').replace(
+    /<\s*((?:[a-zA-Z0-9_-]+:)?process\b[^>]*?)\/>((?:[\s\S]*?)<\/\s*(?:[a-zA-Z0-9_-]+:)?process>)/gi,
+    '<$1>$2'
+  )
+}
+
+function dedupeTagAttributes(xml: string): string {
+  return String(xml || '').replace(
+    /<\s*(?!\/|!|\?)(?:[a-zA-Z0-9_-]+:)?[a-zA-Z0-9_-]+\b[^>]*>/g,
+    (tag: string) => {
+      const attrRegex = /\s+([A-Za-z_:][A-Za-z0-9_.:-]*)\s*=\s*("[^"]*"|'[^']*')/g
+      const matches = Array.from(tag.matchAll(attrRegex))
+      if (matches.length <= 1) return tag
+
+      const keepLastIndex = new Map<string, number>()
+      matches.forEach((match, index) => {
+        keepLastIndex.set(String(match[1] || '').toLowerCase(), index)
+      })
+
+      let attrIndex = -1
+      return tag.replace(attrRegex, (_full: string, name: string, value: string) => {
+        attrIndex += 1
+        return keepLastIndex.get(String(name || '').toLowerCase()) === attrIndex ? ` ${name}=${value}` : ''
+      })
+    }
+  )
+}
+
 /**
  * Normalize DMN decision historyTimeToLive attribute
  */
@@ -147,5 +201,13 @@ export function sanitizeDmnXml(xml: string): string {
  * Sanitize BPMN XML (apply all BPMN normalizations)
  */
 export function sanitizeBpmnXml(xml: string): string {
-  return normalizeBpmnProcessHistoryTtl(String(xml || ''))
+  return dedupeTagAttributes(
+    normalizeBpmnProcessHistoryTtl(
+      dedupeTagAttributes(
+        repairMalformedSelfClosingProcessTags(
+          normalizeOperatonBpmnToCamunda(String(xml || ''))
+        )
+      )
+    )
+  )
 }

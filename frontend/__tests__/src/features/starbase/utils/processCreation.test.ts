@@ -69,5 +69,14 @@ describe('processCreation', () => {
       expect(payload.fileName).toBe('A&B <Flow>');
       expect(payload.xml).toContain('name="A&amp;B &lt;Flow&gt;"');
     });
+
+    it('can build a message-start BPMN payload for semantic message links', () => {
+      const payload = buildLinkedProcessCreationPayload('Invoice Follow-up', { startEventType: 'message' });
+
+      expect(payload.fileName).toBe('Invoice Follow-up');
+      expect(payload.xml).toContain('<bpmn:startEvent id="StartEvent_1">');
+      expect(payload.xml).toContain('<bpmn:message id="Message_Invoice_Follow-up" name="Invoice Follow-up" />');
+      expect(payload.xml).toContain('<bpmn:messageEventDefinition messageRef="Message_Invoice_Follow-up" />');
+    });
   });
 });

@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'react-router-dom'
 import { useTenantNavigate } from '../../../shared/hooks/useTenantNavigate'
 import { sanitizePathParam } from '../../../shared/utils/sanitize'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tabs, TabList, Tab, TabPanels, TabPanel, Button, BreadcrumbItem, InlineNotification, ComboBox, ComposedModal, ModalHeader, ModalBody, ModalFooter, Toggletip, ToggletipButton, ToggletipContent } from '@carbon/react'
+import { Tabs, TabList, Tab, TabPanels, TabPanel, Button, BreadcrumbItem, InlineNotification, ComboBox, ComposedModal, ModalHeader, ModalBody, ModalFooter, DataTable, Table, TableHead, TableRow, TableHeader, TableBody, TableCell, TableContainer, Link as CarbonLink } from '@carbon/react'
 import { Flag, Undo, Redo, Branch, Launch, Information } from '@carbon/icons-react'
 import { BreadcrumbBar } from '../../shared/components/BreadcrumbBar'
 import { useModal } from '../../../shared/hooks/useModal'
@@ -52,8 +52,36 @@ type FileDetail = {
   name: string
   type: 'bpmn' | 'dmn'
   xml: string
+  bpmnProcessId?: string | null
+  dmnDecisionId?: string | null
   createdAt: number
   updatedAt: number
+}
+
+type CallerOccurrence = {
+  parentFileId: string
+  parentFileName: string
+  parentFolderId: string | null
+  parentProcessId: string | null
+  callActivityId: string
+  callActivityName: string | null
+}
+
+type CallerTableRow = {
+  id: string
+  parent: string
+  activity: string
+  location: string
+  actionLabel: string
+  caller: CallerOccurrence
+}
+
+function toDisplayFileName(name: string | null | undefined): string {
+  return String(name || '').replace(/\.(bpmn|dmn)$/i, '')
+}
+
+function formatUsedInParentProcessesLabel(count: number): string {
+  return `Used in ${count} parent ${count === 1 ? 'process' : 'processes'}`
 }
 
 type DeploymentArtifact = {
@@ -167,6 +195,19 @@ export default function Editor() {
     staleTime: 30 * 1000,
   })
 
+  const callersQ = useQuery({
+    queryKey: ['starbase', 'file-callers', fileQ.data?.projectId, fileQ.data?.id, fileQ.data?.type, fileQ.data?.bpmnProcessId, fileQ.data?.dmnDecisionId],
+    queryFn: async () => {
+      if (!fileQ.data?.projectId || !fileQ.data?.id) return [] as CallerOccurrence[]
+      const data = await apiClient.get<{ callers?: CallerOccurrence[] }>(
+        `/starbase-api/projects/${fileQ.data.projectId}/files/${fileQ.data.id}/callers`
+      )
+      return Array.isArray(data?.callers) ? data.callers : []
+    },
+    enabled: Boolean(fileQ.data?.projectId && fileQ.data?.id && (fileQ.data?.type === 'bpmn' || fileQ.data?.type === 'dmn')),
+    staleTime: 30 * 1000,
+  })
+
 
   // Declare hooks unconditionally to keep a stable hook order across renders
   const [selection, setSelection] = React.useState<{ id: string; type: string; name?: string } | null>(null)
@@ -201,7 +242,9 @@ export default function Editor() {
   const [linkModalError, setLinkModalError] = React.useState<string | null>(null)
   const [creatingLinkedProcess, setCreatingLinkedProcess] = React.useState(false)
   const [allFolders, setAllFolders] = React.useState<FolderSummary[] | null>(null)
+  const [callersModalOpen, setCallersModalOpen] = React.useState(false)
   const lastFocusRef = React.useRef<HTMLElement | null>(null)
+  const focusElementAttemptedRef = React.useRef<string | null>(null)
 
   const captureFocus = React.useCallback(() => {
     if (typeof document === 'undefined') return
@@ -265,6 +308,7 @@ export default function Editor() {
     setLinkSelectedFileId(null)
     setLinkModalError(null)
     setCreatingLinkedProcess(false)
+    setCallersModalOpen(false)
     updatedAtRef.current = null
     appliedInitialHistoryRef.current = false
     ignoreDirtyUntilRef.current = 0
@@ -272,6 +316,7 @@ export default function Editor() {
     setHotfixContext(null)
     setShowSaveFirstPrompt(false)
     viewModeImportedRef.current = false
+    focusElementAttemptedRef.current = null
   }, [fileId])
 
   const projectFiles = React.useMemo<ProjectFileMeta[]>(() => {
@@ -342,6 +387,8 @@ export default function Editor() {
     return 'unlinked'
   }, [elementLinkInfo, resolvedLink])
 
+  const isMessageEndEventLink = elementLinkInfo?.elementType === 'EndEvent' && elementLinkInfo?.linkType === 'process'
+
   React.useEffect(() => {
     if (!modelerReady || !selectedElement || !elementLinkInfo || !resolvedLink || !modelerRef.current) return
     const desiredTargetKey =
@@ -359,11 +406,13 @@ export default function Editor() {
       targetKey: desiredTargetKey,
       fileId: resolvedLink.id,
       fileName: resolvedLink.name,
+      nameSyncMode: elementLinkInfo.nameSyncMode,
+      syncName: elementLinkInfo.nameSyncMode === 'auto',
     })
   }, [modelerReady, selectedElement, elementLinkInfo, resolvedLink])
 
   const linkTypeLabel = elementLinkInfo?.linkType === 'decision' ? 'decision' : 'process'
-  const linkedLabel = resolvedLink?.name ?? elementLinkInfo?.fileName ?? null
+  const linkedLabel = toDisplayFileName(resolvedLink?.name ?? elementLinkInfo?.fileName ?? null) || null
   const canOpenLinked = Boolean(resolvedLink)
   const createLinkedProcessName = React.useMemo(
     () => getCreateLinkedProcessName(selectedElement, elementLinkInfo?.linkType ?? null),
@@ -386,6 +435,54 @@ export default function Editor() {
       },
     })
   }, [tenantNavigate, resolvedLink, queryClient, fileId, fileQ.data?.name])
+
+  const syncLinkedElementName = React.useCallback(async () => {
+    if (!elementLinkInfo || !resolvedLink || !selectedElement || !modelerRef.current) return
+    const targetKey = elementLinkInfo.linkType === 'decision' ? resolvedLink.dmnDecisionId : resolvedLink.bpmnProcessId
+    if (!targetKey) return
+
+    updateElementLink(modelerRef.current, selectedElement, {
+      linkType: elementLinkInfo.linkType,
+      targetKey,
+      fileId: resolvedLink.id,
+      fileName: resolvedLink.name,
+      nameSyncMode: elementLinkInfo.nameSyncMode,
+      syncName: true,
+    })
+
+    const saved = await saveLinkUpdate('Linked name synced', 'Failed to sync the linked element name. Please try again.')
+    if (!saved) {
+      notify({
+        kind: 'error',
+        title: 'Name sync failed',
+        subtitle: 'Failed to sync the linked element name. Please try again.',
+      })
+    }
+  }, [elementLinkInfo, resolvedLink, selectedElement, notify])
+
+  const setElementNameSyncMode = React.useCallback(async (mode: 'manual' | 'auto') => {
+    if (!elementLinkInfo || !resolvedLink || !selectedElement || !modelerRef.current) return
+    const targetKey = elementLinkInfo.linkType === 'decision' ? resolvedLink.dmnDecisionId : resolvedLink.bpmnProcessId
+    if (!targetKey) return
+
+    updateElementLink(modelerRef.current, selectedElement, {
+      linkType: elementLinkInfo.linkType,
+      targetKey,
+      fileId: resolvedLink.id,
+      fileName: resolvedLink.name,
+      nameSyncMode: mode,
+      syncName: mode === 'auto',
+    })
+
+    const saved = await saveLinkUpdate('Link sync updated', 'Failed to update linked name sync settings. Please try again.')
+    if (!saved) {
+      notify({
+        kind: 'error',
+        title: 'Sync settings failed',
+        subtitle: 'Failed to update linked name sync settings. Please try again.',
+      })
+    }
+  }, [elementLinkInfo, resolvedLink, selectedElement, notify])
 
   const unlinkElement = React.useCallback(() => {
     if (!elementLinkInfo || !modelerRef.current || !selectedElement) return
@@ -417,6 +514,37 @@ export default function Editor() {
     return map
   }, [allFolders])
 
+  const callers = callersQ.data ?? []
+  const callerGroups = React.useMemo(() => {
+    const groups = new Map<string, { parentFileId: string; parentFileName: string; parentFolderId: string | null; items: CallerOccurrence[] }>()
+    for (const caller of callers) {
+      const key = `${caller.parentFileId}:${caller.parentProcessId || ''}`
+      const existing = groups.get(key)
+      if (existing) {
+        existing.items.push(caller)
+      } else {
+        groups.set(key, {
+          parentFileId: caller.parentFileId,
+          parentFileName: caller.parentFileName,
+          parentFolderId: caller.parentFolderId,
+          items: [caller],
+        })
+      }
+    }
+    return Array.from(groups.values()).sort((a, b) => a.parentFileName.localeCompare(b.parentFileName))
+  }, [callers])
+  const usedByButtonLabel = callersQ.isLoading ? 'Used in parent processes…' : formatUsedInParentProcessesLabel(callerGroups.length)
+  const showUsedByAction = fileQ.data?.type === 'bpmn' || fileQ.data?.type === 'dmn'
+  const callerTableHeaders = React.useMemo(
+    () => ([
+      { key: 'parent', header: 'Parent process' },
+      { key: 'activity', header: 'Linked element' },
+      { key: 'location', header: 'Location' },
+      { key: 'actionLabel', header: 'Open' },
+    ]),
+    []
+  )
+
   const getFolderPath = React.useCallback((folderId: string | null) => {
     if (!folderId) return []
     const parts: string[] = []
@@ -430,12 +558,54 @@ export default function Editor() {
     return parts
   }, [folderMap])
 
+  const callerTableRows = React.useMemo<CallerTableRow[]>(() => {
+    return callers
+      .map((caller) => {
+        const pathLabel = getFolderPath(caller.parentFolderId).join(' / ')
+        return {
+          id: `${caller.parentFileId}:${caller.callActivityId}`,
+          parent: toDisplayFileName(caller.parentFileName),
+          activity: caller.callActivityName || caller.callActivityId,
+          location: pathLabel || 'Project root',
+          actionLabel: 'Open',
+          caller,
+        }
+      })
+      .sort((a, b) => {
+        const parentCompare = a.parent.localeCompare(b.parent)
+        return parentCompare !== 0 ? parentCompare : a.activity.localeCompare(b.activity)
+      })
+  }, [callers, getFolderPath])
+
+  const openCallersModal = React.useCallback(() => {
+    captureFocus()
+    setCallersModalOpen(true)
+  }, [captureFocus])
+
+  const closeCallersModal = React.useCallback(() => {
+    setCallersModalOpen(false)
+    restoreFocus()
+  }, [restoreFocus])
+
+  const openCallerOccurrence = React.useCallback((caller: CallerOccurrence) => {
+    tenantNavigate(`/starbase/editor/${encodeURIComponent(sanitizePathParam(caller.parentFileId))}`, {
+      state: {
+        fromEditor: {
+          fileId: fileId ? String(fileId) : null,
+          fileName: fileQ.data?.name ?? null,
+        },
+        focusElementId: caller.callActivityId,
+      },
+    })
+    setCallersModalOpen(false)
+  }, [tenantNavigate, fileId, fileQ.data?.name])
+
   const linkTargetType = elementLinkInfo?.linkType === 'decision' ? 'dmn' : 'bpmn'
   const filteredLinkFiles = React.useMemo(() => {
     return projectFiles
       .filter((file) => file.type === linkTargetType)
       .filter((file) => !file.isSelf)
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => toDisplayFileName(a.name).localeCompare(toDisplayFileName(b.name)))
   }, [projectFiles, linkTargetType])
 
   const selectedLinkFile = React.useMemo(
@@ -463,16 +633,21 @@ export default function Editor() {
     elementId: elementLinkInfo?.elementId ?? null,
     visible: Boolean(elementLinkInfo),
     status: linkStatus as any,
+    isMessageEndEventLink,
     linkedLabel,
     linkTypeLabel,
     canOpen: canOpenLinked,
     canCreateProcess: Boolean(createLinkedProcessName),
     createProcessDisabled: creatingLinkedProcess,
     createActionLabel,
+    nameSyncMode: elementLinkInfo?.nameSyncMode ?? 'manual',
+    canSyncName: Boolean(resolvedLink),
     onTriggerClick: completeInlineLabelEditing,
     onLink: openLinkModal,
     onOpen: openLinkedFile,
     onCreateProcess: handleCreateLinkedFile,
+    onSyncName: syncLinkedElementName,
+    onSetNameSyncMode: setElementNameSyncMode,
     onUnlink: unlinkElement,
   })
 
@@ -1029,6 +1204,39 @@ export default function Editor() {
     }
   }, [modelerReady, lastSelectionStorageKey])
 
+  React.useEffect(() => {
+    const focusElementId = location.state?.focusElementId ? String(location.state.focusElementId) : null
+    if (!modelerReady || !modelerRef.current || !focusElementId) return
+    const focusKey = `${fileId}:${focusElementId}`
+    if (focusElementAttemptedRef.current === focusKey) return
+    focusElementAttemptedRef.current = focusKey
+
+    let cancelled = false
+    const attemptFocus = (attempt: number) => {
+      if (cancelled || !modelerRef.current) return
+      try {
+        const elementRegistry = modelerRef.current.get('elementRegistry')
+        const selectionSvc = modelerRef.current.get('selection')
+        const canvas = modelerRef.current.get('canvas')
+        const element = elementRegistry?.get(focusElementId)
+        if (element) {
+          selectionSvc?.select(element)
+          canvas?.scrollToElement?.(element)
+          return
+        }
+      } catch {}
+
+      if (attempt < 20) {
+        window.setTimeout(() => attemptFocus(attempt + 1), 50)
+      }
+    }
+
+    window.setTimeout(() => attemptFocus(0), 0)
+    return () => {
+      cancelled = true
+    }
+  }, [modelerReady, location.state, fileId])
+
   const fileIdForSave = fileQ.data?.id
   const saveXmlWithRetry = React.useCallback(async (xml: string) => {
     if (!fileIdForSave) throw new Error('File ID unavailable')
@@ -1057,8 +1265,17 @@ export default function Editor() {
     } catch (error) {
       const parsed = parseApiError(error, 'Failed to save')
       if (parsed.status === 409) {
-        if (typeof parsed.payload?.currentUpdatedAt === 'number') {
-          updatedAtRef.current = parsed.payload.currentUpdatedAt
+        const conflictUpdatedAt =
+          typeof parsed.payload?.details?.currentUpdatedAt === 'number'
+            ? parsed.payload.details.currentUpdatedAt
+            : (typeof parsed.payload?.currentUpdatedAt === 'number' ? parsed.payload.currentUpdatedAt : null)
+        if (typeof conflictUpdatedAt === 'number') {
+          updatedAtRef.current = conflictUpdatedAt
+        } else {
+          const latest = await apiClient.get<{ updatedAt?: number }>(`/starbase-api/files/${fileIdForSave}`)
+          if (typeof latest?.updatedAt === 'number') {
+            updatedAtRef.current = Number(latest.updatedAt) || updatedAtRef.current
+          }
         }
         const data = await apiClient.put<{ updatedAt?: number }>(`/starbase-api/files/${fileIdForSave}`, {
           xml,
@@ -1116,7 +1333,9 @@ export default function Editor() {
     const isDecision = elementLinkInfo.linkType === 'decision'
     const payload = isDecision
       ? buildLinkedDecisionCreationPayload(linkedFileName)
-      : buildLinkedProcessCreationPayload(linkedFileName)
+      : buildLinkedProcessCreationPayload(linkedFileName, {
+          startEventType: isMessageEndEventLink ? 'message' : 'none',
+        })
     const createTitle = isDecision ? 'Decision created' : 'Process created'
     const createErrorTitle = isDecision ? 'Failed to create decision' : 'Failed to create process'
     const createSavedError = isDecision
@@ -1154,6 +1373,8 @@ export default function Editor() {
         targetKey,
         fileId: createdFileId,
         fileName: created?.name ? String(created.name) : payload.fileName,
+        nameSyncMode: elementLinkInfo.nameSyncMode,
+        syncName: elementLinkInfo.nameSyncMode === 'auto',
       })
 
       const saved = await saveLinkUpdate(historyLabel, createSavedError)
@@ -1400,6 +1621,8 @@ export default function Editor() {
       fileId: target.id,
       fileName: target.name,
       inheritNameIfEmpty: true,
+      nameSyncMode: elementLinkInfo.nameSyncMode,
+      syncName: elementLinkInfo.nameSyncMode === 'auto',
     })
 
     const saved = await saveLinkUpdate('Link updated', 'Failed to save link. Please try again.')
@@ -1416,7 +1639,13 @@ export default function Editor() {
       style={{ height: 'calc(100vh - var(--header-height) - var(--spacing-4))', padding: 0, display: 'flex', flexDirection: 'column' }}
     >
       {/* Breadcrumb Bar */}
-      <BreadcrumbBar>
+      <BreadcrumbBar
+        rightActions={showUsedByAction ? (
+          <Button kind="ghost" size="sm" renderIcon={Branch} onClick={openCallersModal} disabled={callersQ.isLoading}>
+            {usedByButtonLabel}
+          </Button>
+        ) : undefined}
+      >
         <BreadcrumbItem>
           <a href={toTenantPath('/starbase')} onClick={(e) => { e.preventDefault(); tenantNavigate('/starbase'); }}>Starbase</a>
         </BreadcrumbItem>
@@ -1444,11 +1673,11 @@ export default function Editor() {
                 tenantNavigate(`/starbase/editor/${encodeURIComponent(sanitizePathParam(location.state.fromEditor.fileId))}`)
               }}
             >
-              {location.state.fromEditor.fileName || 'Previous file'}
+              {toDisplayFileName(location.state.fromEditor.fileName) || 'Previous file'}
             </a>
           </BreadcrumbItem>
         )}
-        <BreadcrumbItem isCurrentPage>{f.name.replace(/\.(bpmn|dmn)$/i, '')}</BreadcrumbItem>
+        <BreadcrumbItem isCurrentPage>{toDisplayFileName(f.name)}</BreadcrumbItem>
       </BreadcrumbBar>
 
       {/* View mode banner */}
@@ -1945,7 +2174,7 @@ export default function Editor() {
               selectedItem={selectedLinkFile as any}
               style={{ width: '100%' }}
               autoAlign
-              itemToString={(item) => (item ? item.name : '')}
+              itemToString={(item) => (item ? toDisplayFileName(item.name) : '')}
               itemToElement={(item) => {
                 if (!item) return null
                 const pathParts = getFolderPath(item.folderId)
@@ -1955,7 +2184,7 @@ export default function Editor() {
                 return (
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, maxWidth: '100%', overflow: 'hidden', opacity: hasKey ? 1 : 0.6 }}>
                     <div style={{ fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {item.name}
+                      {toDisplayFileName(item.name)}
                     </div>
                     {pathLabel && (
                       <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1975,7 +2204,7 @@ export default function Editor() {
                 const search = inputValue.toLowerCase()
                 const pathParts = getFolderPath(item.folderId)
                 const pathLabel = pathParts.length ? pathParts.join(' / ') : 'root'
-                return item.name.toLowerCase().includes(search) || pathLabel.toLowerCase().includes(search)
+                return toDisplayFileName(item.name).toLowerCase().includes(search) || pathLabel.toLowerCase().includes(search)
               }}
             />
             {selectedLinkFile && selectedLinkFile.folderId && (
@@ -2001,6 +2230,80 @@ export default function Editor() {
             onClick={handleLinkSubmit}
           >
             {linkStatus === 'linked' ? 'Update link' : 'Link'}
+          </Button>
+        </ModalFooter>
+      </ComposedModal>
+
+      <ComposedModal open={callersModalOpen} size="md" onClose={closeCallersModal}>
+        <ModalHeader label={undefined} title={callersQ.isLoading ? 'Used in parent processes…' : formatUsedInParentProcessesLabel(callerGroups.length)} closeModal={closeCallersModal} />
+        <ModalBody style={{ paddingBottom: 'var(--spacing-6)' }}>
+          <div style={{ display: 'grid', gap: 'var(--spacing-5)' }}>
+            {callersModalOpen && allFolders === null && <FolderLoader projectId={f.projectId} onLoaded={setAllFolders} />}
+            {callersQ.isError && (
+              <InlineNotification lowContrast kind="error" title="Parent processes failed to load" subtitle="Unable to load parent process usage for this file." />
+            )}
+            {!callersQ.isLoading && !callersQ.isError && callerGroups.length === 0 && (
+              <div style={{ fontSize: 14, color: 'var(--cds-text-secondary)' }}>
+                This file is not currently used in any parent processes in the project.
+              </div>
+            )}
+            {!callersQ.isLoading && !callersQ.isError && callerTableRows.length > 0 && (
+              <DataTable rows={callerTableRows} headers={callerTableHeaders} size="sm">
+                {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
+                  <TableContainer>
+                    <Table {...getTableProps()} size="sm">
+                      <TableHead>
+                        <TableRow>
+                          {headers.map((header) => {
+                            const { key, ...headerProps } = getHeaderProps({ header })
+                            return (
+                              <TableHeader key={key} {...headerProps}>
+                                {header.header}
+                              </TableHeader>
+                            )
+                          })}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {rows.map((row) => {
+                          const original = callerTableRows.find((item) => item.id === row.id)
+                          if (!original) return null
+                          const { key, ...rowProps } = getRowProps({ row })
+                          return (
+                            <TableRow key={key} {...rowProps}>
+                              {row.cells.map((cell) => {
+                                if (cell.info.header === 'actionLabel') {
+                                  return (
+                                    <TableCell key={cell.id}>
+                                      <CarbonLink
+                                        href="#"
+                                        size="sm"
+                                        onClick={(event) => {
+                                          event.preventDefault()
+                                          openCallerOccurrence(original.caller)
+                                        }}
+                                      >
+                                        Open
+                                      </CarbonLink>
+                                    </TableCell>
+                                  )
+                                }
+                                return <TableCell key={cell.id}>{cell.value}</TableCell>
+                              })}
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+              </DataTable>
+            )}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button kind="secondary" onClick={closeCallersModal}>
+            Close
           </Button>
         </ModalFooter>
       </ComposedModal>

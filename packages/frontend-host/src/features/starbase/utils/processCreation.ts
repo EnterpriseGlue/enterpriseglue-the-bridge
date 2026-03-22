@@ -52,10 +52,39 @@ export function buildLinkedProcessCreationPayload(rawProcessName: string): {
   fileName: string
   targetKey: string
   xml: string
+}
+export function buildLinkedProcessCreationPayload(
+  rawProcessName: string,
+  options: { startEventType?: 'none' | 'message' }
+): {
+  fileName: string
+  targetKey: string
+  xml: string
+}
+export function buildLinkedProcessCreationPayload(
+  rawProcessName: string,
+  options?: { startEventType?: 'none' | 'message' }
+): {
+  fileName: string
+  targetKey: string
+  xml: string
 } {
   const fileName = String(rawProcessName || '').trim() || 'Process'
   const processId = toBpmnProcessId(fileName)
   const escapedProcessName = escapeXmlAttribute(fileName)
+  const startEventType = options?.startEventType === 'message' ? 'message' : 'none'
+  const messageId = `Message_${processId}`.slice(0, 64)
+  const startEventXml =
+    startEventType === 'message'
+      ? `    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:messageEventDefinition messageRef="${messageId}" />
+    </bpmn:startEvent>`
+      : '    <bpmn:startEvent id="StartEvent_1" />'
+  const messageXml =
+    startEventType === 'message'
+      ? `  <bpmn:message id="${messageId}" name="${escapedProcessName}" />
+`
+      : ''
 
   return {
     fileName,
@@ -69,8 +98,8 @@ export function buildLinkedProcessCreationPayload(rawProcessName: string): {
   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
   id="Definitions_1"
   targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="${processId}" name="${escapedProcessName}" isExecutable="true" camunda:historyTimeToLive="60">
-    <bpmn:startEvent id="StartEvent_1" />
+${messageXml}  <bpmn:process id="${processId}" name="${escapedProcessName}" isExecutable="true" camunda:historyTimeToLive="60">
+${startEventXml}
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="${processId}">
