@@ -43,3 +43,27 @@ jobs:
         uses: github/codeql-action/analyze@820e3160e279568db735cee8ed8f8e77a6da7818 # v3
         with:
           category: "/language:${{ matrix.language }}"
+
+  codeql-gate:
+    name: CodeQL Gate
+    runs-on: ubuntu-latest
+    needs: analyze
+    permissions:
+      security-events: read
+      contents: read
+    steps:
+      - name: Fail if open CodeQL alerts exist for this SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          alert_count="$(gh api "repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&ref=${GITHUB_SHA}&per_page=100" --jq 'length')"
+          echo "Open CodeQL alerts for ${GITHUB_SHA}: ${alert_count}"
+
+          if [ "${alert_count}" -gt 0 ]; then
+            echo "CodeQL Gate failed: open code scanning alerts exist for ${GITHUB_SHA}."
+            exit 1
+          fi
+
+          echo "CodeQL Gate passed: no open code scanning alerts for ${GITHUB_SHA}."

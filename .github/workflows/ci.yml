@@ -636,39 +636,79 @@ jobs:
 
   ci-complete:
     runs-on: ubuntu-latest
-    needs: [detect, boundary-guards, plugin-api-compat-current, plugin-api-compat-next, plugin-api-package, compose-render, test, build-ci-images, smoke-postgres-image-deploy, smoke-postgres-image-deploy-exposed, security-pr-scan]
     if: always()
+    permissions:
+      actions: read
+      contents: read
     steps:
       - name: Evaluate CI result
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "detect: ${{ needs.detect.result }}"
-          echo "boundary-guards: ${{ needs.boundary-guards.result }}"
-          echo "plugin-api-compat-current: ${{ needs.plugin-api-compat-current.result }}"
-          echo "plugin-api-compat-next: ${{ needs.plugin-api-compat-next.result }}"
-          echo "plugin-api-package: ${{ needs.plugin-api-package.result }}"
-          echo "compose-render: ${{ needs.compose-render.result }}"
-          echo "test: ${{ needs.test.result }}"
-          echo "build-ci-images: ${{ needs.build-ci-images.result }}"
-          echo "smoke-postgres-image-deploy: ${{ needs.smoke-postgres-image-deploy.result }}"
-          echo "smoke-postgres-image-deploy-exposed: ${{ needs.smoke-postgres-image-deploy-exposed.result }}"
-          echo "security-pr-scan: ${{ needs.security-pr-scan.result }}"
+          set -euo pipefail
 
-          for result in \
-            "${{ needs.detect.result }}" \
-            "${{ needs.boundary-guards.result }}" \
-            "${{ needs.plugin-api-compat-current.result }}" \
-            "${{ needs.plugin-api-compat-next.result }}" \
-            "${{ needs.plugin-api-package.result }}" \
-            "${{ needs.compose-render.result }}" \
-            "${{ needs.test.result }}" \
-            "${{ needs.build-ci-images.result }}" \
-            "${{ needs.smoke-postgres-image-deploy.result }}" \
-            "${{ needs.smoke-postgres-image-deploy-exposed.result }}" \
-            "${{ needs.security-pr-scan.result }}"; do
-            if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
-              echo "CI failed: at least one job reported $result"
+          deadline=$((SECONDS + 3600))
+
+          is_target_job() {
+            case "$1" in
+              "detect / detect"|boundary-guards|plugin-api-compat-current|plugin-api-compat-next|plugin-api-package|compose-render|build-ci-images|smoke-postgres-image-deploy|smoke-postgres-image-deploy-exposed|security-pr-scan)
+                return 0
+                ;;
+              test\ \(*)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          while :; do
+            jobs_tsv="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" --jq '.jobs[] | [.name, .status, (.conclusion // "")] | @tsv')"
+
+            if [ -z "$jobs_tsv" ]; then
+              echo "No jobs reported yet; waiting for workflow jobs to start..."
+              sleep 10
+              continue
+            fi
+
+            pending=0
+            failed=0
+
+            while IFS=$'\t' read -r name status conclusion; do
+              [ -n "$name" ] || continue
+
+              if ! is_target_job "$name"; then
+                continue
+              fi
+
+              echo "$name: $status ${conclusion:-}"
+
+              if [ "$status" != "completed" ]; then
+                pending=1
+                continue
+              fi
+
+              if [[ "$conclusion" == "failure" || "$conclusion" == "cancelled" || "$conclusion" == "timed_out" || "$conclusion" == "action_required" || "$conclusion" == "startup_failure" ]]; then
+                failed=1
+              fi
+            done <<< "$jobs_tsv"
+
+            if [ "$failed" -eq 1 ]; then
+              echo "CI failed: at least one job reported failure"
               exit 1
             fi
+
+            if [ "$pending" -eq 0 ]; then
+              echo "All CI jobs passed or were skipped."
+              exit 0
+            fi
+
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "Timed out waiting for CI jobs to complete."
+              exit 1
+            fi
+
+            sleep 15
           done
 
-          echo "All CI jobs passed or were skipped."
