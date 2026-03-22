@@ -48,6 +48,7 @@ describe('bpmnLinking', () => {
           targetKey: 'process-1',
           fileId: 'file-1',
           fileName: 'Process File',
+          nameSyncMode: 'manual',
         });
       });
 
@@ -145,6 +146,7 @@ describe('bpmnLinking', () => {
           targetKey: 'decision-1',
           fileId: null,
           fileName: null,
+          nameSyncMode: 'manual',
         });
       });
 
@@ -198,6 +200,41 @@ describe('bpmnLinking', () => {
       });
     });
 
+    describe('Message end event', () => {
+      it('returns process link info for a message end event', () => {
+        const element = {
+          id: 'el-3',
+          businessObject: {
+            $type: 'bpmn:EndEvent',
+            eventDefinitions: [{ $type: 'bpmn:MessageEventDefinition' }],
+            extensionElements: {
+              values: [
+                {
+                  $type: 'camunda:Properties',
+                  values: [
+                    { name: 'starbase:fileId', value: 'file-3' },
+                    { name: 'starbase:fileName', value: 'Notify Supplier' },
+                    { name: 'starbase:targetProcessId', value: 'notify_supplier' },
+                    { name: 'starbase:nameSyncMode', value: 'auto' },
+                  ],
+                },
+              ],
+            },
+          },
+        };
+
+        expect(getElementLinkInfo(element)).toEqual({
+          elementId: 'el-3',
+          elementType: 'EndEvent',
+          linkType: 'process',
+          targetKey: 'notify_supplier',
+          fileId: 'file-3',
+          fileName: 'Notify Supplier',
+          nameSyncMode: 'auto',
+        });
+      });
+    });
+
     it('handles element without businessObject', () => {
       const element = {
         id: 'el-1',
@@ -215,9 +252,10 @@ describe('bpmnLinking', () => {
     let modeling: any;
     let moddle: any;
     let modeler: any;
+    let definitions: any;
 
     beforeEach(() => {
-      modeling = { updateProperties: vi.fn() };
+      modeling = { updateProperties: vi.fn(), updateModdleProperties: vi.fn() };
       moddle = {
         create: vi.fn((type: string, props: any) => ({
           $type: type,
@@ -225,8 +263,10 @@ describe('bpmnLinking', () => {
           values: props?.values || [],
         })),
       };
+      definitions = { rootElements: [] };
       modeler = {
         get: (key: string) => (key === 'modeling' ? modeling : moddle),
+        getDefinitions: () => definitions,
       };
     });
 
@@ -267,6 +307,45 @@ describe('bpmnLinking', () => {
         expect.objectContaining({
           calledElement: 'process-2',
           extensionElements: expect.any(Object),
+        })
+      );
+    });
+
+    it('updates a message end event with starbase process metadata and semantic messageRef', () => {
+      const eventDefinition = { $type: 'bpmn:MessageEventDefinition', messageRef: null };
+      const element = {
+        id: 'EndEvent_1',
+        businessObject: {
+          $type: 'bpmn:EndEvent',
+          name: 'Send message',
+          eventDefinitions: [eventDefinition],
+        },
+      };
+
+      updateElementLink(modeler, element, {
+        linkType: 'process',
+        targetKey: 'process-2',
+        fileId: 'file-2',
+        fileName: 'Notify Customer',
+        nameSyncMode: 'auto',
+        syncName: true,
+      });
+
+      expect(modeling.updateModdleProperties).toHaveBeenCalledWith(
+        element,
+        eventDefinition,
+        expect.objectContaining({
+          messageRef: expect.objectContaining({
+            $type: 'bpmn:Message',
+            name: 'Notify Customer',
+          }),
+        })
+      );
+      expect(modeling.updateProperties).toHaveBeenCalledWith(
+        element,
+        expect.objectContaining({
+          extensionElements: expect.any(Object),
+          name: 'Notify Customer',
         })
       );
     });
@@ -392,9 +471,10 @@ describe('bpmnLinking', () => {
     let modeling: any;
     let moddle: any;
     let modeler: any;
+    let definitions: any;
 
     beforeEach(() => {
-      modeling = { updateProperties: vi.fn() };
+      modeling = { updateProperties: vi.fn(), updateModdleProperties: vi.fn() };
       moddle = {
         create: vi.fn((type: string, props: any) => ({
           $type: type,
@@ -402,8 +482,10 @@ describe('bpmnLinking', () => {
           values: props?.values || [],
         })),
       };
+      definitions = { rootElements: [] };
       modeler = {
         get: (key: string) => (key === 'modeling' ? modeling : moddle),
+        getDefinitions: () => definitions,
       };
     });
 
@@ -465,6 +547,47 @@ describe('bpmnLinking', () => {
       clearElementLink(modeler, element, 'process');
 
       expect(modeling.updateProperties).toHaveBeenCalled();
+    });
+
+    it('clears semantic message refs and removes linked root messages for message end events', () => {
+      const messageRef = { id: 'Message_EndEvent_1', name: 'Notify Customer' };
+      definitions.rootElements = [messageRef];
+      const eventDefinition = { $type: 'bpmn:MessageEventDefinition', messageRef };
+      const element = {
+        businessObject: {
+          $type: 'bpmn:EndEvent',
+          eventDefinitions: [eventDefinition],
+          extensionElements: {
+            values: [
+              {
+                $type: 'camunda:Properties',
+                values: [
+                  { name: 'starbase:fileId', value: 'file-1' },
+                  { name: 'starbase:fileName', value: 'File 1' },
+                  { name: 'starbase:targetProcessId', value: 'process-1' },
+                  { name: 'starbase:nameSyncMode', value: 'auto' },
+                  { name: 'starbase:messageRefId', value: 'Message_EndEvent_1' },
+                ],
+              },
+            ],
+          },
+        },
+      };
+
+      clearElementLink(modeler, element, 'process');
+
+      expect(modeling.updateModdleProperties).toHaveBeenNthCalledWith(
+        1,
+        element,
+        eventDefinition,
+        { messageRef: null }
+      );
+      expect(modeling.updateModdleProperties).toHaveBeenNthCalledWith(
+        2,
+        element,
+        definitions,
+        { rootElements: [] }
+      );
     });
   });
 });

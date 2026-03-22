@@ -1,7 +1,8 @@
 import React from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { Button, Toggletip, ToggletipButton, ToggletipContent } from '@carbon/react'
-import { Link, WarningAltFilled } from '@carbon/icons-react'
+import { Button, Theme, Toggletip, ToggletipButton, ToggletipContent, Toggle } from '@carbon/react'
+import { Link, Settings, WarningAltFilled } from '@carbon/icons-react'
+import type { NameSyncMode } from '../utils/bpmnLinking'
 
 export type LinkOverlayStatus = 'linked' | 'missing' | 'unlinked'
 
@@ -10,49 +11,31 @@ export interface UseElementLinkOverlayProps {
   elementId: string | null
   visible: boolean
   status: LinkOverlayStatus
+  isMessageEndEventLink?: boolean
   linkedLabel: string | null
   linkTypeLabel: string
   canOpen: boolean
   canCreateProcess?: boolean
   createProcessDisabled?: boolean
   createActionLabel?: string
+  nameSyncMode?: NameSyncMode
+  canSyncName?: boolean
   onTriggerClick?: () => void
   onLink: () => void
   onOpen: () => void
   onCreateProcess?: () => void
+  onSyncName?: () => void
+  onSetNameSyncMode?: (mode: NameSyncMode) => void
   onUnlink: () => void
 }
 
-function OverlayContent({
-  status,
-  linkedLabel,
-  linkTypeLabel,
-  canOpen,
-  canCreateProcess,
-  createProcessDisabled,
-  createActionLabel,
-  onTriggerClick,
-  onLink,
-  onOpen,
-  onCreateProcess,
-  onUnlink,
-}: Omit<UseElementLinkOverlayProps, 'modeler' | 'elementId' | 'visible'>) {
-  const [unlinkHover, setUnlinkHover] = React.useState(false)
-  const showUnlink = status !== 'unlinked'
-  const showOpen = status === 'linked' && canOpen
-  const showCreateProcess = status === 'unlinked' && Boolean(canCreateProcess && onCreateProcess)
-  const statusLabel =
-    status === 'linked'
-      ? `Linked ${linkTypeLabel}`
-      : status === 'missing'
-        ? `Missing ${linkTypeLabel} link`
-        : `No ${linkTypeLabel} linked`
-  const pillStyle: React.CSSProperties = {
+function getPillStyle(background: string): React.CSSProperties {
+  return {
     height: 26,
     minWidth: 34,
     padding: '0 8px',
     borderRadius: 999,
-    background: 'var(--cds-link-01, #0f62fe)',
+    background,
     color: '#ffffff',
     display: 'flex',
     alignItems: 'center',
@@ -60,72 +43,136 @@ function OverlayContent({
     gap: 6,
     boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
     border: 'none',
+    cursor: 'pointer',
   }
+}
+
+export type ElementLinkOverlayContentProps = Omit<UseElementLinkOverlayProps, 'modeler' | 'elementId' | 'visible'>
+
+export function ElementLinkOverlayContent({
+  status,
+  isMessageEndEventLink = false,
+  linkedLabel,
+  linkTypeLabel,
+  canOpen,
+  canCreateProcess,
+  createProcessDisabled,
+  createActionLabel,
+  nameSyncMode = 'manual',
+  canSyncName,
+  onTriggerClick,
+  onLink,
+  onOpen,
+  onCreateProcess,
+  onSyncName,
+  onSetNameSyncMode,
+  onUnlink,
+}: ElementLinkOverlayContentProps) {
+  const showUnlink = status !== 'unlinked'
+  const showLinkedPill = status === 'linked' && canOpen
+  const showCreateProcess = status === 'unlinked' && Boolean(canCreateProcess && onCreateProcess)
+  const showNameSyncControls = status === 'linked' && Boolean(onSetNameSyncMode)
+  const stackConfigBelowLinkedPill = showLinkedPill && isMessageEndEventLink
+  const statusLabel =
+    status === 'linked'
+      ? `Linked ${linkTypeLabel}`
+      : status === 'missing'
+        ? `Missing ${linkTypeLabel} link`
+        : `No ${linkTypeLabel} linked`
+  const linkPillStyle = getPillStyle('var(--cds-link-01, #0f62fe)')
+  const configPillStyle = getPillStyle('var(--cds-button-secondary, #393939)')
 
   return (
-    <Toggletip align="bottom">
-      <ToggletipButton label="Link file" onMouseDownCapture={onTriggerClick}>
-        <div style={pillStyle}>
+    <div style={{ display: 'flex', flexDirection: stackConfigBelowLinkedPill ? 'column' : 'row', alignItems: stackConfigBelowLinkedPill ? 'flex-start' : 'center', gap: 8 }}>
+      {showLinkedPill && (
+        <button
+          type="button"
+          aria-label={`Open linked ${linkTypeLabel}`}
+          onMouseDownCapture={onTriggerClick}
+          onClick={(event) => {
+            event.stopPropagation()
+            onOpen()
+          }}
+          style={linkPillStyle}
+        >
           <Link size={14} style={{ color: '#ffffff', fill: '#ffffff' }} />
-          {status === 'missing' && <WarningAltFilled size={12} style={{ color: '#ffffff', fill: '#ffffff' }} />}
-        </div>
-      </ToggletipButton>
-      <ToggletipContent>
-        <div style={{ display: 'grid', gap: 'var(--spacing-3)', minWidth: 200 }}>
-          <div style={{ display: 'grid', gap: 4 }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{statusLabel}</div>
-            {status === 'linked' && (
-              <div style={{ fontSize: 13, fontWeight: 600, wordBreak: 'break-word' }}>
-                {linkedLabel || 'Untitled'}
+        </button>
+      )}
+      <Toggletip align="bottom">
+        <ToggletipButton label={`Configure ${linkTypeLabel} link`} onMouseDownCapture={onTriggerClick}>
+          <div style={configPillStyle}>
+            <Settings size={14} style={{ color: '#ffffff', fill: '#ffffff' }} />
+            {status === 'missing' && <WarningAltFilled size={12} style={{ color: '#ffffff', fill: '#ffffff' }} />}
+          </div>
+        </ToggletipButton>
+        <ToggletipContent>
+          <Theme theme="g100">
+            <div style={{ display: 'grid', gap: 'var(--spacing-4)', minWidth: 280, maxWidth: 320, padding: 'var(--spacing-5)', background: 'var(--cds-layer-01)', color: 'var(--cds-text-primary)', border: '1px solid var(--cds-border-subtle-01)' }}>
+              <div style={{ display: 'grid', gap: 'var(--spacing-2)' }}>
+                <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>{statusLabel}</div>
+                {status !== 'unlinked' && (
+                  <div style={{ fontSize: 14, fontWeight: 600, wordBreak: 'break-word' }}>
+                    {linkedLabel || 'Untitled'}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
-            <Button
-              size="sm"
-              kind="primary"
-              onClick={onLink}
-              style={{ width: '100%' }}
-            >
-              {status === 'unlinked' ? 'Link' : 'Change'}
-            </Button>
-            {showCreateProcess && (
-              <Button
-                size="sm"
-                kind="primary"
-                onClick={onCreateProcess}
-                disabled={createProcessDisabled}
-                style={{ width: '100%' }}
-              >
-                {createActionLabel || 'Create process'}
-              </Button>
-            )}
-            {showOpen && (
-              <Button size="sm" kind="primary" onClick={onOpen} style={{ width: '100%' }}>
-                Open
-              </Button>
-            )}
-            {showUnlink && (
-              <Button
-                size="sm"
-                kind="ghost"
-                onClick={onUnlink}
-                onMouseEnter={() => setUnlinkHover(true)}
-                onMouseLeave={() => setUnlinkHover(false)}
-                style={{
-                  width: '100%',
-                  background: unlinkHover ? 'var(--cds-layer-hover-01, #e8e8e8)' : 'var(--cds-layer-01, #f4f4f4)',
-                  color: 'var(--cds-text-primary, #161616)',
-                  border: '1px solid var(--cds-border-subtle-01, #e0e0e0)',
-                }}
-              >
-                Unlink
-              </Button>
-            )}
-          </div>
-        </div>
-      </ToggletipContent>
-    </Toggletip>
+              <div style={{ display: 'grid', gap: 'var(--spacing-3)' }}>
+                <Button
+                  size="sm"
+                  kind="primary"
+                  onClick={onLink}
+                  style={{ width: '100%' }}
+                >
+                  {status === 'unlinked' ? 'Link' : 'Change'}
+                </Button>
+                {showNameSyncControls && (
+                  <div style={{ display: 'grid', gap: 'var(--spacing-3)' }}>
+                    {canSyncName && onSyncName && (
+                      <Button
+                        size="sm"
+                        kind="secondary"
+                        onClick={onSyncName}
+                        style={{ width: '100%', whiteSpace: 'nowrap' }}
+                      >
+                        Sync element name
+                      </Button>
+                    )}
+                    <Toggle
+                      id={`name-sync-${linkTypeLabel}`}
+                      labelText="Auto-sync element name"
+                      toggled={nameSyncMode === 'auto'}
+                      onToggle={(checked) => onSetNameSyncMode?.(checked ? 'auto' : 'manual')}
+                      size="sm"
+                    />
+                  </div>
+                )}
+                {showCreateProcess && (
+                  <Button
+                    size="sm"
+                    kind="primary"
+                    onClick={onCreateProcess}
+                    disabled={createProcessDisabled}
+                    style={{ width: '100%' }}
+                  >
+                    {createActionLabel || 'Create process'}
+                  </Button>
+                )}
+                {showUnlink && (
+                  <Button
+                    size="sm"
+                    kind="ghost"
+                    onClick={onUnlink}
+                    style={{ width: '100%' }}
+                  >
+                    Unlink
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Theme>
+        </ToggletipContent>
+      </Toggletip>
+    </div>
   )
 }
 
@@ -134,16 +181,21 @@ export function useElementLinkOverlay({
   elementId,
   visible,
   status,
+  isMessageEndEventLink,
   linkedLabel,
   linkTypeLabel,
   canOpen,
   canCreateProcess,
   createProcessDisabled,
   createActionLabel,
+  nameSyncMode,
+  canSyncName,
   onTriggerClick,
   onLink,
   onOpen,
   onCreateProcess,
+  onSyncName,
+  onSetNameSyncMode,
   onUnlink,
 }: UseElementLinkOverlayProps) {
   const overlayKeyRef = React.useRef<string | null>(null)
@@ -173,33 +225,43 @@ export function useElementLinkOverlay({
   const renderOverlay = React.useCallback(() => {
     if (!rootRef.current) return
     rootRef.current.render(
-      <OverlayContent
+      <ElementLinkOverlayContent
         status={status}
+        isMessageEndEventLink={isMessageEndEventLink}
         linkedLabel={linkedLabel}
         linkTypeLabel={linkTypeLabel}
         canOpen={canOpen}
         canCreateProcess={canCreateProcess}
         createProcessDisabled={createProcessDisabled}
         createActionLabel={createActionLabel}
+        nameSyncMode={nameSyncMode}
+        canSyncName={canSyncName}
         onTriggerClick={onTriggerClick}
         onLink={onLink}
         onOpen={onOpen}
         onCreateProcess={onCreateProcess}
+        onSyncName={onSyncName}
+        onSetNameSyncMode={onSetNameSyncMode}
         onUnlink={onUnlink}
       />
     )
   }, [
     status,
+    isMessageEndEventLink,
     linkedLabel,
     linkTypeLabel,
     canOpen,
     canCreateProcess,
     createProcessDisabled,
     createActionLabel,
+    nameSyncMode,
+    canSyncName,
     onTriggerClick,
     onLink,
     onOpen,
     onCreateProcess,
+    onSyncName,
+    onSetNameSyncMode,
     onUnlink,
   ])
 

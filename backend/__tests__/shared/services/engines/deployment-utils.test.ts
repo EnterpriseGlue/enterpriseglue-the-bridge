@@ -5,6 +5,7 @@ import {
   ensureExt,
   normalizeXmlnsUrisInDefinitions,
   normalizeBpmnProcessHistoryTtl,
+  sanitizeBpmnXml,
 } from '@enterpriseglue/shared/services/engines/deployment-utils.js';
 
 describe('deployment-utils', () => {
@@ -111,6 +112,39 @@ describe('deployment-utils', () => {
       const xml = '<process id="test"></process>';
       const result = normalizeBpmnProcessHistoryTtl(xml);
       expect(result).toBe(xml);
+    });
+  });
+
+  describe('sanitizeBpmnXml', () => {
+    it('normalizes operaton BPMN attributes into camunda-prefixed BPMN', () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:operaton="http://operaton.org/schema/1.0/bpmn">
+  <bpmn:process id="Process_1" operaton:historyTimeToLive="45" camunda:historyTimeToLive="60">
+    <bpmn:userTask id="Task_1" operaton:assignee="demo" operaton:formKey="embedded:app:forms/test.html" />
+  </bpmn:process>
+</bpmn:definitions>`;
+
+      const result = sanitizeBpmnXml(xml);
+      expect(result).not.toContain('operaton:');
+      expect(result).not.toContain('xmlns:operaton');
+      expect(result).toContain('camunda:historyTimeToLive="60"');
+      expect(result).toContain('camunda:assignee="demo"');
+      expect(result).toContain('camunda:formKey="embedded:app:forms/test.html"');
+    });
+
+    it('repairs malformed self-closing process tags while preserving child flow nodes', () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:operaton="http://operaton.org/schema/1.0/bpmn">
+  <bpmn:process id="ReviewInvoice" name="Review Invoice" isExecutable="true" operaton:historyTimeToLive="45" camunda:historyTimeToLive="60" camunda:historyTimeToLive="60"/>
+    <bpmn:startEvent id="StartEvent_1" />
+  </bpmn:process>
+</bpmn:definitions>`;
+
+      const result = sanitizeBpmnXml(xml);
+      expect(result).toContain('<bpmn:process id="ReviewInvoice" name="Review Invoice" isExecutable="true" camunda:historyTimeToLive="60">');
+      expect(result).toContain('<bpmn:startEvent id="StartEvent_1" />');
+      expect(result).toContain('</bpmn:process>');
+      expect(result).not.toContain('/>\n    <bpmn:startEvent');
     });
   });
 });

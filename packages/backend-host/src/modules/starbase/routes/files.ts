@@ -17,7 +17,8 @@ import { AuthorizationService } from '@enterpriseglue/shared/services/authorizat
 import { ResourceService } from '@enterpriseglue/shared/services/resources.js';
 import { CascadeDeleteService } from '@enterpriseglue/shared/services/cascade-delete.js';
 import { syncFileDelete, syncFileUpdate } from '@enterpriseglue/shared/services/versioning/index.js';
-import { extractBpmnProcessId, extractDmnDecisionId, updateStarbaseFileNameInXml } from '@enterpriseglue/shared/utils/starbase-xml.js';
+import { sanitizeBpmnXml, sanitizeDmnXml } from '@enterpriseglue/shared/services/engines/deployment-utils.js';
+import { extractBpmnCallActivityLinks, extractBpmnProcessId, extractDmnDecisionId, updateStarbaseFileNameInXml } from '@enterpriseglue/shared/utils/starbase-xml.js';
 import { projectMemberService } from '@enterpriseglue/shared/services/platform-admin/ProjectMemberService.js';
 import { fileOperationsLimiter, apiLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
 import type { ProjectRole } from '@enterpriseglue/shared/contracts/roles.js';
@@ -130,92 +131,6 @@ const EMPTY_DMN = `<?xml version="1.0" encoding="UTF-8"?>
     </dmndi:DMNDiagram>
   </dmndi:DMNDI>
 </definitions>`;
-
-function normalizeXmlnsUrisInDefinitions(xml: string): string {
-  const defsMatch = xml.match(/<\s*(?:[a-zA-Z0-9_-]+:)?definitions\b[^>]*>/i)
-  if (!defsMatch) return xml
-  const defsTag = defsMatch[0]
-  const fixedDefsTag = defsTag.replace(/\bxmlns(?::[a-zA-Z0-9_-]+)?\s*=\s*(["'])([^"']+)\1/gi, (m: string, q: string, value: string) => {
-    const fixedValue = String(value || '').replace(/\s+/g, '')
-    return m.replace(value, fixedValue)
-  })
-  if (fixedDefsTag === defsTag) return xml
-  return xml.replace(defsTag, fixedDefsTag)
-}
-
-function normalizeDmnDecisionHistoryTtl(xml: string): string {
-  const src = String(xml || '')
-  // Only inject camunda:historyTimeToLive when camunda namespace is declared
-  if (!/\bxmlns:camunda\s*=\s*["']/i.test(src)) return src
-
-  return src.replace(/<\s*(?:[a-zA-Z0-9_-]+:)?decision\b[^>]*>/gi, (m: string) => {
-    const ttlMatch = m.match(/\bcamunda:historyTimeToLive\s*=\s*["']([^"']+)["']/i)
-    if (ttlMatch) {
-      const v = String(ttlMatch[1] || '').trim()
-      if (v === '30') return m.replace(ttlMatch[0], 'camunda:historyTimeToLive="60"')
-      return m
-    }
-    return m.replace(/\s?>$/, ' camunda:historyTimeToLive="60">').replace(/\s?\/?>$/, ' camunda:historyTimeToLive="60"/>')
-  })
-}
-
-function normalizeBpmnProcessHistoryTtl(xml: string): string {
-  const src = String(xml || '')
-  // Only add/adjust camunda:historyTimeToLive when camunda namespace is declared
-  if (!/\bxmlns:camunda\s*=\s*["']/i.test(src)) return src
-
-  return src.replace(/<\s*(?:[a-zA-Z0-9_-]+:)?process\b[^>]*>/gi, (m: string) => {
-    const ttlMatch = m.match(/\bcamunda:historyTimeToLive\s*=\s*["']([^"']+)["']/i)
-    if (ttlMatch) {
-      const v = String(ttlMatch[1] || '').trim()
-      if (v === '180') return m.replace(ttlMatch[0], 'camunda:historyTimeToLive="60"')
-      return m
-    }
-    return m.replace(/\s?>$/, ' camunda:historyTimeToLive="60">').replace(/\s?\/?>$/, ' camunda:historyTimeToLive="60"/>')
-  })
-}
-
-function normalizeXmlnsAttributeNamesInDefinitions(xml: string): string {
-  const defsMatch = xml.match(/<\s*(?:[a-zA-Z0-9_-]+:)?definitions\b[^>]*>/i)
-  if (!defsMatch) return xml
-  const defsTag = defsMatch[0]
-
-  // Repair cases like: "xmlns:\n dmndi" or "xmln\ns:dmndi" which are invalid XML attribute names
-  const fixedDefsTag = defsTag
-    .replace(/xmln\s+s/gi, 'xmlns')
-    .replace(/\bxmlns\s*:\s*/gi, 'xmlns:')
-
-  if (fixedDefsTag === defsTag) return xml
-  return xml.replace(defsTag, fixedDefsTag)
-}
-
-function normalizeDmnDiIds(xml: string): string {
-  let out = String(xml || '')
-
-  let diagramIdx = 1
-  out = out.replace(/<\s*(?:[a-zA-Z0-9_-]+:)?DMNDiagram\b[^>]*>/gi, (m: string) => {
-    if (/\bid\s*=\s*["']/i.test(m)) return m
-    const id = `DMNDiagram_${diagramIdx++}`
-    return m.replace(/\s?>$/, ` id="${id}">`).replace(/\s?\/?>$/, ` id="${id}"/>`)
-  })
-
-  let shapeIdx = 1
-  out = out.replace(/<\s*(?:[a-zA-Z0-9_-]+:)?DMNShape\b[^>]*>/gi, (m: string) => {
-    if (/\bid\s*=\s*["']/i.test(m)) return m
-    const id = `DMNShape_${shapeIdx++}`
-    return m.replace(/\s?>$/, ` id="${id}">`).replace(/\s?\/?>$/, ` id="${id}"/>`)
-  })
-
-  return out
-}
-
-function sanitizeDmnXml(xml: string): string {
-  return normalizeDmnDiIds(normalizeDmnDecisionHistoryTtl(normalizeXmlnsUrisInDefinitions(normalizeXmlnsAttributeNamesInDefinitions(xml))))
-}
-
-function sanitizeBpmnXml(xml: string): string {
-  return normalizeBpmnProcessHistoryTtl(String(xml || ''))
-}
 
 /**
  * List files by project
@@ -378,6 +293,10 @@ r.get('/starbase-api/files/:fileId', apiLimiter, requireAuth, asyncHandler(async
   
   // Get folder breadcrumb
   const folderBreadcrumb = await getFolderBreadcrumb(found.folderId);
+  const ty = String(found.type || '').toLowerCase();
+  const xml = ty === 'dmn'
+    ? sanitizeDmnXml(String(found.xml || ''))
+    : (ty === 'bpmn' ? sanitizeBpmnXml(String(found.xml || '')) : String(found.xml || ''))
   
   res.json({
     id: found.id,
@@ -387,12 +306,72 @@ r.get('/starbase-api/files/:fileId', apiLimiter, requireAuth, asyncHandler(async
     folderBreadcrumb,
     name: found.name,
     type: found.type,
-    xml: found.xml,
+    xml,
     bpmnProcessId: found.bpmnProcessId ?? null,
     dmnDecisionId: found.dmnDecisionId ?? null,
     createdAt: Number(found.createdAt),
     updatedAt: Number(found.updatedAt),
   });
+}));
+
+r.get('/starbase-api/projects/:projectId/files/:fileId/callers', apiLimiter, requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const projectId = String(req.params.projectId);
+  const fileId = String(req.params.fileId);
+  const userId = req.user!.userId;
+
+  if (!(await AuthorizationService.verifyProjectAccess(projectId, userId))) {
+    throw Errors.notFound('Project');
+  }
+
+  const dataSource = await getDataSource();
+  const fileRepo = dataSource.getRepository(File);
+
+  const targetFile = await fileRepo.findOne({
+    where: { id: fileId, projectId },
+    select: ['id', 'projectId', 'type', 'xml', 'bpmnProcessId', 'dmnDecisionId']
+  });
+
+  if (!targetFile) throw Errors.notFound('File');
+
+  const targetType = String(targetFile.type || '').toLowerCase();
+  const targetProcessId = targetType === 'bpmn'
+    ? (targetFile.bpmnProcessId ?? extractBpmnProcessId(String(targetFile.xml || '')))
+    : null;
+  const targetDecisionId = targetType === 'dmn'
+    ? (targetFile.dmnDecisionId ?? extractDmnDecisionId(String(targetFile.xml || '')))
+    : null;
+  if ((targetType !== 'bpmn' && targetType !== 'dmn') || (!targetProcessId && !targetDecisionId)) {
+    res.json({ callers: [] });
+    return;
+  }
+
+  const rows = await fileRepo.find({
+    where: { projectId, type: 'bpmn' },
+    order: { name: 'ASC' },
+    select: ['id', 'name', 'folderId', 'xml', 'bpmnProcessId']
+  });
+
+  const callers = rows.flatMap((row: any) => {
+    if (row.id === fileId) return [];
+
+    const parentProcessId = row.bpmnProcessId ?? extractBpmnProcessId(String(row.xml || ''));
+    return extractBpmnCallActivityLinks(String(row.xml || ''))
+      .filter((link) => {
+        if (link.targetFileId) return link.targetFileId === fileId;
+        if (targetType === 'dmn') return link.targetDecisionId === targetDecisionId;
+        return link.targetProcessId === targetProcessId;
+      })
+      .map((link) => ({
+        parentFileId: row.id,
+        parentFileName: row.name,
+        parentFolderId: row.folderId ?? null,
+        parentProcessId: parentProcessId ?? null,
+        callActivityId: link.elementId,
+        callActivityName: link.elementName,
+      }));
+  });
+
+  res.json({ callers });
 }));
 
 /**
@@ -456,7 +435,7 @@ r.put('/starbase-api/files/:fileId', apiLimiter, requireAuth, fileOperationsLimi
   }
   const currentUpdatedAt = Number(row.updatedAt);
   if (typeof prevUpdatedAt === 'number' && currentUpdatedAt !== prevUpdatedAt) {
-    throw Errors.conflict('File was modified by another user');
+    throw Errors.conflict('File was modified by another user', { currentUpdatedAt });
   }
 
   // Ensure initial version exists for legacy files with no versions yet
