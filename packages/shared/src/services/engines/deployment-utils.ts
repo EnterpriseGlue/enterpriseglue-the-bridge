@@ -72,7 +72,7 @@ export function normalizeBpmnProcessHistoryTtl(xml: string): string {
       if (v === '180') return m.replace(ttlMatch[0], 'camunda:historyTimeToLive="60"')
       return m
     }
-    return m.replace(/\s*>$/, ' camunda:historyTimeToLive="60">').replace(/\s*\/>$/, ' camunda:historyTimeToLive="60"/>')
+    return appendAttributeToOpeningTag(m, 'camunda:historyTimeToLive="60"')
   })
 }
 
@@ -191,7 +191,7 @@ export function normalizeDmnDecisionHistoryTtl(xml: string): string {
       if (v === '30') return m.replace(ttlMatch[0], 'camunda:historyTimeToLive="60"')
       return m
     }
-    return m.replace(/\s*>$/, ' camunda:historyTimeToLive="60">').replace(/\s*\/>$/, ' camunda:historyTimeToLive="60"/>')
+    return appendAttributeToOpeningTag(m, 'camunda:historyTimeToLive="60"')
   })
 }
 
@@ -223,17 +223,33 @@ export function normalizeDmnDiIds(xml: string): string {
   out = out.replace(/<\s*(?:[a-zA-Z0-9_-]+:)?DMNDiagram\b[^>]*>/gi, (m: string) => {
     if (/\bid\s*=\s*["']/i.test(m)) return m
     const id = `DMNDiagram_${diagramIdx++}`
-    return m.replace(/\s*>$/, ` id="${id}">`).replace(/\s*\/>$/, ` id="${id}"/>`)
+    return appendAttributeToOpeningTag(m, `id="${id}"`)
   })
 
   let shapeIdx = 1
   out = out.replace(/<\s*(?:[a-zA-Z0-9_-]+:)?DMNShape\b[^>]*>/gi, (m: string) => {
     if (/\bid\s*=\s*["']/i.test(m)) return m
     const id = `DMNShape_${shapeIdx++}`
-    return m.replace(/\s*>$/, ` id="${id}">`).replace(/\s*\/>$/, ` id="${id}"/>`)
+    return appendAttributeToOpeningTag(m, `id="${id}"`)
   })
 
   return out
+}
+
+function appendAttributeToOpeningTag(tag: string, attribute: string): string {
+  const trimmedTag = tag.trimEnd()
+
+  const closingIndex = trimmedTag.lastIndexOf('>')
+  if (closingIndex < 0) return tag
+
+  let tagBody = trimmedTag.slice(0, closingIndex).trimEnd()
+  const isSelfClosing = tagBody.endsWith('/')
+
+  if (isSelfClosing) {
+    tagBody = tagBody.slice(0, -1).trimEnd()
+  }
+
+  return `${tagBody} ${attribute}${isSelfClosing ? '/>' : '>'}`
 }
 
 /**
