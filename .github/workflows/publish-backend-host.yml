@@ -2,8 +2,13 @@ name: Publish Backend Host
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "backend-host/v*"
+    paths:
+      - "packages/backend-host/**"
+      - ".github/workflows/publish-backend-host.yml"
   workflow_dispatch:
     inputs:
       dry_run:

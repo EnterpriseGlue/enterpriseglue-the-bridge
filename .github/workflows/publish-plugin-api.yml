@@ -2,8 +2,13 @@ name: Publish Plugin API
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "plugin-api/v*"
+    paths:
+      - "packages/enterprise-plugin-api/**"
+      - ".github/workflows/publish-plugin-api.yml"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -79,6 +84,21 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify EE canary
+        if: >-
+          !(github.event_name == 'workflow_dispatch' && inputs.dry_run == 'true')
+          && steps.check.outcome != 'success'
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3
+        with:
+          token: ${{ secrets.EE_DISPATCH_TOKEN }}
+          repository: EnterpriseGlue/enterpriseglue-the-bridge-ee
+          event-type: oss-package-published
+          client-payload: |
+            {
+              "package_name": "${{ steps.pkg.outputs.name }}",
+              "package_version": "${{ steps.pkg.outputs.version }}"
+            }
 
       - name: Summary
         run: |
