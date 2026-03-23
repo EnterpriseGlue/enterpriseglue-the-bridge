@@ -2,8 +2,13 @@ name: Publish Shared Package
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "shared/v*"
+    paths:
+      - "packages/shared/**"
+      - ".github/workflows/publish-shared.yml"
   workflow_dispatch:
     inputs:
       dry_run:
