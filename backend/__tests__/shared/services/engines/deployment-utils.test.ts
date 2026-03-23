@@ -5,6 +5,8 @@ import {
   ensureExt,
   normalizeXmlnsUrisInDefinitions,
   normalizeBpmnProcessHistoryTtl,
+  normalizeDmnDecisionHistoryTtl,
+  normalizeDmnDiIds,
   sanitizeBpmnXml,
 } from '@enterpriseglue/shared/services/engines/deployment-utils.js';
 
@@ -112,6 +114,29 @@ describe('deployment-utils', () => {
       const xml = '<process id="test"></process>';
       const result = normalizeBpmnProcessHistoryTtl(xml);
       expect(result).toBe(xml);
+    });
+
+    it('adds historyTimeToLive to self-closing process tags', () => {
+      const xml = '<definitions xmlns:camunda="http://camunda.org/schema/1.0/bpmn"><process id="test" /></definitions>';
+      const result = normalizeBpmnProcessHistoryTtl(xml);
+      expect(result).toContain('<process id="test" camunda:historyTimeToLive="60"/>');
+    });
+  });
+
+  describe('normalizeDmnDecisionHistoryTtl', () => {
+    it('adds historyTimeToLive to self-closing decision tags', () => {
+      const xml = '<definitions xmlns:camunda="http://camunda.org/schema/1.0/bpmn"><decision id="Decision_1" /></definitions>';
+      const result = normalizeDmnDecisionHistoryTtl(xml);
+      expect(result).toContain('<decision id="Decision_1" camunda:historyTimeToLive="60"/>');
+    });
+  });
+
+  describe('normalizeDmnDiIds', () => {
+    it('adds ids to DMN diagram and shape tags without ids', () => {
+      const xml = '<dmndi:DMNDiagram><dmndi:DMNShape /></dmndi:DMNDiagram>';
+      const result = normalizeDmnDiIds(xml);
+      expect(result).toContain('<dmndi:DMNDiagram id="DMNDiagram_1">');
+      expect(result).toContain('<dmndi:DMNShape id="DMNShape_1"/>');
     });
   });
 
