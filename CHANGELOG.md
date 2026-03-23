@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.8.13](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.8.12...v0.8.13) (2026-03-23)
+
+
+### Bug Fixes
+
+* **shared:** resolve remaining CodeQL regex alerts ([#262](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/262)) ([2d2af11](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/2d2af116863b45b09c60f23b5ff191a845a2535d))
+
 ## [0.8.12](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.8.11...v0.8.12) (2026-03-22)
 
 
