@@ -716,6 +716,10 @@ async function stubEditorCollaboration(page: Page, sessionStatus: CollaborationL
   };
   let currentLock: CollaborationRouteLock | null = otherUserLockBase;
 
+  await page.route(/.*\/git-api\/locks\/[^/?]+\/events(?:\?.*)?$/, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'text/event-stream', headers: { 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' }, body: ':ok\n\n' });
+  });
+
   await page.route(/.*\/git-api\/locks\/[^/?]+\/heartbeat(?:\?.*)?$/, async (route) => {
     heartbeatBodies.push((route.request().postDataJSON() as Record<string, unknown>) || {});
     await fulfillJson(route, { success: true, lock: ownerLock });
@@ -958,7 +962,7 @@ test.describe('Smoke: Starbase versioning split', () => {
     await expect(page.getByRole('heading', { name: /take over editing\?/i })).toBeVisible();
     await expect(page.getByRole('status').getByText(/Alex Editor is actively editing this draft/i)).toBeVisible();
 
-    await page.getByRole('button', { name: /^Take over$/i }).click();
+    await page.getByRole('dialog').getByRole('button', { name: /^Take over$/i }).click();
 
     await expect.poll(() => collaboration.acquireBodies.filter((body) => body.force === true).length).toBe(1);
     expect(collaboration.acquireBodies[collaboration.acquireBodies.length - 1]).toMatchObject({ fileId: primaryFileId, force: true });
@@ -976,7 +980,9 @@ test.describe('Smoke: Starbase versioning split', () => {
     await expect(page.getByRole('heading', { name: /take over editing\?/i })).not.toBeVisible();
     await expect(page.getByRole('button', { name: 'Versions' })).toBeDisabled();
 
-    await page.getByRole('button', { name: /take over editing/i }).first().click();
+    await page.getByRole('button', { name: /^Take over$/i }).click();
+    await expect(page.getByRole('heading', { name: /take over editing\?/i })).toBeVisible();
+    await page.getByRole('dialog').getByRole('button', { name: /^Take over$/i }).click();
 
     await expect.poll(() => collaboration.acquireBodies.filter((body) => body.force === true).length).toBe(1);
     expect(collaboration.acquireBodies[collaboration.acquireBodies.length - 1]).toMatchObject({ fileId: primaryFileId, force: true });
