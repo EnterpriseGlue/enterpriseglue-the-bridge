@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.8.19](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.8.18...v0.8.19) (2026-03-27)
+
+
+### Bug Fixes
+
+* **frontend:** breadcrumb z-index and branding seed data preservation ([#274](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/274)) ([aacb951](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/aacb951d9a4ef63f2688954ac723794f89f39e4e))
+
 ## [0.8.18](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.8.17...v0.8.18) (2026-03-27)
 
 
