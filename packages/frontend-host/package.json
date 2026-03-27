@@ -1,6 +1,6 @@
 {
   "name": "@enterpriseglue/frontend-host",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "OSS frontend host for EnterpriseGlue — routes, enterprise loader, extension registry, and feature components",
   "license": "Apache-2.0",
   "repository": {
@@ -10,7 +10,9 @@
   },
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+    "build:shared": "npm run --prefix ../shared build",
+    "typecheck": "npm run build:shared && tsc -p tsconfig.build.json --noEmit",
+    "build": "npm run build:shared && tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build"
   },
