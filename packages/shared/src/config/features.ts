@@ -23,6 +23,9 @@ export interface FeatureFlags {
   // Phase 5: Platform Admin
   platformAdminUI: boolean;
   
+  // Notifications
+  sseNotifications: boolean;
+  
   // Development
   devMode: boolean;
   impersonation: boolean;
@@ -41,6 +44,9 @@ export const features: FeatureFlags = {
   
   // Phase 5: Platform admin UI
   platformAdminUI: process.env.PLATFORM_ADMIN_ENABLED === 'true',
+  
+  // Notifications
+  sseNotifications: process.env.SSE_NOTIFICATIONS_ENABLED === 'true',
   
   // Development mode
   devMode: process.env.NODE_ENV === 'development',

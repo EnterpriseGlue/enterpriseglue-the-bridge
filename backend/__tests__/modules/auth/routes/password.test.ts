@@ -42,6 +42,7 @@ vi.mock('@enterpriseglue/shared/services/audit.js', () => ({
 }));
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: {
     frontendUrl: 'http://localhost:5173',
     nodeEnv: 'test',

@@ -3,8 +3,8 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { WorkingFile } from '@enterpriseglue/shared/db/entities/WorkingFile.js';
-import { File as MainFile } from '@enterpriseglue/shared/db/entities/File.js';
+import { WorkingFile } from '@enterpriseglue/shared/infrastructure/persistence/entities/WorkingFile.js';
+import { File as MainFile } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { WorkingFileInfo, hashContent, mapWorkingFile, normalizeFolderId } from './vcs-types.js';

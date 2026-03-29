@@ -4,13 +4,13 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitRepository } from '@enterpriseglue/shared/db/entities/GitRepository.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
-import { Folder } from '@enterpriseglue/shared/db/entities/Folder.js';
+import { GitRepository } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitRepository.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
+import { Folder } from '@enterpriseglue/shared/infrastructure/persistence/entities/Folder.js';
 import { In } from 'typeorm';
 import { createHash } from 'crypto';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
-import { vcsService } from '@enterpriseglue/shared/services/versioning/index.js';
+import { vcsService } from '../versioning/index.js';
 import type { GitProviderClient, FileEntry, CommitInfo } from './providers/index.js';
 
 export interface PushToRemoteResult {

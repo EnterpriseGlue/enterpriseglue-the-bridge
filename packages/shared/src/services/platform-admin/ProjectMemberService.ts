@@ -6,10 +6,10 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
-import { ProjectMemberRole } from '@enterpriseglue/shared/db/entities/ProjectMemberRole.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
+import { ProjectMemberRole } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMemberRole.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { In } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 

@@ -4,9 +4,9 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitProvider } from '@enterpriseglue/shared/db/entities/GitProvider.js';
+import { GitProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitProvider.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
-import { decrypt, safeDecrypt } from '@enterpriseglue/shared/services/encryption.js';
+import { decrypt, safeDecrypt } from '../encryption.js';
 import crypto from 'crypto';
 
 // OAuth URLs for each provider

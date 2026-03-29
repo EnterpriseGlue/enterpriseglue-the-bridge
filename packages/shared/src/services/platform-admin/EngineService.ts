@@ -6,10 +6,10 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { EngineMember } from '@enterpriseglue/shared/db/entities/EngineMember.js';
-import { EnvironmentTag } from '@enterpriseglue/shared/db/entities/EnvironmentTag.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { EngineMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineMember.js';
+import { EnvironmentTag } from '@enterpriseglue/shared/infrastructure/persistence/entities/EnvironmentTag.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { In, IsNull } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import type { EngineRole } from '@enterpriseglue/shared/constants/roles.js';

@@ -127,7 +127,7 @@ npm run prod:images:oracle:down
 - Frontend source changes in Docker dev require rebuilding the frontend image (`npm run dev` already runs with `--build`).
 - Git repositories are stored at `./data/repos` inside the backend container.
 - To change ports or database settings, update the active env file.
-- If email verification is enabled, configure `RESEND_API_KEY` to receive verification links.
+- If email verification is enabled, seed the default email configuration with `EMAIL_*` variables in the active env file so verification links work on first deploy.
 
 ## Non-Docker local deployment
 For a localhost deployment (build + preview) using the production-style script, see:

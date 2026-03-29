@@ -1,5 +1,5 @@
 import { getDataSource } from '../data-source.js';
-import { GitProvider } from '../entities/GitProvider.js';
+import { GitProvider } from '../../infrastructure/persistence/entities/GitProvider.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { encrypt } from '@enterpriseglue/shared/services/encryption.js';

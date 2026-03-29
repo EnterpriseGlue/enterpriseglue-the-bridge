@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { config } from '@enterpriseglue/shared/config/index.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { ssoClaimsMappingService, type PlatformRole, type SsoClaims } from './platform-admin/SsoClaimsMappingService.js';
 import { ssoProviderService } from './platform-admin/SsoProviderService.js';

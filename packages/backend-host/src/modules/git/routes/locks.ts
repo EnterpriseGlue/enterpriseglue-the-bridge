@@ -8,7 +8,7 @@ import { requireFileEditAccess } from '@enterpriseglue/shared/middleware/project
 import { AcquireLockRequestSchema, LockHeartbeatRequestSchema, ReleaseLockRequestSchema } from '@enterpriseglue/shared/schemas/git/index.js';
 import { subscribeLockEvents, emitLockEvent } from '../lockEvents.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
 import { projectMemberService } from '@enterpriseglue/shared/services/platform-admin/ProjectMemberService.js';
 import { EDIT_ROLES, MANAGE_ROLES } from '@enterpriseglue/shared/constants/roles.js';
 
@@ -59,7 +59,7 @@ router.post('/git-api/locks', apiLimiter, requireAuth, validateBody(AcquireLockR
   // If this was a force-takeover, notify the previous owner via SSE
   if (validated.force) {
     // Look up the taker's display name
-    const { User } = await import('@enterpriseglue/shared/db/entities/User.js');
+    const { User } = await import('@enterpriseglue/shared/infrastructure/persistence/entities/User.js');
     const userRepo = dataSource.getRepository(User);
     const taker = await userRepo.findOne({ where: { id: userId }, select: ['id', 'firstName', 'lastName', 'email'] });
     let takerName = req.user!.email || userId;

@@ -4,9 +4,9 @@ const baseEnv = {
   DATABASE_TYPE: 'postgres',
   POSTGRES_HOST: 'localhost',
   POSTGRES_PORT: '5432',
-  POSTGRES_USER: 'postgres',
-  POSTGRES_PASSWORD: 'postgres',
-  POSTGRES_DATABASE: 'postgres',
+  POSTGRES_USER: process.env.POSTGRES_USER || 'postgres',
+  POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD || 'postgres',
+  POSTGRES_DATABASE: process.env.POSTGRES_DATABASE || 'postgres',
   POSTGRES_SSL: 'false',
   ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 };

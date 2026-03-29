@@ -1,6 +1,6 @@
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { EmailSendConfig } from '@enterpriseglue/shared/db/entities/EmailSendConfig.js';
+import { EmailSendConfig } from '@enterpriseglue/shared/infrastructure/persistence/entities/EmailSendConfig.js';
 // TenantSettings removed - multi-tenancy is EE-only
 import { decrypt } from '@enterpriseglue/shared/utils/crypto.js';
 import { sendEmail as sendWithProvider, type EmailProvider } from '../email-providers.js';
@@ -53,8 +53,9 @@ export async function getEmailConfigForTenant(_tenantId?: string): Promise<Email
 }
 
 /**
- * Send email using the configured provider (Admin UI → Platform Settings → Email).
- * All providers (Resend, SendGrid, Mailgun, Mailjet, SMTP) are configured through the Admin UI.
+ * Send email using the configured provider.
+ * The default email config is seeded from EMAIL_* env vars on first deploy.
+ * After that, email configs can still be managed in the Admin UI if needed.
  */
 export async function sendEmailWithConfig(
   tenantId: string | undefined,
@@ -66,8 +67,8 @@ export async function sendEmailWithConfig(
   const emailConfig = await getEmailConfigForTenant(tenantId);
 
   if (!emailConfig) {
-    logger.warn(`⚠️  Would send email to ${to} (email not configured — set up in Admin UI → Platform Settings → Email)`);
-    return { success: false, error: 'Email service not configured. Configure a provider in Platform Settings → Email.' };
+    logger.warn(`⚠️  Would send email to ${to} (email not configured — seed EMAIL_* env vars for first deploy or add a default config in Admin UI)`);
+    return { success: false, error: 'Email service not configured. Seed EMAIL_* env vars for first deploy or create a default email configuration.' };
   }
 
   return sendWithProvider({

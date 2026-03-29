@@ -6,7 +6,7 @@ import { notificationsLimiter } from '@enterpriseglue/shared/middleware/rateLimi
 import { asyncHandler } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { validateBody, validateParams, validateQuery } from '@enterpriseglue/shared/middleware/validate.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Notification } from '@enterpriseglue/shared/db/entities/Notification.js';
+import { Notification } from '@enterpriseglue/shared/infrastructure/persistence/entities/Notification.js';
 
 const router = Router();
 

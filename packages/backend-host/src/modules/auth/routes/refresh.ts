@@ -5,11 +5,11 @@ import bcrypt from 'bcryptjs';
 import { verifyToken } from '@enterpriseglue/shared/utils/jwt.js';
 import { generateAccessToken } from '@enterpriseglue/shared/utils/jwt.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { RefreshToken } from '@enterpriseglue/shared/db/entities/RefreshToken.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { RefreshToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/RefreshToken.js';
 import { IsNull, MoreThan } from 'typeorm';
 import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
-import { config } from '@enterpriseglue/shared/config/index.js';
+import { config, shouldUseSecureCookies } from '@enterpriseglue/shared/config/index.js';
 
 const router = Router();
 
@@ -73,7 +73,7 @@ router.post('/api/auth/refresh', apiLimiter, asyncHandler(async (req, res) => {
   // Set new access token as httpOnly cookie
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
-    secure: config.nodeEnv === 'production',
+    secure: shouldUseSecureCookies(),
     sameSite: 'lax',
     maxAge: config.jwtAccessTokenExpires * 1000,
     path: '/',

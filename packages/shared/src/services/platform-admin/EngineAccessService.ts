@@ -4,10 +4,10 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { EngineProjectAccess } from '@enterpriseglue/shared/db/entities/EngineProjectAccess.js';
-import { EngineAccessRequest } from '@enterpriseglue/shared/db/entities/EngineAccessRequest.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { EngineProjectAccess } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineProjectAccess.js';
+import { EngineAccessRequest } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineAccessRequest.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
 import { In } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 

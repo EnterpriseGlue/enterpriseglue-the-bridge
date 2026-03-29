@@ -5,22 +5,22 @@
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
 import type { AdminUserStatus, LegacyPlatformRole } from '@enterpriseglue/shared/contracts/auth.js';
-import { Invitation } from '@enterpriseglue/shared/db/entities/Invitation.js';
-import { Notification } from '@enterpriseglue/shared/db/entities/Notification.js';
-import { PasswordResetToken } from '@enterpriseglue/shared/db/entities/PasswordResetToken.js';
-import { PermissionGrant } from '@enterpriseglue/shared/db/entities/PermissionGrant.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
-import { ProjectMemberRole } from '@enterpriseglue/shared/db/entities/ProjectMemberRole.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { EngineMember } from '@enterpriseglue/shared/db/entities/EngineMember.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { RefreshToken } from '@enterpriseglue/shared/db/entities/RefreshToken.js';
+import { Invitation } from '@enterpriseglue/shared/infrastructure/persistence/entities/Invitation.js';
+import { Notification } from '@enterpriseglue/shared/infrastructure/persistence/entities/Notification.js';
+import { PasswordResetToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/PasswordResetToken.js';
+import { PermissionGrant } from '@enterpriseglue/shared/infrastructure/persistence/entities/PermissionGrant.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
+import { ProjectMemberRole } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMemberRole.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { EngineMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineMember.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { RefreshToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/RefreshToken.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
-import { addCaseInsensitiveEquals } from '@enterpriseglue/shared/db/adapters/QueryHelpers.js';
+import { addCaseInsensitiveEquals } from '@enterpriseglue/shared/infrastructure/persistence/adapters/QueryHelpers.js';
 import { hashPassword, generatePassword } from '@enterpriseglue/shared/utils/password.js';
 import { randomBytes } from 'crypto';
-import { Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
+import { Errors } from '@enterpriseglue/shared/interfaces/middleware/errorHandler.js';
 import { IsNull } from 'typeorm';
 
 export interface CreateUserInput {

@@ -15,11 +15,11 @@ import { projectMemberService } from '@enterpriseglue/shared/services/platform-a
 import { userService } from '@enterpriseglue/shared/services/platform-admin/UserService.js';
 import { invitationService } from '@enterpriseglue/shared/services/invitations.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
-import { PermissionGrant } from '@enterpriseglue/shared/db/entities/PermissionGrant.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { Invitation } from '@enterpriseglue/shared/db/entities/Invitation.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
+import { PermissionGrant } from '@enterpriseglue/shared/infrastructure/persistence/entities/PermissionGrant.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { Invitation } from '@enterpriseglue/shared/infrastructure/persistence/entities/Invitation.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { In, IsNull, Not, Raw } from 'typeorm';
 import { MANAGE_ROLES } from '@enterpriseglue/shared/constants/roles.js';

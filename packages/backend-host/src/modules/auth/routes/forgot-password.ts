@@ -8,8 +8,8 @@ import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHan
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { z } from 'zod';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { PasswordResetToken } from '@enterpriseglue/shared/db/entities/PasswordResetToken.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { PasswordResetToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/PasswordResetToken.js';
 import { validateBody } from '@enterpriseglue/shared/middleware/validate.js';
 import { passwordResetLimiter, passwordResetVerifyLimiter, apiLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
 import { sendPasswordResetEmail } from '@enterpriseglue/shared/services/email/index.js';

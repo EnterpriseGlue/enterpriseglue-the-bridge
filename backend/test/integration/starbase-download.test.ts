@@ -3,8 +3,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import AdmZip from 'adm-zip';
 import { createApp } from '../../../packages/backend-host/src/app.js';
 import { getDataSource } from '../../../packages/shared/src/db/data-source.js';
-import { File } from '../../../packages/shared/src/db/entities/File.js';
-import { Folder } from '../../../packages/shared/src/db/entities/Folder.js';
+import { File } from '../../../packages/shared/src/infrastructure/persistence/entities/File.js';
+import { Folder } from '../../../packages/shared/src/infrastructure/persistence/entities/Folder.js';
 import { extractBpmnCallActivityLinks } from '@enterpriseglue/shared/utils/starbase-xml.js';
 import { cleanupSeededData, seedUser, seedProject, seedFile, seedFolder } from '../utils/seed.js';
 

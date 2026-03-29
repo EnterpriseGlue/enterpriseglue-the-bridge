@@ -1,8 +1,8 @@
 import { Buffer } from 'node:buffer'
 import { fetch } from 'undici'
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js'
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js'
-import { Errors } from '@enterpriseglue/shared/middleware/errorHandler.js'
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js'
+import { Errors } from '@enterpriseglue/shared/interfaces/middleware/errorHandler.js'
 import { safeDecrypt } from './encryption.js'
 import type {
   Batch,

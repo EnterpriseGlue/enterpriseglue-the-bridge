@@ -21,6 +21,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@enterpriseglue/shared/db/adapters': path.resolve(rootDir, '..', 'packages', 'shared', 'src', 'infrastructure', 'persistence', 'adapters'),
+      '@enterpriseglue/shared/db/entities': path.resolve(rootDir, '..', 'packages', 'shared', 'src', 'infrastructure', 'persistence', 'entities'),
       '@enterpriseglue/shared': path.resolve(rootDir, '..', 'packages', 'shared', 'src'),
       '@enterpriseglue/backend-host': path.resolve(rootDir, '..', 'packages', 'backend-host', 'src'),
       '@modules': path.resolve(rootDir, '..', 'packages', 'backend-host', 'src', 'modules'),

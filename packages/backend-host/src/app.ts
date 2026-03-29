@@ -4,7 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { doubleCsrf } from 'csrf-csrf';
-import { config } from '@enterpriseglue/shared/config/index.js';
+import { config, shouldUseSecureCookies } from '@enterpriseglue/shared/config/index.js';
 import { generateOpenApi } from '@enterpriseglue/shared/schemas/openapi.js';
 import { errorHandler } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { apiLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
@@ -122,7 +122,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     cookieName: 'csrf_secret',
     cookieOptions: {
       httpOnly: true,
-      secure: config.nodeEnv === 'production',
+      secure: shouldUseSecureCookies(),
       sameSite: 'lax',
       path: '/',
     },

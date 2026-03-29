@@ -7,7 +7,7 @@
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
 import type { PlatformRole as SharedPlatformRole } from '@enterpriseglue/shared/contracts/auth.js';
-import { SsoClaimsMapping } from '@enterpriseglue/shared/db/entities/SsoClaimsMapping.js';
+import { SsoClaimsMapping } from '@enterpriseglue/shared/infrastructure/persistence/entities/SsoClaimsMapping.js';
 import { IsNull } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 

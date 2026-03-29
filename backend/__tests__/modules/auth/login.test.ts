@@ -39,6 +39,7 @@ vi.mock('@enterpriseglue/shared/services/capabilities.js', () => ({
 }));
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: {
     jwtSecret: 'test-secret',
     jwtAccessTokenExpires: 3600,

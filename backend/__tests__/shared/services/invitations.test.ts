@@ -37,6 +37,7 @@ vi.mock('@enterpriseglue/shared/services/platform-admin/EngineService.js', () =>
 }));
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: {
     frontendUrl: 'http://frontend.test',
     nodeEnv: 'test',

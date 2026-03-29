@@ -14,6 +14,7 @@
     "baseUrl": ".",
     "rootDir": "src",
     "paths": {
+      "@enterpriseglue/shared/db/adapters/*": ["../shared/dist/infrastructure/persistence/adapters/*"],
       "@enterpriseglue/shared/*": ["../shared/dist/*", "../shared/src/*"],
       "@modules/*": ["./src/modules/*"],
       "@enterpriseglue/enterprise-plugin-api": ["../enterprise-plugin-api/src/index.d.ts"],

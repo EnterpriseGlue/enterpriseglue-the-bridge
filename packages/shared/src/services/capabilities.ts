@@ -1,6 +1,6 @@
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { EngineMember } from '@enterpriseglue/shared/db/entities/EngineMember.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { EngineMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineMember.js';
 import { ENGINE_VIEW_ROLES } from '@enterpriseglue/shared/constants/roles.js';
 import { permissionService, PlatformPermissions, ProjectPermissions, EnginePermissions } from './platform-admin/permissions.js';
 import type { UserCapabilities } from '@enterpriseglue/shared/contracts/auth';

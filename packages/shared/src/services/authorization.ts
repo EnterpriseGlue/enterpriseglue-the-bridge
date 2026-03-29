@@ -1,9 +1,9 @@
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { Folder } from '@enterpriseglue/shared/db/entities/Folder.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
-import { GitRepository } from '@enterpriseglue/shared/db/entities/GitRepository.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { Folder } from '@enterpriseglue/shared/infrastructure/persistence/entities/Folder.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
+import { GitRepository } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitRepository.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
 
 /**
  * Authorization Service

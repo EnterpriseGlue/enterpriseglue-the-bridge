@@ -7,10 +7,10 @@
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
 import type { LegacyPlatformRole, PlatformRole as SharedPlatformRole } from '@enterpriseglue/shared/contracts/auth.js';
-import { SsoProvider } from '@enterpriseglue/shared/db/entities/SsoProvider.js';
+import { SsoProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/SsoProvider.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { config } from '@enterpriseglue/shared/config/index.js';
-import { Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
+import { Errors } from '@enterpriseglue/shared/interfaces/middleware/errorHandler.js';
 
 export type SsoProviderType = 'microsoft' | 'google' | 'saml' | 'oidc';
 export type PlatformRole = SharedPlatformRole;

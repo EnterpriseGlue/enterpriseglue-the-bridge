@@ -12,8 +12,8 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { AuthzPolicy } from '@enterpriseglue/shared/db/entities/AuthzPolicy.js';
-import { AuthzAuditLog } from '@enterpriseglue/shared/db/entities/AuthzAuditLog.js';
+import { AuthzPolicy } from '@enterpriseglue/shared/infrastructure/persistence/entities/AuthzPolicy.js';
+import { AuthzAuditLog } from '@enterpriseglue/shared/infrastructure/persistence/entities/AuthzAuditLog.js';
 import { IsNull } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { permissionService, Permission, PermissionContext } from './permissions.js';

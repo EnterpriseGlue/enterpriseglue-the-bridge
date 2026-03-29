@@ -1,6 +1,6 @@
 import type { Request } from 'express';
-import { platformSettingsService } from '@enterpriseglue/shared/services/platform-admin/index.js';
-import { hash, safeDecrypt } from '@enterpriseglue/shared/services/encryption.js';
+import { platformSettingsService } from '../platform-admin/index.js';
+import { hash, safeDecrypt } from '../encryption.js';
 import { RegexProvider } from './providers/regex-provider.js';
 import { PresidioProvider } from './providers/presidio-provider.js';
 import { GcpDlpProvider } from './providers/gcp-dlp-provider.js';

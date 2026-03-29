@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { isMicrosoftAuthEnabled } from '@enterpriseglue/shared/services/microsoft.js';
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: {
     microsoftClientId: null,
     microsoftClientSecret: null,

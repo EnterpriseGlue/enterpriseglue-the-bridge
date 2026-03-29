@@ -12,7 +12,7 @@ import { requirePermission } from '@enterpriseglue/shared/middleware/requirePerm
 import { logAudit } from '@enterpriseglue/shared/services/audit.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
 // TenantSettings removed - multi-tenancy is EE-only
-import { PlatformSettings } from '@enterpriseglue/shared/db/entities/PlatformSettings.js';
+import { PlatformSettings } from '@enterpriseglue/shared/infrastructure/persistence/entities/PlatformSettings.js';
 import { PlatformPermissions } from '@enterpriseglue/shared/services/platform-admin/permissions.js';
 
 const router = Router();

@@ -135,7 +135,7 @@ Docker creates persistent volumes for:
 - Dev compose exposes PostgreSQL on `POSTGRES_HOST_PORT`; production does not expose the DB port by default.
 - Production compose does not publish backend port by default; call backend through frontend origin (`/api`, `/starbase-api`, `/mission-control-api`, `/engines-api`, `/git-api`, `/vcs-api`).
 - For a host-based production-style run outside Docker Compose, see `scripts/deploy-localhost.sh`.
-- If email verification is enabled, configure `RESEND_API_KEY` to receive verification links.
+- If email verification is enabled, seed the default email configuration with `EMAIL_*` variables in the active env file so verification links work on first deploy.
 
 ## Troubleshooting
 - **Wrong env file selected**: ensure `--env-file` and `EG_BACKEND_ENV_FILE` point to the same `.local/docker/env/images.*.env` file.

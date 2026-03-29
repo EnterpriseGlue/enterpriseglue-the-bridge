@@ -10,11 +10,11 @@ import { asyncHandler, AppError, Errors } from '@enterpriseglue/shared/middlewar
 import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { validateBody } from '@enterpriseglue/shared/middleware/validate.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { GitRepository } from '@enterpriseglue/shared/db/entities/GitRepository.js';
-import { GitProvider } from '@enterpriseglue/shared/db/entities/GitProvider.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
-import { ProjectMemberRole } from '@enterpriseglue/shared/db/entities/ProjectMemberRole.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { GitRepository } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitRepository.js';
+import { GitProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitProvider.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
+import { ProjectMemberRole } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMemberRole.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { credentialService } from '@enterpriseglue/shared/services/git/CredentialService.js';

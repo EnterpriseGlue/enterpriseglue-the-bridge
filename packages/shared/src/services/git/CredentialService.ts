@@ -4,12 +4,12 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitCredential } from '@enterpriseglue/shared/db/entities/GitCredential.js';
-import { GitProvider } from '@enterpriseglue/shared/db/entities/GitProvider.js';
+import { GitCredential } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitCredential.js';
+import { GitProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitProvider.js';
 import { In } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
-import { encrypt, decrypt, safeDecrypt } from '@enterpriseglue/shared/services/encryption.js';
+import { encrypt, decrypt, safeDecrypt } from '../encryption.js';
 import { remoteGitService } from './RemoteGitService.js';
 
 export interface StoredCredential {

@@ -6,7 +6,7 @@
 
 import 'dotenv/config';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
 
 function extractBpmnProcessId(xml: string): string | null {
   const match = String(xml || '').match(/<\s*(?:[a-zA-Z0-9_-]+:)?process\b[^>]*\bid\s*=\s*["']([^"']+)["'][^>]*>/i);

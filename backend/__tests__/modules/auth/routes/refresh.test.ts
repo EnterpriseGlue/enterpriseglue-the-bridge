@@ -26,6 +26,7 @@ vi.mock('@enterpriseglue/shared/middleware/rateLimiter.js', () => ({
 }));
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: {
     jwtAccessTokenExpires: 3600,
     jwtRefreshTokenExpires: 604800,

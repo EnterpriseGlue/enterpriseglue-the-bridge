@@ -5,10 +5,10 @@ import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHan
 import { apiLimiter, createUserLimiter, passwordResetVerifyLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
 import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { addCaseInsensitiveEquals } from '@enterpriseglue/shared/db/adapters/QueryHelpers.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { addCaseInsensitiveEquals } from '@enterpriseglue/shared/infrastructure/persistence/adapters/QueryHelpers.js';
 import { userService } from '@enterpriseglue/shared/services/platform-admin/UserService.js';
 import { invitationService } from '@enterpriseglue/shared/services/invitations.js';
 import { getEmailConfigForTenant } from '@enterpriseglue/shared/services/email/index.js';

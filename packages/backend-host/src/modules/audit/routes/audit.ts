@@ -7,7 +7,7 @@ import { auditLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
 import { getUserAuditLogs, getResourceAuditLogs } from '@enterpriseglue/shared/services/audit.js';
 import { piiRedactionService } from '@enterpriseglue/shared/services/pii/PiiRedactionService.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { AuditLog } from '@enterpriseglue/shared/db/entities/AuditLog.js';
+import { AuditLog } from '@enterpriseglue/shared/infrastructure/persistence/entities/AuditLog.js';
 import { PlatformPermissions } from '@enterpriseglue/shared/services/platform-admin/permissions.js';
 
 const router = Router();

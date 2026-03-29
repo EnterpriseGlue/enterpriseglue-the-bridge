@@ -3,13 +3,13 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Branch } from '@enterpriseglue/shared/db/entities/Branch.js';
-import { WorkingFile } from '@enterpriseglue/shared/db/entities/WorkingFile.js';
-import { WorkingFolder } from '@enterpriseglue/shared/db/entities/WorkingFolder.js';
-import { Commit } from '@enterpriseglue/shared/db/entities/Commit.js';
-import { FileSnapshot } from '@enterpriseglue/shared/db/entities/FileSnapshot.js';
-import { PendingChange } from '@enterpriseglue/shared/db/entities/PendingChange.js';
-import { RemoteSyncState } from '@enterpriseglue/shared/db/entities/RemoteSyncState.js';
+import { Branch } from '@enterpriseglue/shared/infrastructure/persistence/entities/Branch.js';
+import { WorkingFile } from '@enterpriseglue/shared/infrastructure/persistence/entities/WorkingFile.js';
+import { WorkingFolder } from '@enterpriseglue/shared/infrastructure/persistence/entities/WorkingFolder.js';
+import { Commit } from '@enterpriseglue/shared/infrastructure/persistence/entities/Commit.js';
+import { FileSnapshot } from '@enterpriseglue/shared/infrastructure/persistence/entities/FileSnapshot.js';
+import { PendingChange } from '@enterpriseglue/shared/infrastructure/persistence/entities/PendingChange.js';
+import { RemoteSyncState } from '@enterpriseglue/shared/infrastructure/persistence/entities/RemoteSyncState.js';
 import { In, IsNull } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';

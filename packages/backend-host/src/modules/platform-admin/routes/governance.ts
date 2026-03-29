@@ -12,10 +12,10 @@ import { requirePermission } from '@enterpriseglue/shared/middleware/requirePerm
 import { projectMemberService, engineService } from '@enterpriseglue/shared/services/platform-admin/index.js';
 import { logAudit } from '@enterpriseglue/shared/services/audit.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { addCaseInsensitiveLike } from '@enterpriseglue/shared/db/adapters/index.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { addCaseInsensitiveLike } from '@enterpriseglue/shared/infrastructure/persistence/adapters/index.js';
 import { PlatformPermissions } from '@enterpriseglue/shared/services/platform-admin/permissions.js';
 
 const router = Router();

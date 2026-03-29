@@ -1,7 +1,7 @@
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { config } from '@enterpriseglue/shared/config/index.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { PlatformSettings } from '@enterpriseglue/shared/db/entities/PlatformSettings.js';
+import { PlatformSettings } from '@enterpriseglue/shared/infrastructure/persistence/entities/PlatformSettings.js';
 import { sendEmailWithConfig } from './config.js';
 import { getActiveTemplateByType, renderBracesTemplate, escapeHtml } from './utils.js';
 

@@ -10,8 +10,8 @@ import { invitationService } from '@enterpriseglue/shared/services/invitations.j
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { generateAccessToken, generateRefreshToken } from '@enterpriseglue/shared/utils/jwt.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { RefreshToken } from '@enterpriseglue/shared/db/entities/RefreshToken.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { RefreshToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/RefreshToken.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { buildUserCapabilities } from '@enterpriseglue/shared/services/capabilities.js';
 import { config } from '@enterpriseglue/shared/config/index.js';
 import { logAudit } from '@enterpriseglue/shared/services/audit.js';

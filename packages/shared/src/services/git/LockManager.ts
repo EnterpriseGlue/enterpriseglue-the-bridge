@@ -1,7 +1,7 @@
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitLock } from '@enterpriseglue/shared/db/entities/GitLock.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { GitLock } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitLock.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { MoreThan, LessThan, In } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
