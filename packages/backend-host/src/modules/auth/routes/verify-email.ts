@@ -4,7 +4,7 @@ import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { z } from 'zod';
 import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { validateBody } from '@enterpriseglue/shared/middleware/validate.js';
 
 const router = Router();

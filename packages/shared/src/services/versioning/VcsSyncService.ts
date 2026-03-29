@@ -3,12 +3,12 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Branch } from '@enterpriseglue/shared/db/entities/Branch.js';
-import { Commit } from '@enterpriseglue/shared/db/entities/Commit.js';
-import { FileSnapshot } from '@enterpriseglue/shared/db/entities/FileSnapshot.js';
-import { RemoteSyncState } from '@enterpriseglue/shared/db/entities/RemoteSyncState.js';
-import { File as MainFile } from '@enterpriseglue/shared/db/entities/File.js';
-import { Folder as MainFolder } from '@enterpriseglue/shared/db/entities/Folder.js';
+import { Branch } from '@enterpriseglue/shared/infrastructure/persistence/entities/Branch.js';
+import { Commit } from '@enterpriseglue/shared/infrastructure/persistence/entities/Commit.js';
+import { FileSnapshot } from '@enterpriseglue/shared/infrastructure/persistence/entities/FileSnapshot.js';
+import { RemoteSyncState } from '@enterpriseglue/shared/infrastructure/persistence/entities/RemoteSyncState.js';
+import { File as MainFile } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
+import { Folder as MainFolder } from '@enterpriseglue/shared/infrastructure/persistence/entities/Folder.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { hashContent, normalizeFolderId } from './vcs-types.js';

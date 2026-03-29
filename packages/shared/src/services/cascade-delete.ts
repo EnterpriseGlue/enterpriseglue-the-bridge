@@ -1,10 +1,10 @@
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { Folder } from '@enterpriseglue/shared/db/entities/Folder.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
-import { Version } from '@enterpriseglue/shared/db/entities/Version.js';
-import { Comment } from '@enterpriseglue/shared/db/entities/Comment.js';
-import { GitRepository } from '@enterpriseglue/shared/db/entities/GitRepository.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { Folder } from '@enterpriseglue/shared/infrastructure/persistence/entities/Folder.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
+import { Version } from '@enterpriseglue/shared/infrastructure/persistence/entities/Version.js';
+import { Comment } from '@enterpriseglue/shared/infrastructure/persistence/entities/Comment.js';
+import { GitRepository } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitRepository.js';
 import { vcsService } from './versioning/index.js';
 
 /**

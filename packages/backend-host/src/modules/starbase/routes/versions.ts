@@ -7,8 +7,8 @@ import { requireFileAccess } from '@enterpriseglue/shared/middleware/projectAuth
 import { validateBody, validateParams } from '@enterpriseglue/shared/middleware/validate.js';
 import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Version } from '@enterpriseglue/shared/db/entities/Version.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
+import { Version } from '@enterpriseglue/shared/infrastructure/persistence/entities/Version.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
 import { AuthorizationService } from '@enterpriseglue/shared/services/authorization.js';
 import { projectMemberService } from '@enterpriseglue/shared/services/platform-admin/ProjectMemberService.js';
 import { EDIT_ROLES } from '@enterpriseglue/shared/constants/roles.js';

@@ -7,9 +7,9 @@ import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { requireProjectRole } from '@enterpriseglue/shared/middleware/projectAuth.js';
 import { validateBody } from '@enterpriseglue/shared/middleware/validate.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitRepository } from '@enterpriseglue/shared/db/entities/GitRepository.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
+import { GitRepository } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitRepository.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
 import { projectMemberService } from '@enterpriseglue/shared/services/platform-admin/ProjectMemberService.js';
 import { EDIT_ROLES } from '@enterpriseglue/shared/constants/roles.js';
 

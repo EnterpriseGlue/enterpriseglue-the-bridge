@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken, type JwtPayload } from '@enterpriseglue/shared/utils/jwt.js';
 import { Errors, AppError } from './errorHandler.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { config } from '@enterpriseglue/shared/config/index.js';
 
 /**

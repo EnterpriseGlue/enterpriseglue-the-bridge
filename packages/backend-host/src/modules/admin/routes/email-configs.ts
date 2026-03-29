@@ -11,7 +11,7 @@ import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { requirePermission } from '@enterpriseglue/shared/middleware/requirePermission.js';
 import { asyncHandler, AppError, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { EmailSendConfig } from '@enterpriseglue/shared/db/entities/EmailSendConfig.js';
+import { EmailSendConfig } from '@enterpriseglue/shared/infrastructure/persistence/entities/EmailSendConfig.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { encrypt, decrypt } from '@enterpriseglue/shared/utils/crypto.js';
 import { logAudit, AuditActions } from '@enterpriseglue/shared/services/audit.js';

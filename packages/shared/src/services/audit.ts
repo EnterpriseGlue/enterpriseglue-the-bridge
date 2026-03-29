@@ -7,7 +7,7 @@
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { AuditLog } from '@enterpriseglue/shared/db/entities/AuditLog.js';
+import { AuditLog } from '@enterpriseglue/shared/infrastructure/persistence/entities/AuditLog.js';
 
 import { Request } from 'express';
 

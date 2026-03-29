@@ -15,7 +15,7 @@ import {
   setExternalTaskRetries,
 } from '@enterpriseglue/shared/services/bpmn-engine-client.js'
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js'
-import { Batch } from '@enterpriseglue/shared/db/entities/Batch.js'
+import { Batch } from '@enterpriseglue/shared/infrastructure/persistence/entities/Batch.js'
 
 export interface BatchStatisticsEntry {
   completedJobs?: number

@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
-import { getDataSource } from '../db/data-source.js';
-import { User } from '../db/entities/User.js';
-import { hashPassword, validatePassword } from '../utils/password.js';
+import { getDataSource } from '../packages/shared/src/infrastructure/persistence/data-source.js';
+import { User } from '../packages/shared/src/infrastructure/persistence/entities/User.js';
+import { hashPassword, validatePassword } from '../packages/shared/src/utils/password.js';
 
 /**
  * Script to manually add a user to the database

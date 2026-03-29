@@ -10,7 +10,7 @@ import { projectMemberService } from '../services/platform-admin/ProjectMemberSe
 import { AuthorizationService } from '../services/authorization.js';
 import { engineService } from '../services/platform-admin/index.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
 import type { EngineRole } from '@enterpriseglue/shared/constants/roles.js';
 
 /**

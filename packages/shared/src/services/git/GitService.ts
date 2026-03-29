@@ -6,16 +6,16 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitRepository } from '@enterpriseglue/shared/db/entities/GitRepository.js';
-import { GitDeployment } from '@enterpriseglue/shared/db/entities/GitDeployment.js';
-import { GitAuditLog } from '@enterpriseglue/shared/db/entities/GitAuditLog.js';
+import { GitRepository } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitRepository.js';
+import { GitDeployment } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitDeployment.js';
+import { GitAuditLog } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitAuditLog.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
-import { decrypt } from '@enterpriseglue/shared/services/encryption.js';
-import { vcsService } from '@enterpriseglue/shared/services/versioning/index.js';
+import { decrypt } from '../encryption.js';
+import { vcsService } from '../versioning/index.js';
 import { remoteGitService } from './RemoteGitService.js';
 import { credentialService } from './CredentialService.js';
-import { platformSettingsService } from '@enterpriseglue/shared/services/platform-admin/PlatformSettingsService.js';
+import { platformSettingsService } from '../platform-admin/PlatformSettingsService.js';
 
 export interface RepositoryInfo {
   id: string;

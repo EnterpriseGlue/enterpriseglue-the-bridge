@@ -7,7 +7,7 @@ import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { requireFileAccess } from '@enterpriseglue/shared/middleware/projectAuth.js';
 import { validateParams } from '@enterpriseglue/shared/middleware/validate.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Comment } from '@enterpriseglue/shared/db/entities/Comment.js';
+import { Comment } from '@enterpriseglue/shared/infrastructure/persistence/entities/Comment.js';
 import { unixTimestamp } from '@enterpriseglue/shared/utils/id.js';
 
 const fileIdParamSchema = z.object({ fileId: z.string().uuid() });

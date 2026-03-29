@@ -3,12 +3,12 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Branch } from '@enterpriseglue/shared/db/entities/Branch.js';
-import { Commit } from '@enterpriseglue/shared/db/entities/Commit.js';
-import { WorkingFile } from '@enterpriseglue/shared/db/entities/WorkingFile.js';
-import { FileSnapshot } from '@enterpriseglue/shared/db/entities/FileSnapshot.js';
-import { FileCommitVersion } from '@enterpriseglue/shared/db/entities/FileCommitVersion.js';
-import { File as MainFile } from '@enterpriseglue/shared/db/entities/File.js';
+import { Branch } from '@enterpriseglue/shared/infrastructure/persistence/entities/Branch.js';
+import { Commit } from '@enterpriseglue/shared/infrastructure/persistence/entities/Commit.js';
+import { WorkingFile } from '@enterpriseglue/shared/infrastructure/persistence/entities/WorkingFile.js';
+import { FileSnapshot } from '@enterpriseglue/shared/infrastructure/persistence/entities/FileSnapshot.js';
+import { FileCommitVersion } from '@enterpriseglue/shared/infrastructure/persistence/entities/FileCommitVersion.js';
+import { File as MainFile } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
 import { Brackets, In } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';

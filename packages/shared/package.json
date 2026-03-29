@@ -64,6 +64,30 @@
     "typescript": "^5.8.3"
   },
   "exports": {
+    ".": {
+      "types": "./dist/shared-index.d.ts",
+      "default": "./dist/shared-index.js"
+    },
+    "./domain": {
+      "types": "./dist/domain/index.d.ts",
+      "default": "./dist/domain/index.js"
+    },
+    "./application": {
+      "types": "./dist/application/index.d.ts",
+      "default": "./dist/application/index.js"
+    },
+    "./infrastructure": {
+      "types": "./dist/infrastructure/index.d.ts",
+      "default": "./dist/infrastructure/index.js"
+    },
+    "./interfaces": {
+      "types": "./dist/interfaces/index.d.ts",
+      "default": "./dist/interfaces/index.js"
+    },
+    "./db/entities/*": {
+      "types": "./dist/infrastructure/persistence/entities/*.d.ts",
+      "default": "./dist/infrastructure/persistence/entities/*.js"
+    },
     "./contracts": {
       "types": "./dist/contracts/index.d.ts",
       "default": "./dist/contracts/index.js"

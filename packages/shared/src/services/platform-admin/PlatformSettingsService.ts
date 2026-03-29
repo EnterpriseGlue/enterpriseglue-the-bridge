@@ -4,8 +4,8 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { PlatformSettings } from '@enterpriseglue/shared/db/entities/PlatformSettings.js';
-import { encrypt, isEncrypted, safeDecrypt } from '@enterpriseglue/shared/services/encryption.js';
+import { PlatformSettings } from '@enterpriseglue/shared/infrastructure/persistence/entities/PlatformSettings.js';
+import { encrypt, isEncrypted, safeDecrypt } from '../encryption.js';
 
 const DEFAULT_PII_SCOPES = ['processDetails', 'history', 'logs', 'errors', 'audit'];
 

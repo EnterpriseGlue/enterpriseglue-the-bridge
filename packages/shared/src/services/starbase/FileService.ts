@@ -4,12 +4,12 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
-import { Version } from '@enterpriseglue/shared/db/entities/Version.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
+import { Version } from '@enterpriseglue/shared/infrastructure/persistence/entities/Version.js';
 import { IsNull } from 'typeorm';
-import { Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
+import { Errors } from '@enterpriseglue/shared/interfaces/middleware/errorHandler.js';
 import { generateId, unixTimestamp } from '@enterpriseglue/shared/utils/id.js';
-import { syncFileUpdate } from '@enterpriseglue/shared/services/versioning/index.js';
+import { syncFileUpdate } from '../versioning/index.js';
 
 // Empty templates
 const EMPTY_BPMN = `<?xml version="1.0" encoding="UTF-8"?>

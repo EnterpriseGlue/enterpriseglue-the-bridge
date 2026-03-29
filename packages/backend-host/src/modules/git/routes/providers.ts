@@ -7,9 +7,9 @@ import { validateBody, validateParams } from '@enterpriseglue/shared/middleware/
 import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { requirePermission } from '@enterpriseglue/shared/middleware/requirePermission.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitProvider } from '@enterpriseglue/shared/db/entities/GitProvider.js';
-import { GitRepository } from '@enterpriseglue/shared/db/entities/GitRepository.js';
-import { GitCredential } from '@enterpriseglue/shared/db/entities/GitCredential.js';
+import { GitProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitProvider.js';
+import { GitRepository } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitRepository.js';
+import { GitCredential } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitCredential.js';
 import { remoteGitService } from '@enterpriseglue/shared/services/git/RemoteGitService.js';
 import { credentialService } from '@enterpriseglue/shared/services/git/CredentialService.js';
 import { encrypt as encryptSecret, isEncrypted as isEncryptedValue } from '@enterpriseglue/shared/services/encryption.js';

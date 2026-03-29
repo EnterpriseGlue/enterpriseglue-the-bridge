@@ -3,7 +3,7 @@ import { Errors } from './errorHandler.js';
 import { engineService } from '../services/platform-admin/index.js';
 import type { EngineRole } from '@enterpriseglue/shared/constants/roles.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
 
 type EngineIdFrom = 'params' | 'body' | 'query' | 'any';
 

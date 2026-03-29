@@ -12,8 +12,8 @@ import { requirePermission } from '@enterpriseglue/shared/middleware/requirePerm
 import { asyncHandler, AppError, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { validateBody, validateParams } from '@enterpriseglue/shared/middleware/validate.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { EmailTemplate } from '@enterpriseglue/shared/db/entities/EmailTemplate.js';
-import { PlatformSettings } from '@enterpriseglue/shared/db/entities/PlatformSettings.js';
+import { EmailTemplate } from '@enterpriseglue/shared/infrastructure/persistence/entities/EmailTemplate.js';
+import { PlatformSettings } from '@enterpriseglue/shared/infrastructure/persistence/entities/PlatformSettings.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 import { logAudit, AuditActions } from '@enterpriseglue/shared/services/audit.js';
 import { PlatformPermissions } from '@enterpriseglue/shared/services/platform-admin/permissions.js';

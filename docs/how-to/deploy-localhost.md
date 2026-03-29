@@ -47,7 +47,7 @@ This will:
 - Start backend and frontend preview services
 - Run database migrations before startup (using your `backend/.env` settings)
 
-If email verification is enabled, configure `RESEND_API_KEY` to receive verification links or set `ADMIN_EMAIL_VERIFICATION_EXEMPT=true` for the seeded admin account.
+If email verification is enabled, seed the default email configuration with `EMAIL_*` variables in `backend/.env` or `.env.selfhost` so verification links work on first deploy. You can still set `ADMIN_EMAIL_VERIFICATION_EXEMPT=true` for the seeded admin account if needed.
 
 ## Incremental deploy (after first install)
 

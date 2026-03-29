@@ -2,20 +2,20 @@ import { Router } from 'express';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
 import { z } from 'zod';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
-import { addCaseInsensitiveEquals, getDatabaseType } from '@enterpriseglue/shared/db/adapters/QueryHelpers.js';
+import { addCaseInsensitiveEquals, getDatabaseType } from '@enterpriseglue/shared/infrastructure/persistence/adapters/QueryHelpers.js';
 import { verifyPassword } from '@enterpriseglue/shared/utils/password.js';
 import { generateAccessToken, generateRefreshToken } from '@enterpriseglue/shared/utils/jwt.js';
 import bcrypt from 'bcryptjs';
 import { logAudit, AuditActions } from '@enterpriseglue/shared/services/audit.js';
 import { authLimiter , apiLimiter} from '@enterpriseglue/shared/middleware/rateLimiter.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { SsoProvider } from '@enterpriseglue/shared/db/entities/SsoProvider.js';
-import { RefreshToken } from '@enterpriseglue/shared/db/entities/RefreshToken.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { SsoProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/SsoProvider.js';
+import { RefreshToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/RefreshToken.js';
 import { validateBody } from '@enterpriseglue/shared/middleware/validate.js';
 import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { buildUserCapabilities } from '@enterpriseglue/shared/services/capabilities.js';
-import { config } from '@enterpriseglue/shared/config/index.js';
+import { config, shouldUseSecureCookies } from '@enterpriseglue/shared/config/index.js';
 
 const router = Router();
 
@@ -195,7 +195,7 @@ router.post('/api/auth/login', apiLimiter, authLimiter, validateBody(loginSchema
   // Set tokens in HTTP-only cookies (same pattern as Microsoft OAuth)
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
-    secure: config.nodeEnv === 'production',
+    secure: shouldUseSecureCookies(),
     sameSite: 'lax',
     maxAge: config.jwtAccessTokenExpires * 1000,
     path: '/',
@@ -203,7 +203,7 @@ router.post('/api/auth/login', apiLimiter, authLimiter, validateBody(loginSchema
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: config.nodeEnv === 'production',
+    secure: shouldUseSecureCookies(),
     sameSite: 'lax',
     maxAge: config.jwtRefreshTokenExpires * 1000,
     path: '/',

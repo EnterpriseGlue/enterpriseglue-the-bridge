@@ -11,8 +11,8 @@ import { apiLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
 import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { EmailSendConfig } from '@enterpriseglue/shared/db/entities/EmailSendConfig.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { EmailSendConfig } from '@enterpriseglue/shared/infrastructure/persistence/entities/EmailSendConfig.js';
 
 const router = Router();
 

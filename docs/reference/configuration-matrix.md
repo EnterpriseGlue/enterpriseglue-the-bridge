@@ -74,7 +74,16 @@ Audience: Developers and architects.
 ## Backend (Optional Integrations)
 | Variable | Required | Notes |
 | --- | --- | --- |
-| RESEND_API_KEY | No | Email service (Resend) |
+| EMAIL_CONFIG_NAME | No | Display name for the seeded default email config |
+| EMAIL_PROVIDER | No | Email provider to seed on first deploy (`resend`, `sendgrid`, `mailgun`, `mailjet`, `smtp`) |
+| EMAIL_API_KEY | No | Provider API key or SMTP password used when seeding the default email config |
+| EMAIL_FROM_NAME | No | Sender name for the seeded default email config |
+| EMAIL_FROM_EMAIL | No | Sender email for the seeded default email config |
+| EMAIL_REPLY_TO | No | Optional reply-to address for the seeded default email config |
+| EMAIL_SMTP_HOST | No | SMTP host when `EMAIL_PROVIDER=smtp` |
+| EMAIL_SMTP_PORT | No | SMTP port when `EMAIL_PROVIDER=smtp` |
+| EMAIL_SMTP_SECURE | No | SMTP TLS flag when `EMAIL_PROVIDER=smtp` |
+| EMAIL_SMTP_USER | No | SMTP username when `EMAIL_PROVIDER=smtp` |
 | CAMUNDA_BASE_URL | No | External Camunda engine |
 | CAMUNDA_USERNAME | No | Camunda auth |
 | CAMUNDA_PASSWORD | No | Camunda auth |

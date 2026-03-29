@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { SsoProvider } from '@enterpriseglue/shared/db/entities/SsoProvider.js';
+import { SsoProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/SsoProvider.js';
 
 const router = Router();
 

@@ -67,7 +67,7 @@ Set the following when enabling Google OAuth:
 - `GOOGLE_REDIRECT_URI`
 
 ## Email (Optional)
-- `RESEND_API_KEY` enables email flows (verification/reset).
+- Seed the default email configuration with `EMAIL_*` variables on first deploy so verification/reset flows work out of the box.
 
 ## Notes
 - Ensure redirect URIs use production domains outside local development.

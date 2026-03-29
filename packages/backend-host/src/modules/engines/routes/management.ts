@@ -14,9 +14,9 @@ import { engineService, engineAccessService, projectMemberService } from '@enter
 import { userService } from '@enterpriseglue/shared/services/platform-admin/UserService.js';
 import { invitationService } from '@enterpriseglue/shared/services/invitations.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { Invitation } from '@enterpriseglue/shared/db/entities/Invitation.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { Invitation } from '@enterpriseglue/shared/infrastructure/persistence/entities/Invitation.js';
 import { getEmailConfigForTenant } from '@enterpriseglue/shared/services/email/index.js';
 // Invitation and Tenant entities removed - multi-tenancy is EE-only
 import { In, IsNull } from 'typeorm';

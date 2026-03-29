@@ -13,10 +13,10 @@ import { projectMemberService } from '../services/platform-admin/ProjectMemberSe
 import { engineAccessService } from '../services/platform-admin/EngineAccessService.js';
 import { engineService } from '../services/platform-admin/EngineService.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { PlatformSettings } from '@enterpriseglue/shared/db/entities/PlatformSettings.js';
-import { EnvironmentTag } from '@enterpriseglue/shared/db/entities/EnvironmentTag.js';
-import { PermissionGrant } from '@enterpriseglue/shared/db/entities/PermissionGrant.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { PlatformSettings } from '@enterpriseglue/shared/infrastructure/persistence/entities/PlatformSettings.js';
+import { EnvironmentTag } from '@enterpriseglue/shared/infrastructure/persistence/entities/EnvironmentTag.js';
+import { PermissionGrant } from '@enterpriseglue/shared/infrastructure/persistence/entities/PermissionGrant.js';
 import { ENGINE_MEMBER_ROLES } from '@enterpriseglue/shared/constants/roles.js';
 
 export interface DeployContext {

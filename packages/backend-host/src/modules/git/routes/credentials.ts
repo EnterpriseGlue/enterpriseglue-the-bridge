@@ -13,7 +13,7 @@ import { credentialService } from '@enterpriseglue/shared/services/git/Credentia
 import { oauthService } from '@enterpriseglue/shared/services/git/OAuthService.js';
 import { config } from '@enterpriseglue/shared/config/index.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitProvider } from '@enterpriseglue/shared/db/entities/GitProvider.js';
+import { GitProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitProvider.js';
 
 const router = Router();
 

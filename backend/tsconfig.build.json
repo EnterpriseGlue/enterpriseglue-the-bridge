@@ -4,6 +4,8 @@
     "rootDir": "..",
     "baseUrl": ".",
     "paths": {
+      "@enterpriseglue/shared/db/adapters/*": ["../packages/shared/src/infrastructure/persistence/adapters/*"],
+      "@enterpriseglue/shared/db/entities/*": ["../packages/shared/src/infrastructure/persistence/entities/*"],
       "@enterpriseglue/shared/contracts": ["../packages/shared/src/contracts/index.d.ts"],
       "@enterpriseglue/shared/contracts/auth": ["../packages/shared/src/contracts/auth.d.ts"],
       "@enterpriseglue/shared/contracts/roles": ["../packages/shared/src/contracts/roles.d.ts"],

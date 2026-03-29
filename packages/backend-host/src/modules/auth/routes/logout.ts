@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { RefreshToken } from '@enterpriseglue/shared/db/entities/RefreshToken.js';
+import { RefreshToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/RefreshToken.js';
 import { IsNull } from 'typeorm';
 import { validateBody } from '@enterpriseglue/shared/middleware/validate.js';
 

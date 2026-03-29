@@ -1,19 +1,19 @@
 import { In, IsNull, QueryRunner, TableColumn, TableIndex } from 'typeorm';
 import { getDataSource, adapter } from './data-source.js';
-import { EnvironmentTag } from './entities/EnvironmentTag.js';
-import { PlatformSettings } from './entities/PlatformSettings.js';
-import { User } from './entities/User.js';
+import { EnvironmentTag } from '../infrastructure/persistence/entities/EnvironmentTag.js';
+import { PlatformSettings } from '../infrastructure/persistence/entities/PlatformSettings.js';
+import { User } from '../infrastructure/persistence/entities/User.js';
 // Tenant entities removed - multi-tenancy is EE-only
-import { EmailTemplate } from './entities/EmailTemplate.js';
-import { SsoClaimsMapping } from './entities/SsoClaimsMapping.js';
-import { SsoProvider } from './entities/SsoProvider.js';
-import { RefreshToken } from './entities/RefreshToken.js';
-import { GitProvider } from './entities/GitProvider.js';
-import { GitCredential } from './entities/GitCredential.js';
-import { File } from './entities/File.js';
-import { WorkingFile } from './entities/WorkingFile.js';
-import { FileSnapshot } from './entities/FileSnapshot.js';
-import { Invitation } from './entities/Invitation.js';
+import { EmailTemplate } from '../infrastructure/persistence/entities/EmailTemplate.js';
+import { SsoClaimsMapping } from '../infrastructure/persistence/entities/SsoClaimsMapping.js';
+import { SsoProvider } from '../infrastructure/persistence/entities/SsoProvider.js';
+import { RefreshToken } from '../infrastructure/persistence/entities/RefreshToken.js';
+import { GitProvider } from '../infrastructure/persistence/entities/GitProvider.js';
+import { GitCredential } from '../infrastructure/persistence/entities/GitCredential.js';
+import { File } from '../infrastructure/persistence/entities/File.js';
+import { WorkingFile } from '../infrastructure/persistence/entities/WorkingFile.js';
+import { FileSnapshot } from '../infrastructure/persistence/entities/FileSnapshot.js';
+import { Invitation } from '../infrastructure/persistence/entities/Invitation.js';
 
 /**
  * Ensure schema exists using TypeORM QueryRunner APIs (no raw SQL)

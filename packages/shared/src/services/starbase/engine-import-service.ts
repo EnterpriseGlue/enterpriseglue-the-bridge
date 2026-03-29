@@ -1,15 +1,15 @@
 import type { DeepPartial, EntityManager } from 'typeorm';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
+import { Errors } from '@enterpriseglue/shared/interfaces/middleware/errorHandler.js';
 import { ENGINE_MEMBER_ROLES } from '@enterpriseglue/shared/constants/roles.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { EngineProjectAccess } from '@enterpriseglue/shared/db/entities/EngineProjectAccess.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
-import { Version } from '@enterpriseglue/shared/db/entities/Version.js';
-import { engineService } from '@enterpriseglue/shared/services/platform-admin/index.js';
-import { camundaGet } from '@enterpriseglue/shared/services/bpmn-engine-client.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { EngineProjectAccess } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineProjectAccess.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
+import { Version } from '@enterpriseglue/shared/infrastructure/persistence/entities/Version.js';
+import { engineService } from '../platform-admin/index.js';
+import { camundaGet } from '../bpmn-engine-client.js';
 import type { DecisionDefinition, DecisionDefinitionXml, ProcessDefinition } from '@enterpriseglue/shared/types/bpmn-engine-api.js';
-import { ensureExt, sanitize, sanitizeBpmnXml, sanitizeDmnXml } from '@enterpriseglue/shared/services/engines/deployment-utils.js';
+import { ensureExt, sanitize, sanitizeBpmnXml, sanitizeDmnXml } from '../engines/deployment-utils.js';
 import { extractBpmnProcessId, extractDmnDecisionId } from '@enterpriseglue/shared/utils/starbase-xml.js';
 import { generateId, unixTimestamp } from '@enterpriseglue/shared/utils/id.js';
 

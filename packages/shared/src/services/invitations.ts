@@ -1,15 +1,15 @@
 import { createHash, randomBytes } from 'crypto';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Invitation, type InvitationDeliveryMethod, type InvitationResourceType } from '@enterpriseglue/shared/db/entities/Invitation.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { SsoProvider } from '@enterpriseglue/shared/db/entities/SsoProvider.js';
-import { Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
+import { Invitation, type InvitationDeliveryMethod, type InvitationResourceType } from '@enterpriseglue/shared/infrastructure/persistence/entities/Invitation.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { SsoProvider } from '@enterpriseglue/shared/infrastructure/persistence/entities/SsoProvider.js';
+import { Errors } from '@enterpriseglue/shared/interfaces/middleware/errorHandler.js';
 import { config } from '@enterpriseglue/shared/config/index.js';
 import { generatePassword, hashPassword, verifyPassword } from '@enterpriseglue/shared/utils/password.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
-import { sendInvitationEmail } from '@enterpriseglue/shared/services/email/index.js';
-import { projectMemberService } from '@enterpriseglue/shared/services/platform-admin/ProjectMemberService.js';
-import { engineService } from '@enterpriseglue/shared/services/platform-admin/EngineService.js';
+import { sendInvitationEmail } from './email/index.js';
+import { projectMemberService } from './platform-admin/ProjectMemberService.js';
+import { engineService } from './platform-admin/EngineService.js';
 import type { PlatformRole, User as UserContract } from '@enterpriseglue/shared/contracts/auth.js';
 import type { Repository } from 'typeorm';
 

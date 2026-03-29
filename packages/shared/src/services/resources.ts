@@ -1,8 +1,8 @@
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { Folder } from '@enterpriseglue/shared/db/entities/Folder.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { Folder } from '@enterpriseglue/shared/infrastructure/persistence/entities/Folder.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { ObjectLiteral, EntityTarget } from 'typeorm';
 
 /**

@@ -1,5 +1,5 @@
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { EmailTemplate } from '@enterpriseglue/shared/db/entities/EmailTemplate.js';
+import { EmailTemplate } from '@enterpriseglue/shared/infrastructure/persistence/entities/EmailTemplate.js';
 
 export function escapeHtml(input: string): string {
   return input

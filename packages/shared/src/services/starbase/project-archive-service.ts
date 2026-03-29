@@ -1,11 +1,11 @@
 import AdmZip from 'adm-zip'
 import { posix as pathPosix } from 'node:path'
 import type { DeepPartial, EntityManager } from 'typeorm'
-import { File } from '@enterpriseglue/shared/db/entities/File.js'
-import { Folder } from '@enterpriseglue/shared/db/entities/Folder.js'
-import { Version } from '@enterpriseglue/shared/db/entities/Version.js'
-import { ensureExt, sanitizeBpmnXml, sanitizeDmnXml } from '@enterpriseglue/shared/services/engines/deployment-utils.js'
-import { Errors } from '@enterpriseglue/shared/middleware/errorHandler.js'
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js'
+import { Folder } from '@enterpriseglue/shared/infrastructure/persistence/entities/Folder.js'
+import { Version } from '@enterpriseglue/shared/infrastructure/persistence/entities/Version.js'
+import { ensureExt, sanitizeBpmnXml, sanitizeDmnXml } from '../engines/deployment-utils.js'
+import { Errors } from '@enterpriseglue/shared/interfaces/middleware/errorHandler.js'
 import { generateId, unixTimestamp } from '@enterpriseglue/shared/utils/id.js'
 import {
   extractBpmnProcessId,

@@ -1,9 +1,26 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
-// Load .env file FIRST before reading any environment variables
-dotenv.config();
+// Load the first matching env file before reading any environment variables.
+// Prefer self-host config so a single .env.selfhost file can drive the runtime.
+const envFileCandidates = [
+  process.env.EG_ENV_FILE,
+  path.resolve(process.cwd(), '.env.selfhost'),
+  path.resolve(process.cwd(), '..', '.env.selfhost'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '..', '.env'),
+];
+
+const envFilePath = envFileCandidates.find(candidate => candidate && fs.existsSync(candidate));
+
+if (envFilePath) {
+  dotenv.config({ path: envFilePath });
+} else {
+  dotenv.config();
+}
 
 /**
  * Application configuration with validation
@@ -76,6 +93,18 @@ const schemaName = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/);
   adminEmail: z.string().email().default('admin@example.com'),
   adminPassword: z.string().min(8),
   adminEmailVerificationExempt: z.boolean().default(false),
+
+  // Email bootstrap configuration (seeded into the default DB email config on first run)
+  emailConfigName: z.string().optional(),
+  emailProvider: z.enum(['resend', 'sendgrid', 'mailgun', 'mailjet', 'smtp']).optional(),
+  emailApiKey: z.string().optional(),
+  emailFromName: z.string().optional(),
+  emailFromEmail: z.string().email().optional(),
+  emailReplyTo: z.string().email().optional(),
+  emailSmtpHost: z.string().optional(),
+  emailSmtpPort: z.number().int().positive().optional(),
+  emailSmtpSecure: z.boolean().optional(),
+  emailSmtpUser: z.string().optional(),
   
   frontendUrl: z.string().url().default('http://localhost:5173'),
   
@@ -174,6 +203,16 @@ function loadConfig(): Config {
     adminEmail: process.env.ADMIN_EMAIL,
     adminPassword: process.env.ADMIN_PASSWORD || generatedAdminPassword,
     adminEmailVerificationExempt: process.env.ADMIN_EMAIL_VERIFICATION_EXEMPT === 'true',
+    emailConfigName: envOrUndefined(process.env.EMAIL_CONFIG_NAME),
+    emailProvider: envOrUndefined(process.env.EMAIL_PROVIDER) as Config['emailProvider'],
+    emailApiKey: envOrUndefined(process.env.EMAIL_API_KEY),
+    emailFromName: envOrUndefined(process.env.EMAIL_FROM_NAME),
+    emailFromEmail: envOrUndefined(process.env.EMAIL_FROM_EMAIL),
+    emailReplyTo: envOrUndefined(process.env.EMAIL_REPLY_TO),
+    emailSmtpHost: envOrUndefined(process.env.EMAIL_SMTP_HOST),
+    emailSmtpPort: envOrUndefined(process.env.EMAIL_SMTP_PORT) ? Number(process.env.EMAIL_SMTP_PORT) : undefined,
+    emailSmtpSecure: envOrUndefined(process.env.EMAIL_SMTP_SECURE) ? process.env.EMAIL_SMTP_SECURE === 'true' : undefined,
+    emailSmtpUser: envOrUndefined(process.env.EMAIL_SMTP_USER),
     frontendUrl: process.env.FRONTEND_URL,
     camundaBaseUrl: process.env.CAMUNDA_BASE_URL,
     camundaUsername: process.env.CAMUNDA_USERNAME,
@@ -206,6 +245,19 @@ function loadConfig(): Config {
 
 // Singleton config instance
 export const config = loadConfig();
+
+/**
+ * Determine whether auth/CSRF cookies should use the `secure` flag.
+ * Keys on the configured FRONTEND_URL protocol so that local HTTP
+ * development works even when NODE_ENV=production.
+ */
+export function shouldUseSecureCookies(): boolean {
+  try {
+    return new URL(config.frontendUrl).protocol === 'https:';
+  } catch {
+    return config.nodeEnv === 'production';
+  }
+}
 
 const requireConfig = (name: string, value: unknown, dbType: string): void => {
   if (value === undefined || value === null || String(value).trim() === '') {

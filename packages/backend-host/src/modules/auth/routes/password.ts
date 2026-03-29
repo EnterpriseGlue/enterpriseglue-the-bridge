@@ -8,9 +8,9 @@ import { sendVerificationEmail } from '@enterpriseglue/shared/services/email/ind
 import { config } from '@enterpriseglue/shared/config/index.js';
 import { logAudit, AuditActions } from '@enterpriseglue/shared/services/audit.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
-import { RefreshToken } from '@enterpriseglue/shared/db/entities/RefreshToken.js';
-import { PasswordResetToken } from '@enterpriseglue/shared/db/entities/PasswordResetToken.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
+import { RefreshToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/RefreshToken.js';
+import { PasswordResetToken } from '@enterpriseglue/shared/infrastructure/persistence/entities/PasswordResetToken.js';
 import { IsNull } from 'typeorm';
 import { validateBody } from '@enterpriseglue/shared/middleware/validate.js';
 import { passwordResetLimiter , apiLimiter} from '@enterpriseglue/shared/middleware/rateLimiter.js';

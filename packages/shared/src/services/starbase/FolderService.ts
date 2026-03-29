@@ -4,12 +4,12 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Folder } from '@enterpriseglue/shared/db/entities/Folder.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
+import { Folder } from '@enterpriseglue/shared/infrastructure/persistence/entities/Folder.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
 import { IsNull, Raw } from 'typeorm';
-import { Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
+import { Errors } from '@enterpriseglue/shared/interfaces/middleware/errorHandler.js';
 import { generateId, unixTimestamp } from '@enterpriseglue/shared/utils/id.js';
-import { caseInsensitiveColumn } from '@enterpriseglue/shared/db/adapters/QueryHelpers.js';
+import { caseInsensitiveColumn } from '@enterpriseglue/shared/infrastructure/persistence/adapters/QueryHelpers.js';
 
 export interface CreateFolderInput {
   projectId: string;

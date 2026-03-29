@@ -50,10 +50,12 @@ SHARED_DIR="$ROOT_DIR/packages/shared"
 FRONTEND_HOST_DIR="$ROOT_DIR/packages/frontend-host"
 ROOT_NODE_MODULES_DIR="$ROOT_DIR/node_modules"
 ROOT_LOCKFILE="$ROOT_DIR/package-lock.json"
+SELFHOST_ENV_FILE="$ROOT_DIR/.env.selfhost"
+BACKEND_ENV_FILE="$BACKEND_DIR/.env"
 
 BACKEND_PORT=${API_PORT:-8787}
-FRONTEND_PORT=5173
-PREVIEW_PORT=5173
+FRONTEND_PORT=${FRONTEND_HOST_PORT:-5173}
+PREVIEW_PORT=${FRONTEND_HOST_PORT:-5173}
 DATABASE_TYPE=${DATABASE_TYPE:-postgres}
 
 log() { echo "[deploy] $*"; }
@@ -119,20 +121,24 @@ clean_build_artifacts() {
 
 check_env() {
   log "Checking environment configuration..."
-  
-  # Check if .env exists in backend
-  if [[ ! -f "$BACKEND_DIR/.env" ]]; then
-    error ".env file not found in backend/. Copy from .env.example and configure."
+
+  local ACTIVE_ENV_FILE=""
+  if [[ -f "$SELFHOST_ENV_FILE" ]]; then
+    ACTIVE_ENV_FILE="$SELFHOST_ENV_FILE"
+  elif [[ -f "$BACKEND_ENV_FILE" ]]; then
+    ACTIVE_ENV_FILE="$BACKEND_ENV_FILE"
+  else
+    error ".env.selfhost (preferred) or backend/.env not found. Create one and configure it."
   fi
   
   # Source .env for validation
   set -a
-  source "$BACKEND_DIR/.env"
+  source "$ACTIVE_ENV_FILE"
   set +a
   DATABASE_TYPE="${DATABASE_TYPE:-postgres}"
 
   bash "$ROOT_DIR/scripts/db-preflight.sh" \
-    --env-file "$BACKEND_DIR/.env" \
+    --env-file "$ACTIVE_ENV_FILE" \
     --mode localhost \
     --install-drivers true
   
@@ -214,7 +220,7 @@ check_frontend_env() {
       error "API_BASE_URL (or VITE_API_BASE_URL) must be an absolute URL (http/https) or start with '/'"
     fi
 
-    if [[ "${NODE_ENV:-}" == "production" ]] && [[ "$FRONTEND_API_BASE_URL" == *"localhost"* ]]; then
+    if [[ "${NODE_ENV:-}" == "production" ]] && [[ "$FRONTEND_API_BASE_URL" == *"localhost"* ]] && [[ -z "${SELFHOST_ENV_FILE:-}" ]]; then
       error "API_BASE_URL (or VITE_API_BASE_URL) must use production domain (not localhost)"
     fi
   fi
@@ -457,7 +463,11 @@ print_summary() {
     log "⚠️  Microsoft Entra ID: Not configured"
   fi
   
-  log "ℹ️  Email Service: Configure in Admin UI → Platform Settings → Email"
+  if [[ -n "${EMAIL_PROVIDER:-}" && -n "${EMAIL_API_KEY:-}" && -n "${EMAIL_FROM_NAME:-}" && -n "${EMAIL_FROM_EMAIL:-}" ]]; then
+    log "ℹ️  Email bootstrap: seeded from EMAIL_* env vars on startup"
+  else
+    log "ℹ️  Email bootstrap: not configured (set EMAIL_* vars in .env.selfhost or backend/.env)"
+  fi
   
   log ""
   log "Logs:"

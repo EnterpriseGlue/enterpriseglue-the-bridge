@@ -4,7 +4,7 @@
 
 import { generateId } from '@enterpriseglue/shared/utils/id.js'
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js'
-import { Batch } from '@enterpriseglue/shared/db/entities/Batch.js'
+import { Batch } from '@enterpriseglue/shared/infrastructure/persistence/entities/Batch.js'
 import {
   postProcessInstanceModification,
   postProcessDefinitionModificationAsync,

@@ -6,7 +6,7 @@
  */
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { PermissionGrant } from '@enterpriseglue/shared/db/entities/PermissionGrant.js';
+import { PermissionGrant } from '@enterpriseglue/shared/infrastructure/persistence/entities/PermissionGrant.js';
 import { IsNull, MoreThan, LessThan } from 'typeorm';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 

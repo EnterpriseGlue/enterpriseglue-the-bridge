@@ -4,8 +4,8 @@ import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { dashboardLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
 import { asyncHandler, Errors } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
-import { File } from '@enterpriseglue/shared/db/entities/File.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js';
 import { In } from 'typeorm';
 
 const r = Router();

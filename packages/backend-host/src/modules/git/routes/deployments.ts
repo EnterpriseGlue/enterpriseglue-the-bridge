@@ -8,9 +8,9 @@ import { requireProjectRole } from '@enterpriseglue/shared/middleware/projectAut
 import { DeployRequestSchema, RollbackRequestSchema } from '@enterpriseglue/shared/schemas/git/index.js';
 import { projectMemberService } from '@enterpriseglue/shared/services/platform-admin/ProjectMemberService.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { GitDeployment } from '@enterpriseglue/shared/db/entities/GitDeployment.js';
-import { EnvironmentTag } from '@enterpriseglue/shared/db/entities/EnvironmentTag.js';
-import { PlatformSettings } from '@enterpriseglue/shared/db/entities/PlatformSettings.js';
+import { GitDeployment } from '@enterpriseglue/shared/infrastructure/persistence/entities/GitDeployment.js';
+import { EnvironmentTag } from '@enterpriseglue/shared/infrastructure/persistence/entities/EnvironmentTag.js';
+import { PlatformSettings } from '@enterpriseglue/shared/infrastructure/persistence/entities/PlatformSettings.js';
 import { DEPLOY_ROLES, EDIT_ROLES } from '@enterpriseglue/shared/constants/roles.js';
 
 const router = Router();

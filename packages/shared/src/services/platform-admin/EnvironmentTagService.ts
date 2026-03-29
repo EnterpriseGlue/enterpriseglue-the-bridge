@@ -5,8 +5,8 @@
 
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
 import { logger } from '@enterpriseglue/shared/utils/logger.js';
-import { EnvironmentTag } from '@enterpriseglue/shared/db/entities/EnvironmentTag.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
+import { EnvironmentTag } from '@enterpriseglue/shared/infrastructure/persistence/entities/EnvironmentTag.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
 import { generateId } from '@enterpriseglue/shared/utils/id.js';
 
 export class EnvironmentTagService {

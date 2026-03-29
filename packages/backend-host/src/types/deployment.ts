@@ -3,9 +3,9 @@
  * Reduces 'as any' usage in deployment routes
  */
 
-import type { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import type { EngineDeployment } from '@enterpriseglue/shared/db/entities/EngineDeployment.js';
-import type { EngineDeploymentArtifact } from '@enterpriseglue/shared/db/entities/EngineDeploymentArtifact.js';
+import type { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import type { EngineDeployment } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineDeployment.js';
+import type { EngineDeploymentArtifact } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineDeploymentArtifact.js';
 
 // Engine connection info for deployment
 export interface EngineConnectionInfo {

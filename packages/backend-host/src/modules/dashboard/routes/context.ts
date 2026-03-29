@@ -3,10 +3,10 @@ import { requireAuth } from '@enterpriseglue/shared/middleware/auth.js';
 import { dashboardLimiter } from '@enterpriseglue/shared/middleware/rateLimiter.js';
 import { asyncHandler } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { Project } from '@enterpriseglue/shared/db/entities/Project.js';
-import { ProjectMember } from '@enterpriseglue/shared/db/entities/ProjectMember.js';
-import { Engine } from '@enterpriseglue/shared/db/entities/Engine.js';
-import { EngineMember } from '@enterpriseglue/shared/db/entities/EngineMember.js';
+import { Project } from '@enterpriseglue/shared/infrastructure/persistence/entities/Project.js';
+import { ProjectMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/ProjectMember.js';
+import { Engine } from '@enterpriseglue/shared/infrastructure/persistence/entities/Engine.js';
+import { EngineMember } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineMember.js';
 import { In } from 'typeorm';
 import { isPlatformAdmin } from '@enterpriseglue/shared/middleware/platformAuth.js';
 

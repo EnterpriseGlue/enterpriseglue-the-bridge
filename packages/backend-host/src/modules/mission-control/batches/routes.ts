@@ -18,7 +18,7 @@ import {
 import { markBatchPollerViewer } from '../../../poller/batchPoller.js'
 import { piiRedactionService } from '@enterpriseglue/shared/services/pii/PiiRedactionService.js'
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js'
-import { Batch } from '@enterpriseglue/shared/db/entities/Batch.js'
+import { Batch } from '@enterpriseglue/shared/infrastructure/persistence/entities/Batch.js'
 
 const r = Router()
 
