@@ -1,8 +1,8 @@
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js'
-import { EngineDeploymentArtifact } from '@enterpriseglue/shared/db/entities/EngineDeploymentArtifact.js'
-import { EngineDeployment } from '@enterpriseglue/shared/db/entities/EngineDeployment.js'
-import { File } from '@enterpriseglue/shared/db/entities/File.js'
-import { FileCommitVersion } from '@enterpriseglue/shared/db/entities/FileCommitVersion.js'
+import { EngineDeploymentArtifact } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineDeploymentArtifact.js'
+import { EngineDeployment } from '@enterpriseglue/shared/infrastructure/persistence/entities/EngineDeployment.js'
+import { File } from '@enterpriseglue/shared/infrastructure/persistence/entities/File.js'
+import { FileCommitVersion } from '@enterpriseglue/shared/infrastructure/persistence/entities/FileCommitVersion.js'
 import { EDIT_ROLES } from '@enterpriseglue/shared/constants/roles.js'
 import { projectMemberService } from '@enterpriseglue/shared/services/platform-admin/ProjectMemberService.js'
 
