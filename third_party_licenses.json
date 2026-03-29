@@ -1043,12 +1043,9 @@
     "email": "me@kentcdodds.com",
     "url": "https://kentcdodds.com"
   },
-  "balanced-match@1.0.2": {
+  "balanced-match@4.0.4": {
     "licenses": "MIT",
-    "repository": "git://github.com/juliangruber/balanced-match.git",
-    "publisher": "Julian Gruber",
-    "email": "mail@juliangruber.com",
-    "url": "http://juliangruber.com"
+    "repository": "git://github.com/juliangruber/balanced-match.git"
   },
   "bare-events@2.8.2": {
     "licenses": "Apache-2.0",
@@ -1204,12 +1201,9 @@
     "publisher": "Seif Eddine Ghezala",
     "email": "siffogh3@gmail.com"
   },
-  "brace-expansion@2.0.2": {
+  "brace-expansion@5.0.5": {
     "licenses": "MIT",
-    "repository": "git://github.com/juliangruber/brace-expansion.git",
-    "publisher": "Julian Gruber",
-    "email": "mail@juliangruber.com",
-    "url": "http://juliangruber.com"
+    "repository": "git+ssh://git@github.com/juliangruber/brace-expansion.git"
   },
   "buffer-crc32@1.0.0": {
     "licenses": "MIT",
@@ -2671,7 +2665,7 @@
     "repository": "https://github.com/node-fetch/node-fetch.git",
     "publisher": "David Frank"
   },
-  "nodemailer@8.0.1": {
+  "nodemailer@8.0.4": {
     "licenses": "MIT-0",
     "repository": "https://github.com/nodemailer/nodemailer.git",
     "publisher": "Andris Reinman"
@@ -2795,7 +2789,7 @@
     "email": "i@izs.me",
     "url": "https://blog.izs.me"
   },
-  "path-to-regexp@8.3.0": {
+  "path-to-regexp@8.4.0": {
     "licenses": "MIT",
     "repository": "https://github.com/pillarjs/path-to-regexp.git"
   },
@@ -3704,13 +3698,13 @@
     "publisher": "Ben Coe",
     "email": "bencoe@gmail.com"
   },
-  "yaml@1.10.2": {
+  "yaml@1.10.3": {
     "licenses": "ISC",
     "repository": "github:eemeli/yaml",
     "publisher": "Eemeli Aro",
     "email": "eemeli@gmail.com"
   },
-  "yaml@2.8.2": {
+  "yaml@2.8.3": {
     "licenses": "ISC",
     "repository": "github:eemeli/yaml",
     "publisher": "Eemeli Aro",

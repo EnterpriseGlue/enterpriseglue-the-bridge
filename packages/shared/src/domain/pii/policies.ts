@@ -27,9 +27,28 @@ export const DEFAULT_REDACTION_OPTIONS: RedactionOptions = {
  * Validate an email address format
  */
 export function isValidEmail(value: string): boolean {
-  // RFC 5322 simplified pattern
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailPattern.test(value);
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.includes(' ')) {
+    return false;
+  }
+
+  const atIndex = trimmed.indexOf('@');
+  if (atIndex <= 0 || atIndex !== trimmed.lastIndexOf('@') || atIndex === trimmed.length - 1) {
+    return false;
+  }
+
+  const localPart = trimmed.slice(0, atIndex);
+  const domain = trimmed.slice(atIndex + 1);
+  if (localPart.length === 0 || domain.length < 3) {
+    return false;
+  }
+
+  if (domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) {
+    return false;
+  }
+
+  const lastDotIndex = domain.lastIndexOf('.');
+  return lastDotIndex > 0 && lastDotIndex < domain.length - 1;
 }
 
 /**

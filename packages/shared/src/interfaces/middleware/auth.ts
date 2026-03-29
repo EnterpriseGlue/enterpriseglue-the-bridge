@@ -20,6 +20,46 @@ declare global {
   }
 }
 
+function getRequestTokenCandidate(req: Request): string | null {
+  const authHeader = typeof req.headers.authorization === 'string' ? req.headers.authorization : null;
+  if (authHeader?.startsWith('Bearer ')) {
+    const bearerToken = authHeader.slice(7).trim();
+    if (bearerToken.length > 0) {
+      return bearerToken;
+    }
+  }
+
+  const cookieToken = typeof req.cookies?.accessToken === 'string' ? req.cookies.accessToken.trim() : '';
+  return cookieToken.length > 0 ? cookieToken : null;
+}
+
+function isStructurallyValidJwt(token: string): boolean {
+  const segments = token.split('.');
+  return segments.length === 3 && segments.every(segment => /^[A-Za-z0-9_-]+$/.test(segment));
+}
+
+function readRequiredAuthPayload(req: Request): JwtPayload {
+  const tokenCandidate = getRequestTokenCandidate(req);
+  if (tokenCandidate === null) {
+    throw Errors.unauthorized('No token provided');
+  }
+
+  if (!isStructurallyValidJwt(tokenCandidate)) {
+    throw Errors.unauthorized('Malformed token');
+  }
+
+  return verifyToken(tokenCandidate);
+}
+
+function readOptionalAuthPayload(req: Request): JwtPayload | null {
+  const tokenCandidate = getRequestTokenCandidate(req);
+  if (tokenCandidate === null || !isStructurallyValidJwt(tokenCandidate)) {
+    return null;
+  }
+
+  return verifyToken(tokenCandidate);
+}
+
 /**
  * Middleware to require authentication
  * Verifies JWT token from Authorization header OR cookies
@@ -27,32 +67,7 @@ declare global {
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    let token: string | undefined;
-
-    // Try Authorization header first (email/password login)
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    }
-
-    // Fallback to cookie (Microsoft OAuth login)
-    if (!token && req.cookies?.accessToken) {
-      token = req.cookies.accessToken;
-    }
-
-    // No token found in either location
-    if (!token) { // lgtm[js/user-controlled-bypass]
-      return next(Errors.unauthorized('No token provided'));
-    }
-
-    // Whitelist-sanitize: keep only base64url chars and dots to break taint chain
-    const sanitizedToken = token.replace(/[^A-Za-z0-9_.-]/g, '');
-    if (sanitizedToken.length === 0 || sanitizedToken.split('.').length !== 3) { // lgtm[js/user-controlled-bypass]
-      return next(Errors.unauthorized('Malformed token'));
-    }
-
-    // Verify token using sanitized value
-    const payload = verifyToken(sanitizedToken);
+    const payload = readRequiredAuthPayload(req);
 
     if (payload.type !== 'access') {
       throw Errors.unauthorized('Invalid token type. Use access token.');
@@ -142,26 +157,9 @@ export function requireOnboarding(req: Request, res: Response, next: NextFunctio
  */
 export function optionalAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    let token: string | undefined;
-
-    // Try Authorization header first
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
-
-    // Fallback to cookie
-    if (!token && req.cookies?.accessToken) {
-      token = req.cookies.accessToken;
-    }
-
-    // Whitelist-sanitize: keep only base64url chars and dots to break taint chain
-    if (token) { // lgtm[js/user-controlled-bypass]
-      const sanitizedToken = token.replace(/[^A-Za-z0-9_.-]/g, '');
-      const payload = verifyToken(sanitizedToken);
-      if (payload.type === 'access') {
-        req.user = payload;
-      }
+    const payload = readOptionalAuthPayload(req);
+    if (payload?.type === 'access') {
+      req.user = payload;
     }
   } catch {
     // Ignore errors for optional auth

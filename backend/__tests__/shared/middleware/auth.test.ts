@@ -3,7 +3,7 @@ import { requireAuth, requireAdmin, optionalAuth } from '@enterpriseglue/shared/
 import { AppError } from '@enterpriseglue/shared/middleware/errorHandler.js';
 import * as jwt from '@enterpriseglue/shared/utils/jwt.js';
 import { getDataSource } from '@enterpriseglue/shared/db/data-source.js';
-import { User } from '@enterpriseglue/shared/db/entities/User.js';
+import { User } from '@enterpriseglue/shared/infrastructure/persistence/entities/User.js';
 import { Request, Response, NextFunction } from 'express';
 
 vi.mock('@enterpriseglue/shared/utils/jwt.js', () => ({
@@ -71,6 +71,18 @@ describe('auth middleware', () => {
       const error = (next as any).mock.calls[0][0];
       expect(error).toBeInstanceOf(AppError);
       expect(error?.message).toContain('No token provided');
+    });
+
+    it('rejects malformed tokens before verification', async () => {
+      req.headers = { authorization: 'Bearer invalid token with spaces' };
+
+      await requireAuth(req as Request, res as Response, next);
+
+      expect(jwt.verifyToken).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalled();
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error?.message).toContain('Malformed token');
     });
 
     it('reports invalid token type', async () => {
@@ -150,6 +162,16 @@ describe('auth middleware', () => {
     it('continues without user when no token', () => {
       optionalAuth(req as Request, res as Response, next);
 
+      expect(req.user).toBeUndefined();
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('ignores malformed tokens without attempting verification', () => {
+      req.headers = { authorization: 'Bearer invalid token with spaces' };
+
+      optionalAuth(req as Request, res as Response, next);
+
+      expect(jwt.verifyToken).not.toHaveBeenCalled();
       expect(req.user).toBeUndefined();
       expect(next).toHaveBeenCalled();
     });
