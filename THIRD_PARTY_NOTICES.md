@@ -244,7 +244,7 @@ Generated from:
 | azure-devops-node-api | 15.1.2 | MIT | https://github.com/Microsoft/azure-devops-node-api | backend, frontend, packages/frontend-host, packages/shared |
 | b4a | 1.8.0 | Apache-2.0 | git+https://github.com/holepunchto/b4a.git | backend |
 | babel-plugin-macros | 3.1.0 | MIT | https://github.com/kentcdodds/babel-plugin-macros | backend, frontend, packages/frontend-host, packages/shared |
-| balanced-match | 1.0.2 | MIT | git://github.com/juliangruber/balanced-match.git | backend, frontend, packages/frontend-host, packages/shared |
+| balanced-match | 4.0.4 | MIT | git://github.com/juliangruber/balanced-match.git | backend, frontend, packages/frontend-host, packages/shared |
 | bare-events | 2.8.2 | Apache-2.0 | git+https://github.com/holepunchto/bare-events.git | backend |
 | bare-fs | 4.5.5 | Apache-2.0 | git+https://github.com/holepunchto/bare-fs.git | backend |
 | bare-os | 3.7.1 | Apache-2.0 | git+https://github.com/holepunchto/bare-os.git | backend |
@@ -273,7 +273,7 @@ Generated from:
 | bpmnlint-plugin-camunda-compat | 2.48.1 | MIT | https://github.com/camunda/bpmnlint-plugin-camunda-compat | frontend |
 | bpmnlint-utils | 1.1.1 | MIT | https://github.com/bpmn-io/bpmnlint-utils | frontend |
 | bpmnlint | 11.12.0 | MIT | https://github.com/bpmn-io/bpmnlint | frontend |
-| brace-expansion | 2.0.2 | MIT | git://github.com/juliangruber/brace-expansion.git | backend, frontend, packages/frontend-host, packages/shared |
+| brace-expansion | 5.0.5 | MIT | git+ssh://git@github.com/juliangruber/brace-expansion.git | backend, frontend, packages/frontend-host, packages/shared |
 | buffer-crc32 | 1.0.0 | MIT | git://github.com/brianloveswords/buffer-crc32.git | backend |
 | buffer-equal-constant-time | 1.0.1 | BSD-3-Clause | git@github.com:goinstant/buffer-equal-constant-time.git | backend, frontend, packages/frontend-host, packages/shared |
 | buffer | 6.0.3 | MIT | git://github.com/feross/buffer.git | backend, frontend, packages/frontend-host, packages/shared |
@@ -526,7 +526,7 @@ Generated from:
 | node-domexception | 1.0.0 | MIT | git+https://github.com/jimmywarting/node-domexception.git | backend, frontend, packages/frontend-host, packages/shared |
 | node-fetch | 2.7.0 | MIT | https://github.com/bitinn/node-fetch.git | backend, frontend, packages/frontend-host, packages/shared |
 | node-fetch | 3.3.2 | MIT | https://github.com/node-fetch/node-fetch.git | backend, frontend, packages/frontend-host, packages/shared |
-| nodemailer | 8.0.1 | MIT-0 | https://github.com/nodemailer/nodemailer.git | backend, frontend, packages/frontend-host, packages/shared |
+| nodemailer | 8.0.4 | MIT-0 | https://github.com/nodemailer/nodemailer.git | backend, frontend, packages/frontend-host, packages/shared |
 | normalize-path | 3.0.0 | MIT | jonschlinkert/normalize-path | backend |
 | object-assign | 4.1.1 | MIT | sindresorhus/object-assign | backend, frontend, packages/frontend-host, packages/shared |
 | object-inspect | 1.13.4 | MIT | git://github.com/inspect-js/object-inspect.git | backend, frontend, packages/frontend-host, packages/shared |
@@ -547,7 +547,7 @@ Generated from:
 | path-key | 3.1.1 | MIT | sindresorhus/path-key | backend, frontend, packages/frontend-host, packages/shared |
 | path-parse | 1.0.7 | MIT | https://github.com/jbgutierrez/path-parse.git | backend, frontend, packages/frontend-host, packages/shared |
 | path-scurry | 1.11.1 | BlueOak-1.0.0 | git+https://github.com/isaacs/path-scurry | backend, frontend, packages/frontend-host, packages/shared |
-| path-to-regexp | 8.3.0 | MIT | https://github.com/pillarjs/path-to-regexp.git | backend, frontend, packages/frontend-host, packages/shared |
+| path-to-regexp | 8.4.0 | MIT | https://github.com/pillarjs/path-to-regexp.git | backend, frontend, packages/frontend-host, packages/shared |
 | path-type | 4.0.0 | MIT | sindresorhus/path-type | backend, frontend, packages/frontend-host, packages/shared |
 | performance-now | 2.1.0 | MIT | git://github.com/braveg1rl/performance-now.git | frontend |
 | pg-cloudflare | 1.3.0 | MIT | git://github.com/brianc/node-postgres.git | backend, frontend, packages/frontend-host, packages/shared |
@@ -705,8 +705,8 @@ Generated from:
 | xpath | 0.0.34 | MIT | https://github.com/goto100/xpath.git | backend |
 | xtend | 4.0.2 | MIT | git://github.com/Raynos/xtend.git | backend, frontend, packages/frontend-host, packages/shared |
 | y18n | 5.0.8 | ISC | yargs/y18n | backend, frontend, packages/frontend-host, packages/shared |
-| yaml | 1.10.2 | ISC | github:eemeli/yaml | backend, frontend, packages/frontend-host, packages/shared |
-| yaml | 2.8.2 | ISC | github:eemeli/yaml | backend, frontend, packages/frontend-host, packages/shared, root |
+| yaml | 1.10.3 | ISC | github:eemeli/yaml | backend, frontend, packages/frontend-host, packages/shared |
+| yaml | 2.8.3 | ISC | github:eemeli/yaml | backend, frontend, packages/frontend-host, packages/shared, root |
 | yargs-parser | 21.1.1 | ISC | https://github.com/yargs/yargs-parser.git | backend, frontend, packages/frontend-host, packages/shared |
 | yargs | 17.7.2 | MIT | https://github.com/yargs/yargs.git | backend, frontend, packages/frontend-host, packages/shared |
 | zeebe-bpmn-moddle | 1.12.0 | MIT | https://github.com/camunda/zeebe-bpmn-moddle | frontend |
