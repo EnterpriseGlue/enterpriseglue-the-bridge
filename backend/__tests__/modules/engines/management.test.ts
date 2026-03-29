@@ -33,6 +33,7 @@ vi.mock('@enterpriseglue/shared/db/adapters/QueryHelpers.js', () => ({
 }));
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: {
     nodeEnv: 'test',
     frontendUrl: 'http://localhost:5173',

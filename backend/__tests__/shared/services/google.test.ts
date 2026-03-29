@@ -8,6 +8,7 @@ vi.mock('@enterpriseglue/shared/services/platform-admin/SsoProviderService.js', 
 }));
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: {
     googleClientId: null,
     googleClientSecret: null,

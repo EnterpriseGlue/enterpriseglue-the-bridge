@@ -17,6 +17,7 @@ vi.mock('@enterpriseglue/shared/middleware/tenant.js', () => ({
 }));
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: {
     nodeEnv: 'test',
     port: 8787,

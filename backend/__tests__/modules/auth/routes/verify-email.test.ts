@@ -18,6 +18,7 @@ vi.mock('@enterpriseglue/shared/services/email/index.js', () => ({
 }));
 
 vi.mock('@enterpriseglue/shared/config/index.js', () => ({
+  shouldUseSecureCookies: () => false,
   config: { frontendUrl: 'http://localhost:3000' },
 }));
 
