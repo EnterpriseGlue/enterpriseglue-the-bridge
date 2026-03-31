@@ -47,8 +47,9 @@ export class AddFileSnapshotsMainFileId1700000000010 implements MigrationInterfa
       await queryRunner.query(`
         MERGE INTO ${tableRef} fs
         USING ${workingFilesTableRef} wf
-        ON (fs."working_file_id" = wf."id" AND fs."main_file_id" IS NULL)
+        ON (fs."working_file_id" = wf."id")
         WHEN MATCHED THEN UPDATE SET fs."main_file_id" = wf."main_file_id"
+        WHERE fs."main_file_id" IS NULL
       `);
     } else {
       await queryRunner.query(`
