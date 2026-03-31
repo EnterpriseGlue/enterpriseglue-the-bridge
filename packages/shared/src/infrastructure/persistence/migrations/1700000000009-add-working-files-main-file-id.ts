@@ -50,9 +50,9 @@ export class AddWorkingFilesMainFileId1700000000009 implements MigrationInterfac
         ON (wf."project_id" = f."project_id"
             AND wf."name" = f."name"
             AND wf."type" = f."type"
-            AND (wf."folder_id" = f."folder_id" OR (wf."folder_id" IS NULL AND f."folder_id" IS NULL))
-            AND wf."main_file_id" IS NULL)
+            AND (wf."folder_id" = f."folder_id" OR (wf."folder_id" IS NULL AND f."folder_id" IS NULL)))
         WHEN MATCHED THEN UPDATE SET wf."main_file_id" = f."id"
+        WHERE wf."main_file_id" IS NULL
       `);
     } else {
       await queryRunner.query(`
