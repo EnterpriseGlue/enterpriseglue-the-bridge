@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and uses [Release Please](https://github.com/googleapis/release-please) to manage release notes.
 
+## [0.8.29](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.8.28...v0.8.29) (2026-04-02)
+
+
+### Bug Fixes
+
+* **security:** update lodash to 4.18.0 ([#296](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/issues/296)) ([77ce53d](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/commit/77ce53dc2e0d6e45f74dff719266b9473dd97d36))
+
 ## [0.8.28](https://github.com/EnterpriseGlue/enterpriseglue-the-bridge-oss/compare/v0.8.27...v0.8.28) (2026-04-01)
 
 
