@@ -65,6 +65,61 @@ export interface ExportDiagramOptions {
    * fallback when `baseName` is missing.
    */
   type?: string | null;
+  /**
+   * White padding (in PDF points, equivalent to SVG pixels under svg2pdf.js)
+   * applied around the diagram inside the generated PDF page. Defaults to
+   * `DEFAULT_PDF_PADDING_PT`.
+   */
+  paddingPt?: number;
+}
+
+/**
+ * Default white padding (in PDF points) applied around the diagram when
+ * rendering to PDF. jsPDF uses pt internally and svg2pdf.js maps SVG user
+ * units 1:1 to pt, so this is effectively the pixel padding requested by
+ * the user (“~200 px”).
+ */
+export const DEFAULT_PDF_PADDING_PT = 200;
+
+export interface PdfLayout {
+  /** Total PDF page width, including padding on both sides. */
+  pageWidth: number;
+  /** Total PDF page height, including padding on both sides. */
+  pageHeight: number;
+  /** jsPDF orientation computed from the padded page. */
+  orientation: 'landscape' | 'portrait';
+  /** X offset at which svg2pdf should place the diagram inside the page. */
+  svgX: number;
+  /** Y offset at which svg2pdf should place the diagram inside the page. */
+  svgY: number;
+  /** Diagram width passed to svg2pdf (== source SVG width). */
+  svgWidth: number;
+  /** Diagram height passed to svg2pdf (== source SVG height). */
+  svgHeight: number;
+}
+
+/**
+ * Pure helper that computes the PDF page geometry for a given diagram size
+ * and padding. Extracted from `svgToPdfBlob` so the padding math can be
+ * unit-tested without the jspdf/svg2pdf dynamic imports.
+ */
+export function computePdfLayout(
+  width: number,
+  height: number,
+  paddingPt: number = DEFAULT_PDF_PADDING_PT,
+): PdfLayout {
+  const safePadding = Number.isFinite(paddingPt) && paddingPt >= 0 ? paddingPt : DEFAULT_PDF_PADDING_PT;
+  const pageWidth = width + safePadding * 2;
+  const pageHeight = height + safePadding * 2;
+  return {
+    pageWidth,
+    pageHeight,
+    orientation: pageWidth >= pageHeight ? 'landscape' : 'portrait',
+    svgX: safePadding,
+    svgY: safePadding,
+    svgWidth: width,
+    svgHeight: height,
+  };
 }
 
 /**
@@ -172,7 +227,7 @@ export async function exportDiagramAsPdf(
   opts: ExportDiagramOptions,
 ): Promise<void> {
   const svg = await captureDiagramSvg(modeler);
-  const blob = await svgToPdfBlob(svg);
+  const blob = await svgToPdfBlob(svg, { paddingPt: opts.paddingPt });
   const filename = buildStarbaseFileName(opts.baseName, opts.type ?? null, {
     forceExtension: 'pdf',
     fallbackBase: 'diagram',
@@ -197,12 +252,18 @@ export async function exportDiagramAsSvg(
 /**
  * Convert an SVG string to a PDF Blob using jspdf + svg2pdf.js. Extracted so
  * it can be unit tested in isolation with jsdom.
+ *
+ * A white padding (default `DEFAULT_PDF_PADDING_PT`) is added around the
+ * diagram by growing the page and offsetting the svg2pdf render origin. The
+ * jsPDF page background is white by default, so no explicit fill is needed.
  */
-export async function svgToPdfBlob(svg: string): Promise<Blob> {
+export async function svgToPdfBlob(
+  svg: string,
+  opts: { paddingPt?: number } = {},
+): Promise<Blob> {
   const svgEl = parseSvgDocument(svg);
   const { width, height } = resolveSvgDimensions(svgEl);
-
-  const orientation = width >= height ? 'landscape' : 'portrait';
+  const layout = computePdfLayout(width, height, opts.paddingPt);
 
   const [{ jsPDF }, { svg2pdf }] = await Promise.all([
     import('jspdf'),
@@ -210,13 +271,18 @@ export async function svgToPdfBlob(svg: string): Promise<Blob> {
   ]);
 
   const pdf = new jsPDF({
-    orientation,
+    orientation: layout.orientation,
     unit: 'pt',
-    format: [width, height],
+    format: [layout.pageWidth, layout.pageHeight],
     compress: true,
   });
 
-  await svg2pdf(svgEl, pdf, { x: 0, y: 0, width, height });
+  await svg2pdf(svgEl, pdf, {
+    x: layout.svgX,
+    y: layout.svgY,
+    width: layout.svgWidth,
+    height: layout.svgHeight,
+  });
 
   const arrayBuffer = pdf.output('arraybuffer');
   return new Blob([arrayBuffer], { type: 'application/pdf' });

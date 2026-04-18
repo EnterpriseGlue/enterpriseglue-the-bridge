@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   canExportDiagram,
   captureDiagramSvg,
+  computePdfLayout,
+  DEFAULT_PDF_PADDING_PT,
   fitViewportBeforeExport,
   svgToPdfBlob,
   toDownloadBaseName,
@@ -108,6 +110,44 @@ describe('exportDiagram.canExportDiagram', () => {
       getActiveViewer: () => ({ saveSVG: async () => ({ svg: SAMPLE_SVG }) }),
     };
     expect(canExportDiagram(modeler)).toBe(false);
+  });
+});
+
+describe('exportDiagram.computePdfLayout', () => {
+  it('defaults to a 200pt margin on every side', () => {
+    expect(DEFAULT_PDF_PADDING_PT).toBe(200);
+    const layout = computePdfLayout(400, 300);
+    expect(layout).toEqual({
+      pageWidth: 800,   // 400 + 2*200
+      pageHeight: 700,  // 300 + 2*200
+      orientation: 'landscape',
+      svgX: 200,
+      svgY: 200,
+      svgWidth: 400,
+      svgHeight: 300,
+    });
+  });
+
+  it('allows zero padding for edge-to-edge rendering', () => {
+    const layout = computePdfLayout(400, 300, 0);
+    expect(layout.pageWidth).toBe(400);
+    expect(layout.pageHeight).toBe(300);
+    expect(layout.svgX).toBe(0);
+    expect(layout.svgY).toBe(0);
+  });
+
+  it('falls back to the default for non-finite or negative padding', () => {
+    expect(computePdfLayout(400, 300, Number.NaN).svgX).toBe(DEFAULT_PDF_PADDING_PT);
+    expect(computePdfLayout(400, 300, -50).svgX).toBe(DEFAULT_PDF_PADDING_PT);
+  });
+
+  it('flips orientation to portrait once padding makes the page taller than wide', () => {
+    // 100x400 diagram already portrait; confirm padding does not flip it.
+    const portrait = computePdfLayout(100, 400, 50);
+    expect(portrait.orientation).toBe('portrait');
+    // A nearly-square diagram with symmetric padding stays in whichever is larger.
+    const landscape = computePdfLayout(400, 300, 200);
+    expect(landscape.orientation).toBe('landscape');
   });
 });
 
