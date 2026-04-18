@@ -23,9 +23,12 @@ describe('safeDom utils', () => {
       expect(toSafeDownloadFilename('file\x7Fname', 'fallback')).toBe('file_name');
     });
 
-    it('replaces multiple spaces with single underscore', () => {
-      expect(toSafeDownloadFilename('file   name', 'fallback')).toBe('file_name');
-      // Tab and newline are treated as separate whitespace characters
+    it('preserves regular spaces and replaces only control whitespace with underscores', () => {
+      // Unified rule: regular spaces are valid in filenames and are kept
+      // verbatim. TAB/LF and other ASCII control characters are still
+      // replaced with underscores because they are never valid in
+      // filesystem entries.
+      expect(toSafeDownloadFilename('file   name', 'fallback')).toBe('file   name');
       expect(toSafeDownloadFilename('file\t\nname', 'fallback')).toBe('file__name');
     });
 
@@ -66,11 +69,13 @@ describe('safeDom utils', () => {
 
   describe('toSafeDownloadFilenameWithExtension', () => {
     it('appends the required extension when it is missing', () => {
-      expect(toSafeDownloadFilenameWithExtension('Process Diagram', 'bpmn', 'diagram')).toBe('Process_Diagram.bpmn');
+      // Regular spaces are preserved now (same rule the backend uses for ZIP
+      // archive entries and individual-file Content-Disposition).
+      expect(toSafeDownloadFilenameWithExtension('Process Diagram', 'bpmn', 'diagram')).toBe('Process Diagram.bpmn');
     });
 
     it('preserves the required extension when it is already present', () => {
-      expect(toSafeDownloadFilenameWithExtension('Decision Table.dmn', 'dmn', 'diagram')).toBe('Decision_Table.dmn');
+      expect(toSafeDownloadFilenameWithExtension('Decision Table.dmn', 'dmn', 'diagram')).toBe('Decision Table.dmn');
     });
 
     it('replaces xml with the required extension', () => {

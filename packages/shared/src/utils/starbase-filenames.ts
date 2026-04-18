@@ -60,12 +60,18 @@ export interface BuildStarbaseFileNameOptions {
  */
 export function sanitizeFileNameSegment(name: unknown, fallback: string): string {
   const raw = typeof name === 'string' ? name : '';
+  // Whitespace handling rules:
+  //   - Outer whitespace is trimmed.
+  //   - ASCII control characters (including TAB, LF, CR) are replaced with
+  //     underscores because they are never valid in filenames.
+  //   - Regular spaces are PRESERVED so filenames like "My Process.bpmn"
+  //     remain readable. This matches the prior backend ZIP rule and modern
+  //     browser/download-attribute support.
   const cleaned = raw
-    .trim()
     .replace(/[\u0000-\u001F\u007F]/g, '_')
     .replace(/[\\/]/g, '_')
     .replace(/[:*?"<>|]/g, '_')
-    .replace(/\s+/g, '_')
+    .trim()
     .slice(0, MAX_FILENAME_LENGTH);
 
   if (!cleaned || cleaned === '.' || cleaned === '..' || /^_+$/.test(cleaned)) {

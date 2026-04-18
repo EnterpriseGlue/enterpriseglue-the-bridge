@@ -1,17 +1,28 @@
 import React from 'react'
 import { Button } from '@carbon/react'
-import { 
-  FitToScreen, 
-  CenterCircle, 
-  Add, 
-  Subtract
+import {
+  FitToScreen,
+  CenterCircle,
+  Add,
+  Subtract,
 } from '@carbon/icons-react'
+import DownloadPdfButton from './DownloadPdfButton'
 
 interface CanvasToolbarProps {
   modeler: any | null
+  /** Current Starbase file name; used to build the PDF filename. */
+  fileName?: string | null
+  /** Starbase file type (bpmn/dmn); helps with fallback labelling. */
+  fileType?: string | null
+  /**
+   * Invoked when the user triggers a PDF export that fails. Lets the parent
+   * surface a user-visible toast. Optional to keep the existing read-only
+   * call sites compatible.
+   */
+  onExportError?: (message: string) => void
 }
 
-export default function CanvasToolbar({ modeler }: CanvasToolbarProps) {
+export default function CanvasToolbar({ modeler, fileName, fileType, onExportError }: CanvasToolbarProps) {
   const getCanvas = React.useCallback(() => {
     if (!modeler) return null
     try {
@@ -114,6 +125,15 @@ export default function CanvasToolbar({ modeler }: CanvasToolbarProps) {
         renderIcon={Add}
         iconDescription="Zoom in"
         onClick={handleZoomIn}
+        style={{ minWidth: '32px', minHeight: '32px' }}
+      />
+      <div style={{ width: '1px', height: '20px', background: 'var(--cds-border-subtle-01, #e0e0e0)' }} />
+      <DownloadPdfButton
+        modeler={modeler}
+        fileName={fileName}
+        fileType={fileType}
+        onExportError={onExportError}
+        iconOnly
         style={{ minWidth: '32px', minHeight: '32px' }}
       />
     </div>

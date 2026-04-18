@@ -25,8 +25,14 @@ describe('sanitizeFileNameSegment', () => {
     expect(sanitizeFileNameSegment(raw, 'fallback')).toBe('a_b_c_d_e_f_g_h_i_j_k');
   });
 
-  it('collapses internal whitespace to underscores and trims', () => {
-    expect(sanitizeFileNameSegment('  my  process name  ', 'x')).toBe('my_process_name');
+  it('preserves regular spaces and only trims the outer ends', () => {
+    // The unified rule keeps human-readable spaces in filenames; only control
+    // characters and path-hostile characters are replaced with underscores.
+    expect(sanitizeFileNameSegment('  my process name  ', 'x')).toBe('my process name');
+  });
+
+  it('replaces tabs and newlines with underscores', () => {
+    expect(sanitizeFileNameSegment('a\tb\nc', 'x')).toBe('a_b_c');
   });
 
   it('caps length at 200 characters', () => {
@@ -38,11 +44,11 @@ describe('sanitizeFileNameSegment', () => {
 
 describe('buildStarbaseFileName', () => {
   it('appends the type extension when missing', () => {
-    expect(buildStarbaseFileName('My Process', 'bpmn')).toBe('My_Process.bpmn');
+    expect(buildStarbaseFileName('My Process', 'bpmn')).toBe('My Process.bpmn');
   });
 
   it('does not double-append when the name already ends with the correct extension', () => {
-    expect(buildStarbaseFileName('My_Process.bpmn', 'bpmn')).toBe('My_Process.bpmn');
+    expect(buildStarbaseFileName('My Process.bpmn', 'bpmn')).toBe('My Process.bpmn');
   });
 
   it('appends the type extension even when the name contains an interior dot (regression)', () => {
@@ -65,7 +71,7 @@ describe('buildStarbaseFileName', () => {
   it('forceExtension replaces a trailing diagram extension', () => {
     expect(
       buildStarbaseFileName('My Process.bpmn', 'bpmn', { forceExtension: 'pdf' }),
-    ).toBe('My_Process.pdf');
+    ).toBe('My Process.pdf');
     expect(
       buildStarbaseFileName('table.dmn', 'dmn', { forceExtension: 'pdf' }),
     ).toBe('table.pdf');
@@ -74,13 +80,13 @@ describe('buildStarbaseFileName', () => {
   it('forceExtension appends when no diagram extension is present', () => {
     expect(
       buildStarbaseFileName('Receipt Report', 'bpmn', { forceExtension: 'pdf' }),
-    ).toBe('Receipt_Report.pdf');
+    ).toBe('Receipt Report.pdf');
   });
 
   it('forceExtension is idempotent', () => {
     expect(
       buildStarbaseFileName('Receipt Report.pdf', 'bpmn', { forceExtension: 'pdf' }),
-    ).toBe('Receipt_Report.pdf');
+    ).toBe('Receipt Report.pdf');
   });
 
   it('strips leading dots from forceExtension', () => {
@@ -107,7 +113,7 @@ describe('buildStarbaseFileName', () => {
 
   it('returns a sanitised single-segment value even with no type and no force', () => {
     // Used for ZIP archive outer download name.
-    expect(buildStarbaseFileName('My Project Name', null)).toBe('My_Project_Name');
-    expect(buildStarbaseFileName('My Project Name', undefined)).toBe('My_Project_Name');
+    expect(buildStarbaseFileName('My Project Name', null)).toBe('My Project Name');
+    expect(buildStarbaseFileName('My Project Name', undefined)).toBe('My Project Name');
   });
 });
